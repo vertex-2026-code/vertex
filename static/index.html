@@ -144,11 +144,11 @@
     </h2>
     <div id="cat-tabs" class="flex gap-1.5 mb-3 overflow-x-auto pb-1">
       <span class="cat-tab active" data-cat="all">全部</span>
-      <span class="cat-tab" data-cat="A">简约清透</span>
-      <span class="cat-tab" data-cat="B">甜美可爱</span>
-      <span class="cat-tab" data-cat="C">华丽璀璨</span>
-      <span class="cat-tab" data-cat="D">暗黑酷飒</span>
-      <span class="cat-tab" data-cat="E">潮流前卫</span>
+      <span class="cat-tab" data-cat="A">Pureté</span>
+      <span class="cat-tab" data-cat="B">Rosé</span>
+      <span class="cat-tab" data-cat="C">Lumière</span>
+      <span class="cat-tab" data-cat="D">Noir</span>
+      <span class="cat-tab" data-cat="E">Avant-Garde</span>
     </div>
     <div id="styles-grid" class="grid grid-cols-3 gap-2 max-h-[60vh] overflow-y-auto">
       <!-- 第一格：上传自定义款式 -->
@@ -240,8 +240,7 @@
       card.className = 'style-card rounded-xl overflow-hidden cursor-pointer relative bg-pink-50';
       card.dataset.id = s.id;
       card.dataset.cat = s.category;
-      card.innerHTML = `<img src="${s.url}" class="w-full aspect-square object-cover" loading="lazy">
-        <div class="absolute bottom-0 inset-x-0 bg-black/40 text-white text-[9px] font-bold text-center py-0.5">${s.category_name}</div>`;
+      card.innerHTML = `<img src="${s.url}" class="w-full aspect-square object-cover" loading="lazy">`;
       grid.appendChild(card);
       allStyleCards.push(card);
     });
