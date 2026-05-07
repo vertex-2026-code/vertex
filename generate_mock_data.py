@@ -149,7 +149,7 @@ for _ in range(15):
 
 records.sort(key=lambda r: r["ts"])
 
-with open(OUT, "w") as f:
+with open(OUT, "a") as f:
     for r in records:
         f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
