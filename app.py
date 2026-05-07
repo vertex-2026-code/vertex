@@ -10,6 +10,7 @@ import json
 import time
 import uuid
 import base64
+import subprocess
 import requests
 from datetime import datetime, timezone
 from flask import Flask, request, jsonify, send_from_directory
@@ -17,7 +18,6 @@ from openai import OpenAI
 
 # ============ 配置 ============
 ARK_API_KEY = os.environ.get("ARK_API_KEY", "")
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 MODEL_ID = "doubao-seedream-4-5-251128"
 
 PROMPT = (
@@ -324,39 +324,27 @@ def admin_chat():
     user_msg = data.get('message', '')
     if not user_msg:
         return jsonify({"error": "消息不能为空"}), 400
-    if not DEEPSEEK_API_KEY:
-        return jsonify({"error": "未配置 DEEPSEEK_API_KEY"}), 500
 
-    logs = load_logs()
-    recent = logs[-500:] if len(logs) > 500 else logs
-    log_text = "\n".join(json.dumps(r, ensure_ascii=False) for r in recent)
-
-    ds_client = OpenAI(base_url="https://api.deepseek.com", api_key=DEEPSEEK_API_KEY)
     try:
-        resp = ds_client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[
-                {"role": "system", "content": (
-                    "你是「Vertex · 甲趣」美甲平台的 AI 运营助手。下面是最近的用户行为日志（JSONL 格式），"
-                    "包含试戴开始(tryon_start)、试戴成功(tryon_success)、用户反馈(feedback: like/dislike/book)等事件。"
-                    "每条记录有 user_id、nickname、style_id、shop_id 等字段。\n\n"
-                    "平台有 5 家门店，每家专做一种风格：\n"
-                    "- shop_001 Maison Pureté(三里屯) → A 简约清透风 (nail_01,10,13,14,23)\n"
-                    "- shop_002 Fleur Rosé(五道口) → B 甜美可爱风 (nail_02,05,15,16,25)\n"
-                    "- shop_003 Bijou Lumière(国贸) → C 华丽璀璨风 (nail_06,11,17,18,19)\n"
-                    "- shop_004 Noir Atelier(望京) → D 暗黑酷飒风 (nail_03,08,09,12)\n"
-                    "- shop_005 L'Avant-Garde(中关村) → E 潮流前卫风 (nail_04,07,20,21,22,24)\n\n"
-                    "请基于这些真实数据回答运营人员的问题，给出具体的数据分析和可执行的运营建议。"
-                    "注意发现异常（如某门店预约量异常高可能是刷量）。"
-                    "回复用中文，格式清晰，善用表格和数字。\n\n"
-                    f"--- 行为日志（共 {len(logs)} 条，展示最近 {len(recent)} 条）---\n{log_text}"
-                )},
-                {"role": "user", "content": user_msg},
-            ],
-            max_tokens=2000,
+        result = subprocess.run(
+            ["openclaw", "agent", "--message", user_msg, "--json", "--timeout", "120"],
+            capture_output=True, text=True, timeout=130,
         )
-        reply = resp.choices[0].message.content
-        return jsonify({"reply": reply})
+        if result.returncode != 0:
+            return jsonify({"error": f"OpenClaw 错误: {result.stderr.strip()[-200:]}"}), 500
+
+        output = result.stdout.strip()
+        # --json 输出可能包含日志行，找最后一个 JSON 对象
+        for line in reversed(output.split("\n")):
+            line = line.strip()
+            if line.startswith("{"):
+                resp = json.loads(line)
+                reply = resp.get("reply") or resp.get("content") or resp.get("message") or resp.get("text") or str(resp)
+                return jsonify({"reply": reply})
+
+        return jsonify({"reply": output})
+    except subprocess.TimeoutExpired:
+        return jsonify({"error": "AI 响应超时，请重试"}), 504
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
