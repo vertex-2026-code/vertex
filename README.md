@@ -1,5 +1,5 @@
 
-# 甲趣 · AI 美甲试戴 + 智能运营
+# Vertex · 甲趣 — AI 美甲试戴 + 智能运营
 
 > 用 AI 让用户"先试再做"，用 AI 帮平台"决策推什么"。
 
@@ -13,6 +13,16 @@
 2. **B 端智能运营**——平台运营人员通过 OpenClaw 网关与 DeepSeek 对话，AI 实时读取 C 端用户行为日志，给出"哪个款式该推首页 / 哪家店该流量加权 / 哪些刷量门店要打压"的决策建议
 
 C 端积累数据，B 端用 AI 反向决策——**形成"用户行为 → 数据沉淀 → AI 分析 → 运营决策 → 流量分发 → 用户行为"的闭环**。
+
+## 5 店 × 5 风格体系
+
+| 分类 | 风格 | 门店 | 款式 |
+|---|---|---|---|
+| A | 简约清透 | Maison Pureté · 三里屯 | nail_01, 10, 13, 14, 23 |
+| B | 甜美可爱 | Fleur Rosé · 五道口 | nail_02, 05, 15, 16, 25 |
+| C | 华丽璀璨 | Bijou Lumière · 国贸 | nail_06, 11, 17, 18, 19 |
+| D | 暗黑酷飒 | Noir Atelier · 望京 | nail_03, 08, 09, 12 |
+| E | 潮流前卫 | L'Avant-Garde · 中关村 | nail_04, 07, 20, 21, 22, 24 |
 
 ## 架构
 
@@ -57,15 +67,18 @@ graph LR
 
 ```
 .
-├── app.py              # Flask 后端：试戴 / 反馈 / 门店 API
+├── app.py              # Flask 后端：试戴 / 反馈 / 门店 / 运营大屏 API
 ├── static/
-│   ├── index.html      # 移动端试戴 UI
-│   ├── nails/          # 25 张预设美甲款式（nail_01.png ~ nail_25.png）
-│   └── results/        # AI 生成结果（运行时产物，不进 git）
-├── data/               # tryon.jsonl 行为日志（不进 git）
-├── deploy.sh           # 服务器一键部署脚本
+│   ├── index.html      # C 端移动端试戴 UI
+│   ├── admin.html      # B 端运营大屏 + AI 对话
+│   ├── nails/          # 25 张预设美甲款式（nail_01 ~ nail_25）
+│   ├── results/        # AI 生成结果（运行时产物）
+│   └── uploads/        # 用户上传的手部照片 + 自定义款式图
+├── generate_mock_data.py  # 模拟行为数据生成器
+├── data/               # tryon.jsonl 行为日志
+├── deploy.sh
 ├── requirements.txt
-├── .env.example        # 环境变量模板
+├── .env.example
 └── README.md
 ```
 
@@ -79,6 +92,9 @@ graph LR
 | `/api/shops` | GET | 列出附近门店（mock 数据） |
 | `/api/tryon` | POST | 执行 AI 试戴 |
 | `/api/feedback` | POST | 收用户反馈：喜欢 / 不喜欢 / 预约 |
+| `/admin` | GET | B 端运营大屏 |
+| `/api/admin/stats` | GET | 运营统计数据（风格热度 / 门店预约 / 用户排行） |
+| `/api/admin/chat` | POST | AI 运营助手（调用 OpenClaw → DeepSeek） |
 
 试戴请求体示例：
 ```json
@@ -149,12 +165,44 @@ git pull && ./deploy.sh
 
 ## OpenClaw 接入运营脑
 
-```bash
-# 让 DeepSeek 能读取试戴日志（一次性）
-ln -s /opt/jiaqu/data /root/.openclaw/workspace/tryon-data
+### 关键路径速查
+
+```
+/root/.openclaw/
+├── openclaw.json                  # 主配置：模型、端口、插件
+├── agents/main/agent/
+│   ├── auth-profiles.json         # API 凭证
+│   └── models.json                # 可用模型清单
+├── workspace/                     # DeepSeek 能读的范围
+│   ├── SOUL.md                    # AI 灵魂设定（行为准则 + 数据映射）
+│   ├── IDENTITY.md                # AI 身份（名: 小趣，角色: 运营分析师）
+│   ├── USER.md                    # 用户画像
+│   ├── DOSSIER.md                 # 长期记忆
+│   └── tryon-data/ → /opt/jiaqu/data  # 软链，让 AI 能读 jsonl
+├── extensions/                    # 第三方插件（微信/飞书/钉钉等）
+└── canvas/                        # 自定义 UI 面板
 ```
 
-然后在 OpenClaw 控制台直接对话：
+**DeepSeek 默认只能读 `workspace/` 内的文件**。建软链暴露试戴数据：
+
+```bash
+ln -sf /opt/jiaqu/data /root/.openclaw/workspace/tryon-data
+```
+
+### 日志 & 调试
+
+```bash
+# 追 OpenClaw 日志
+openclaw logs --follow
+tail -f /tmp/openclaw/openclaw-$(date +%Y-%m-%d).log
+
+# 一键查看 OpenClaw 状态
+ps aux | grep openclaw-gateway | grep -v grep
+ss -tlnp | grep 25688
+ls -la /root/.openclaw/workspace/
+```
+
+### 在 OpenClaw 控制台对话
 
 > "读 `/workspace/tryon-data/tryon.jsonl`，统计今天每个款式的试戴次数和喜欢率，给出该上首页的 top 3 款式。"
 
@@ -170,6 +218,9 @@ DeepSeek 会实时读取最新 jsonl 数据并给出**结构化的运营决策�
 - [x] 25 个预设款式 + 用户自定义款式上传
 - [x] 客户端图片压缩（200KB 上传，30 倍提速）
 - [x] B 端 OpenClaw + DeepSeek 接入
+- [x] B 端运营大屏（数据看板 + AI 对话）
+- [x] 用户昵称系统 + 行为数据关联
+- [x] 用户上传图片持久化存储
 - [ ] OpenClaw 飞书 Bot 集成（运营人员手机直接问）
 - [ ] 大模型升级到豆包 1.6（更懂中文美甲场景）
 - [ ] 真门店数据库 + 预约工作流
