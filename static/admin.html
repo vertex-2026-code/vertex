@@ -8,34 +8,44 @@
 <style>
   body {
     font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
-    background: #0f172a;
-    color: #e2e8f0;
+    background: #e9e9e9;
+    color: #1a1a1a;
     min-height: 100vh;
   }
+  .brand-serif {
+    font-family: Georgia, "Songti SC", "Noto Serif SC", serif;
+  }
   .card {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 16px;
-    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #d4d0cc;
+    padding: 28px;
   }
   .stat-num {
     font-size: 2rem;
-    font-weight: 900;
-    background: linear-gradient(135deg, #ff6b9d, #f472b6);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: -0.02em;
+  }
+  .stat-label {
+    font-size: 10px;
+    color: #8a8785;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
   .bar {
-    height: 24px;
-    background: linear-gradient(90deg, #ff6b9d, #f472b6);
-    border-radius: 6px;
-    transition: width 0.6s;
+    height: 20px;
+    background: #2d3a26;
+    transition: width 0.6s ease;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #8a8785;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
   }
   .chat-box {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 16px;
+    background: #ffffff;
     display: flex;
     flex-direction: column;
     height: 420px;
@@ -43,132 +53,142 @@
   .chat-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 16px;
+    padding: 20px 24px;
   }
   .msg-user {
-    background: #334155;
-    border-radius: 12px 12px 4px 12px;
-    padding: 10px 14px;
-    margin-left: 40px;
-    margin-bottom: 8px;
+    background: #f2efed;
+    padding: 12px 16px;
+    margin-left: 48px;
+    margin-bottom: 10px;
     font-size: 14px;
+    color: #1a1a1a;
+    line-height: 1.6;
   }
   .msg-ai {
-    background: #1a1a2e;
-    border: 1px solid #334155;
-    border-radius: 12px 12px 12px 4px;
-    padding: 10px 14px;
-    margin-right: 40px;
-    margin-bottom: 8px;
+    background: #faf8f7;
+    border: 1px solid #e5e1dd;
+    padding: 12px 16px;
+    margin-right: 48px;
+    margin-bottom: 10px;
     font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.7;
     white-space: pre-wrap;
+    color: #333;
   }
   .chat-input-area {
-    border-top: 1px solid #334155;
-    padding: 12px;
+    border-top: 1px solid #d4d0cc;
+    padding: 14px 20px;
     display: flex;
-    gap: 8px;
+    gap: 10px;
   }
   .chat-input-area input {
     flex: 1;
-    background: #0f172a;
-    border: 1px solid #475569;
-    border-radius: 10px;
+    background: #f2efed;
+    border: 1px solid #d4d0cc;
     padding: 10px 14px;
-    color: #e2e8f0;
+    color: #1a1a1a;
     font-size: 14px;
     outline: none;
+    transition: border-color 0.3s ease;
   }
-  .chat-input-area input:focus { border-color: #f472b6; }
+  .chat-input-area input:focus { border-color: #1a1a1a; }
   .chat-input-area button {
-    background: linear-gradient(135deg, #ff6b9d, #f472b6);
+    background: #1a1a1a;
     border: none;
-    border-radius: 10px;
-    padding: 10px 20px;
+    padding: 10px 24px;
     color: white;
-    font-weight: 700;
-    font-size: 14px;
+    font-weight: 600;
+    font-size: 13px;
     cursor: pointer;
+    letter-spacing: 0.06em;
+    transition: background 0.3s ease;
   }
-  .chat-input-area button:disabled { opacity: 0.4; cursor: not-allowed; }
-  .shop-warn { color: #fbbf24; font-weight: 700; }
+  .chat-input-area button:hover { background: #333; }
+  .chat-input-area button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .shop-warn { color: #b4545a; font-weight: 700; }
   .spinner-sm {
-    width: 18px; height: 18px;
-    border: 2px solid rgba(244,114,182,0.3);
-    border-top-color: #f472b6;
+    width: 16px; height: 16px;
+    border: 2px solid #ddd8d3;
+    border-top-color: #1a1a1a;
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    animation: spin 1s linear infinite;
     display: inline-block;
     vertical-align: middle;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+  .divider {
+    height: 1px;
+    background: #d4d0cc;
+    margin: 8px 0;
+  }
 </style>
 </head>
 <body>
 
-<div class="max-w-6xl mx-auto px-4 py-6">
+<div class="max-w-6xl mx-auto px-6 py-10">
 
   <!-- Header -->
-  <header class="flex items-center justify-between mb-6">
+  <header class="flex items-center justify-between mb-12">
     <div>
-      <h1 class="text-2xl font-black text-pink-400">甲趣 · 运营中心</h1>
-      <p class="text-xs text-gray-500 mt-1">AI 驱动的美甲平台智能决策</p>
+      <h1 class="brand-serif text-2xl font-normal text-stone-800" style="letter-spacing: 0.08em;">甲趣 · 运营中心</h1>
+      <p class="text-stone-400 mt-2" style="font-size: 10px; letter-spacing: 0.2em;">AI-POWERED NAIL PLATFORM ANALYTICS</p>
     </div>
-    <a href="/" class="text-xs text-gray-400 hover:text-pink-400 transition">← 返回 C 端</a>
+    <a href="/" class="text-xs text-stone-400 hover:text-stone-700 transition duration-300" style="letter-spacing: 0.06em;">← 返回 C 端</a>
   </header>
 
   <!-- 概览数字 -->
-  <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6" id="overview">
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-10" id="overview">
     <div class="card text-center">
-      <div class="text-xs text-gray-400 mb-1">总试戴</div>
+      <div class="stat-label mb-3">总试戴</div>
       <div class="stat-num" id="s-tryons">--</div>
     </div>
     <div class="card text-center">
-      <div class="text-xs text-gray-400 mb-1">成功率</div>
+      <div class="stat-label mb-3">成功率</div>
       <div class="stat-num" id="s-success-rate">--</div>
     </div>
     <div class="card text-center">
-      <div class="text-xs text-gray-400 mb-1">喜欢数</div>
+      <div class="stat-label mb-3">喜欢数</div>
       <div class="stat-num" id="s-likes">--</div>
     </div>
     <div class="card text-center">
-      <div class="text-xs text-gray-400 mb-1">预约数</div>
+      <div class="stat-label mb-3">预约数</div>
       <div class="stat-num" id="s-books">--</div>
     </div>
     <div class="card text-center">
-      <div class="text-xs text-gray-400 mb-1">平均耗时</div>
+      <div class="stat-label mb-3">平均耗时</div>
       <div class="stat-num" id="s-latency">--</div>
     </div>
   </div>
 
   <!-- 中间两列 -->
-  <div class="grid md:grid-cols-2 gap-4 mb-6">
+  <div class="grid md:grid-cols-2 gap-4 mb-10">
     <!-- 风格分类热度 -->
     <div class="card">
-      <h2 class="text-sm font-bold text-gray-300 mb-3">风格分类热度</h2>
-      <div id="cat-stats" class="space-y-2"></div>
-      <h2 class="text-sm font-bold text-gray-300 mt-4 mb-3">热门款式 Top 10</h2>
-      <div id="top-styles" class="space-y-2"></div>
+      <h2 class="section-title mb-5">风格分类热度</h2>
+      <div id="cat-stats" class="space-y-3"></div>
+      <div class="divider my-6"></div>
+      <h2 class="section-title mb-5">热门款式 Top 10</h2>
+      <div id="top-styles" class="space-y-3"></div>
     </div>
     <!-- 门店预约 + 用户 -->
     <div class="card">
-      <h2 class="text-sm font-bold text-gray-300 mb-3">门店预约排行</h2>
-      <div id="top-shops" class="space-y-2"></div>
-      <h2 class="text-sm font-bold text-gray-300 mt-4 mb-3">活跃用户 Top 10</h2>
-      <div id="top-users" class="space-y-2"></div>
+      <h2 class="section-title mb-5">门店预约排行</h2>
+      <div id="top-shops" class="space-y-3"></div>
+      <div class="divider my-6"></div>
+      <h2 class="section-title mb-5">活跃用户 Top 10</h2>
+      <div id="top-users" class="space-y-3"></div>
     </div>
   </div>
 
   <!-- AI 对话 -->
   <div class="card" style="padding:0;">
-    <div class="px-5 pt-4 pb-2">
-      <h2 class="text-sm font-bold text-gray-300">AI 运营助手 · DeepSeek</h2>
-      <p class="text-xs text-gray-500 mt-1">基于实时用户行为数据，问任何运营问题</p>
+    <div class="px-7 pt-6 pb-3">
+      <h2 class="section-title">AI 运营助手 · DeepSeek</h2>
+      <p class="text-xs text-stone-400 mt-1.5">基于实时用户行为数据，问任何运营问题</p>
     </div>
-    <div class="chat-box" style="border:none; height:400px;">
+    <div class="chat-box" style="border:none; border-top: 1px solid #d4d0cc; height:400px;">
       <div class="chat-messages" id="chat-messages">
-        <div class="msg-ai">你好！我是甲趣 AI 运营助手。我能实时读取用户行为日志，帮你分析 5 家门店的运营数据。
+        <div class="msg-ai">你好，我是甲趣 AI 运营助手。我能实时读取用户行为日志，帮你分析 5 家门店的运营数据。
 
 5 家门店：Maison Pureté(简约) · Fleur Rosé(甜美) · Bijou Lumière(华丽) · Noir Atelier(暗黑) · L'Avant-Garde(前卫)
 
@@ -202,34 +222,34 @@ async function loadStats() {
     $('#s-books').textContent = d.total_books;
     $('#s-latency').textContent = (d.avg_latency_ms / 1000).toFixed(1) + 's';
 
-    // 风格分类
-    const catColors = {A:'#a7f3d0',B:'#fbcfe8',C:'#fde68a',D:'#6b7280',E:'#93c5fd'};
+    // 风格分类 — 使用 Aesop 大地色系
+    const catColors = {A:'#2d3a26',B:'#876f4e',C:'#8a6a4e',D:'#4a4a4a',E:'#5c6b54'};
     const maxCat = d.category_stats.length ? d.category_stats[0][1] : 1;
     $('#cat-stats').innerHTML = d.category_stats.map(([cat, count]) => {
       const w = Math.round(count / maxCat * 100);
       const name = d.category_names[cat] || cat;
-      return `<div class="flex items-center gap-2 text-sm">
-        <span class="w-20 text-gray-300 font-bold">${cat} ${name}</span>
-        <div class="flex-1"><div class="bar" style="width:${w}%;background:${catColors[cat]||'#ff6b9d'}"></div></div>
-        <span class="w-8 text-right text-gray-300">${count}</span>
+      return `<div class="flex items-center gap-3 text-sm">
+        <span class="w-20 text-stone-600 font-semibold" style="letter-spacing: 0.02em;">${cat} ${name}</span>
+        <div class="flex-1"><div class="bar" style="width:${w}%;background:${catColors[cat]||'#2d3a26'}"></div></div>
+        <span class="w-8 text-right text-stone-500 font-medium">${count}</span>
       </div>`;
     }).join('');
 
-    // 热门款式
+    // 热门款式 — 橄榄绿柱状
     const maxCount = d.top_styles.length ? d.top_styles[0][1] : 1;
     $('#top-styles').innerHTML = d.top_styles.map(([sid, count], i) => {
       const likeRate = d.like_rates[sid] != null ? d.like_rates[sid] + '%' : '-';
       const w = Math.round(count / maxCount * 100);
       return `<div class="flex items-center gap-2 text-sm">
-        <span class="text-gray-500 w-5 text-right">${i+1}</span>
-        <span class="w-16 font-mono text-gray-300">${sid}</span>
+        <span class="text-stone-400 w-5 text-right font-medium">${i+1}</span>
+        <span class="w-16 font-mono text-stone-600">${sid}</span>
         <div class="flex-1"><div class="bar" style="width:${w}%"></div></div>
-        <span class="w-8 text-right text-gray-300">${count}</span>
-        <span class="w-12 text-right text-xs text-pink-400">${likeRate}</span>
+        <span class="w-8 text-right text-stone-500 font-medium">${count}</span>
+        <span class="w-12 text-right text-xs text-stone-400">${likeRate}</span>
       </div>`;
     }).join('');
 
-    // 门店预约
+    // 门店预约 — 铜色柱状
     const shopNames = {shop_001:'Maison Pureté(三里屯)',shop_002:'Fleur Rosé(五道口)',shop_003:'Bijou Lumière(国贸)',shop_004:'Noir Atelier(望京)',shop_005:"L'Avant-Garde(中关村)"};
     const shopStyles = {shop_001:'简约清透',shop_002:'甜美可爱',shop_003:'华丽璀璨',shop_004:'暗黑酷飒',shop_005:'潮流前卫'};
     const maxShop = d.top_shops.length ? d.top_shops[0][1] : 1;
@@ -238,19 +258,19 @@ async function loadStats() {
       const w = Math.round(count / maxShop * 100);
       const warn = count > avgShopBooks * 2 ? ' shop-warn' : '';
       return `<div class="flex items-center gap-2 text-sm">
-        <span class="w-40 text-gray-300 truncate">${shopNames[sid]||sid}</span>
-        <span class="w-16 text-xs text-gray-500">${shopStyles[sid]||''}</span>
-        <div class="flex-1"><div class="bar" style="width:${w}%"></div></div>
-        <span class="w-8 text-right${warn}">${count}${warn ? ' ⚠️' : ''}</span>
+        <span class="w-40 text-stone-600 truncate font-medium">${shopNames[sid]||sid}</span>
+        <span class="w-16 text-xs text-stone-400">${shopStyles[sid]||''}</span>
+        <div class="flex-1"><div class="bar" style="width:${w}%;background:#876f4e"></div></div>
+        <span class="w-8 text-right${warn} font-medium">${count}${warn ? ' !' : ''}</span>
       </div>`;
     }).join('');
 
     // 活跃用户
     $('#top-users').innerHTML = d.top_users.map(([name, count], i) => {
       return `<div class="flex items-center gap-2 text-sm">
-        <span class="text-gray-500 w-5 text-right">${i+1}</span>
-        <span class="flex-1 text-gray-300">${name}</span>
-        <span class="text-gray-400">${count} 次试戴</span>
+        <span class="text-stone-400 w-5 text-right font-medium">${i+1}</span>
+        <span class="flex-1 text-stone-600">${name}</span>
+        <span class="text-stone-400">${count} 次试戴</span>
       </div>`;
     }).join('');
 
