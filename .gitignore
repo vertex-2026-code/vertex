@@ -1,0 +1,19 @@
+# 运行时数据（每次部署都该是新的）
+data/
+static/results/
+*.log
+*.bak
+
+# 敏感配置
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# 编辑器
+.vscode/
+.idea/
+.DS_Store
