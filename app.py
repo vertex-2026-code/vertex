@@ -25,7 +25,11 @@ PROMPT = (
     "设计风格、颜色、图案。输出图片必须保持第一张图的整体构图和氛围。"
 )
 
-BASE_DIR = "/opt/jiaqu"
+if os.path.isdir("/opt/jiaqu"):
+    BASE_DIR = "/opt/jiaqu"
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 DATA_DIR = f"{BASE_DIR}/data"
 RESULTS_DIR = f"{BASE_DIR}/static/results"
 NAILS_DIR = f"{BASE_DIR}/static/nails"
@@ -102,6 +106,7 @@ def tryon():
     style_id = data.get('style_id')
     custom_style_image = data.get('custom_style_image')
     user_id = data.get('user_id', 'anonymous')
+    nickname = data.get('nickname', '')
 
     if not hand_image:
         return jsonify({"error": "缺少手部照片"}), 400
@@ -135,6 +140,7 @@ def tryon():
     log_event("tryon_start", {
         "request_id": request_id,
         "user_id": user_id,
+        "nickname": nickname,
         "style_id": style_label,
         "style_kind": style_kind,
     })
@@ -163,6 +169,7 @@ def tryon():
         log_event("tryon_success", {
             "request_id": request_id,
             "user_id": user_id,
+            "nickname": nickname,
             "style_id": style_label,
             "style_kind": style_kind,
             "latency_ms": latency,
@@ -178,6 +185,7 @@ def tryon():
         log_event("tryon_error", {
             "request_id": request_id,
             "user_id": user_id,
+            "nickname": nickname,
             "style_id": style_label,
             "style_kind": style_kind,
             "error": str(e),
@@ -191,6 +199,7 @@ def feedback():
     log_event("feedback", {
         "request_id": data.get('request_id'),
         "user_id": data.get('user_id', 'anonymous'),
+        "nickname": data.get('nickname', ''),
         "style_id": data.get('style_id'),
         "action": data.get('action'),
         "shop_id": data.get('shop_id'),
@@ -204,5 +213,5 @@ def health():
 
 
 if __name__ == '__main__':
-    print(f"🎀 甲趣 v2 启动 → 日志: {LOG_FILE}")
+    print(f"甲趣 v3 启动 | BASE_DIR={BASE_DIR} | 日志: {LOG_FILE}")
     app.run(host='0.0.0.0', port=5000, debug=False)
