@@ -54,12 +54,13 @@ CAT_TO_SHOP = {
 
 SHOPS = ["shop_001", "shop_002", "shop_003", "shop_004", "shop_005"]
 
-now = datetime.now(timezone.utc)
+BJT = timezone(timedelta(hours=8))
+now = datetime.now(BJT)
 records = []
 
 
 def iso(dt):
-    return dt.isoformat().replace("+00:00", "Z")
+    return dt.astimezone(BJT).isoformat()
 
 
 def pick_style():

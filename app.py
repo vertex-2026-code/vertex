@@ -12,8 +12,10 @@ import uuid
 import base64
 import subprocess
 import requests
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from flask import Flask, request, jsonify, send_from_directory
+
+# ============ 配置 ============
 from openai import OpenAI
 
 # ============ 配置 ============
@@ -71,8 +73,11 @@ CATEGORY_NAMES = {
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 
+BJT = timezone(timedelta(hours=8))
+
+
 def now_iso():
-    return datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+    return datetime.now(BJT).isoformat()
 
 
 def log_event(event_type, data):
