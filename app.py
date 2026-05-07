@@ -355,15 +355,30 @@ def admin_chat():
             return jsonify({"error": f"OpenClaw 错误: {result.stderr.strip()[-200:]}"}), 500
 
         output = result.stdout.strip()
-        # --json 输出可能包含日志行，找最后一个 JSON 对象
-        for line in reversed(output.split("\n")):
-            line = line.strip()
-            if line.startswith("{"):
-                resp = json.loads(line)
-                reply = resp.get("reply") or resp.get("content") or resp.get("message") or resp.get("text") or str(resp)
-                return jsonify({"reply": reply})
 
-        return jsonify({"reply": output})
+        def extract_reply(raw):
+            """从 OpenClaw --json 输出中提取文本，支持数组和对象两种格式"""
+            for line in reversed(raw.split("\n")):
+                line = line.strip()
+                if not (line.startswith("{") or line.startswith("[")):
+                    continue
+                try:
+                    parsed = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(parsed, list):
+                    texts = [item.get("text", "") for item in parsed if isinstance(item, dict) and item.get("text")]
+                    if texts:
+                        return texts[-1]
+                elif isinstance(parsed, dict):
+                    return parsed.get("reply") or parsed.get("content") or parsed.get("message") or parsed.get("text") or str(parsed)
+            return None
+
+        reply = extract_reply(output)
+        if reply:
+            return jsonify({"reply": reply})
+
+        return jsonify({"reply": output or "AI 未返回有效内容，请重试"})
     except subprocess.TimeoutExpired:
         return jsonify({"error": "AI 响应超时，请重试"}), 504
     except Exception as e:
