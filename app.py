@@ -327,7 +327,8 @@ def admin_chat():
 
     try:
         result = subprocess.run(
-            ["openclaw", "agent", "--message", user_msg, "--json", "--timeout", "120"],
+            ["openclaw", "agent", "--message", user_msg, "--json",
+             "--session-id", "vertex-admin", "--timeout", "120"],
             capture_output=True, text=True, timeout=130,
         )
         if result.returncode != 0:
