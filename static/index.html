@@ -78,6 +78,23 @@
     font-size: 13px;
     font-weight: 700;
   }
+  .cat-tab {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .cat-tab.active {
+    background: linear-gradient(135deg, #ff6b9d, #ff8fab);
+    color: white;
+  }
+  .cat-tab:not(.active) {
+    background: #fce7f3;
+    color: #9d174d;
+  }
   /* 结果图：保持原图比例 + 占满弹窗宽度 */
   #result-img {
     width: 100%;
@@ -125,6 +142,14 @@
     <h2 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
       <span class="step-num">2</span><span>选款式 · 或自己上传一张</span>
     </h2>
+    <div id="cat-tabs" class="flex gap-1.5 mb-3 overflow-x-auto pb-1">
+      <span class="cat-tab active" data-cat="all">全部</span>
+      <span class="cat-tab" data-cat="A">简约清透</span>
+      <span class="cat-tab" data-cat="B">甜美可爱</span>
+      <span class="cat-tab" data-cat="C">华丽璀璨</span>
+      <span class="cat-tab" data-cat="D">暗黑酷飒</span>
+      <span class="cat-tab" data-cat="E">潮流前卫</span>
+    </div>
     <div id="styles-grid" class="grid grid-cols-3 gap-2 max-h-[60vh] overflow-y-auto">
       <!-- 第一格：上传自定义款式 -->
       <label class="style-card upload-tile rounded-xl overflow-hidden cursor-pointer relative aspect-square flex flex-col items-center justify-center" data-id="__custom__" id="custom-tile">
@@ -206,6 +231,7 @@
   function getNickname() { return nicknameInput.value.trim(); }    // 已点过的 action，防重复
 
   // === 加载预设款式 ===
+  let allStyleCards = [];
   fetch('/api/styles').then(r => r.json()).then(styles => {
     $('#styles-loading')?.remove();
     const grid = $('#styles-grid');
@@ -213,8 +239,23 @@
       const card = document.createElement('div');
       card.className = 'style-card rounded-xl overflow-hidden cursor-pointer relative bg-pink-50';
       card.dataset.id = s.id;
-      card.innerHTML = `<img src="${s.url}" class="w-full aspect-square object-cover" loading="lazy">`;
+      card.dataset.cat = s.category;
+      card.innerHTML = `<img src="${s.url}" class="w-full aspect-square object-cover" loading="lazy">
+        <div class="absolute bottom-0 inset-x-0 bg-black/40 text-white text-[9px] font-bold text-center py-0.5">${s.category_name}</div>`;
       grid.appendChild(card);
+      allStyleCards.push(card);
+    });
+  });
+
+  // === 分类筛选 ===
+  $('#cat-tabs').addEventListener('click', e => {
+    const tab = e.target.closest('.cat-tab');
+    if (!tab) return;
+    $$('.cat-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const cat = tab.dataset.cat;
+    allStyleCards.forEach(c => {
+      c.style.display = (cat === 'all' || c.dataset.cat === cat) ? '' : 'none';
     });
   });
 
@@ -365,6 +406,7 @@
             <div class="flex-1 min-w-0">
               <div class="font-bold text-sm text-gray-800 truncate">${s.name}</div>
               <div class="text-xs text-gray-500 mt-0.5">⭐ ${s.rating} · ${s.distance_km}km · 均价 ¥${s.price_avg}</div>
+              <div class="text-[10px] text-pink-500 font-bold mt-0.5">${s.desc || ''}</div>
             </div>
             <button class="bg-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shrink-0">预约</button>
           </div>

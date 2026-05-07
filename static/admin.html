@@ -144,12 +144,14 @@
 
   <!-- 中间两列 -->
   <div class="grid md:grid-cols-2 gap-4 mb-6">
-    <!-- 热门款式 -->
+    <!-- 风格分类热度 -->
     <div class="card">
-      <h2 class="text-sm font-bold text-gray-300 mb-3">热门款式 Top 10</h2>
+      <h2 class="text-sm font-bold text-gray-300 mb-3">风格分类热度</h2>
+      <div id="cat-stats" class="space-y-2"></div>
+      <h2 class="text-sm font-bold text-gray-300 mt-4 mb-3">热门款式 Top 10</h2>
       <div id="top-styles" class="space-y-2"></div>
     </div>
-    <!-- 门店预约 -->
+    <!-- 门店预约 + 用户 -->
     <div class="card">
       <h2 class="text-sm font-bold text-gray-300 mb-3">门店预约排行</h2>
       <div id="top-shops" class="space-y-2"></div>
@@ -166,12 +168,14 @@
     </div>
     <div class="chat-box" style="border:none; height:400px;">
       <div class="chat-messages" id="chat-messages">
-        <div class="msg-ai">你好！我是甲趣 AI 运营助手。我能实时读取用户行为日志，帮你分析款式热度、转化率、门店数据、用户偏好等。
+        <div class="msg-ai">你好！我是甲趣 AI 运营助手。我能实时读取用户行为日志，帮你分析 5 家门店的运营数据。
+
+5 家门店：Maison Pureté(简约) · Fleur Rosé(甜美) · Bijou Lumière(华丽) · Noir Atelier(暗黑) · L'Avant-Garde(前卫)
 
 试试问我：
-· "哪些款式试戴多但预约少？分析原因"
-· "shop_003 的预约量是否异常？"
-· "给我一份今日运营简报"</div>
+· "各风格分类的转化率对比"
+· "Bijou Lumière 的预约量是否异常？"
+· "给我一份今日运营简报和推荐策略"</div>
       </div>
       <div class="chat-input-area">
         <input type="text" id="chat-input" placeholder="问 AI 任何运营问题..." autocomplete="off">
@@ -198,6 +202,19 @@ async function loadStats() {
     $('#s-books').textContent = d.total_books;
     $('#s-latency').textContent = (d.avg_latency_ms / 1000).toFixed(1) + 's';
 
+    // 风格分类
+    const catColors = {A:'#a7f3d0',B:'#fbcfe8',C:'#fde68a',D:'#6b7280',E:'#93c5fd'};
+    const maxCat = d.category_stats.length ? d.category_stats[0][1] : 1;
+    $('#cat-stats').innerHTML = d.category_stats.map(([cat, count]) => {
+      const w = Math.round(count / maxCat * 100);
+      const name = d.category_names[cat] || cat;
+      return `<div class="flex items-center gap-2 text-sm">
+        <span class="w-20 text-gray-300 font-bold">${cat} ${name}</span>
+        <div class="flex-1"><div class="bar" style="width:${w}%;background:${catColors[cat]||'#ff6b9d'}"></div></div>
+        <span class="w-8 text-right text-gray-300">${count}</span>
+      </div>`;
+    }).join('');
+
     // 热门款式
     const maxCount = d.top_styles.length ? d.top_styles[0][1] : 1;
     $('#top-styles').innerHTML = d.top_styles.map(([sid, count], i) => {
@@ -213,14 +230,16 @@ async function loadStats() {
     }).join('');
 
     // 门店预约
-    const shopNames = {shop_001:'粉黛(陆家嘴)',shop_002:'莫里斯(静安寺)',shop_003:'甲艺(田子坊)',shop_004:'NailLab(新天地)',shop_005:'甜心(豫园)'};
+    const shopNames = {shop_001:'Maison Pureté(三里屯)',shop_002:'Fleur Rosé(五道口)',shop_003:'Bijou Lumière(国贸)',shop_004:'Noir Atelier(望京)',shop_005:"L'Avant-Garde(中关村)"};
+    const shopStyles = {shop_001:'简约清透',shop_002:'甜美可爱',shop_003:'华丽璀璨',shop_004:'暗黑酷飒',shop_005:'潮流前卫'};
     const maxShop = d.top_shops.length ? d.top_shops[0][1] : 1;
     const avgShopBooks = d.top_shops.length ? d.top_shops.reduce((s,x)=>s+x[1],0) / d.top_shops.length : 0;
     $('#top-shops').innerHTML = d.top_shops.map(([sid, count]) => {
       const w = Math.round(count / maxShop * 100);
       const warn = count > avgShopBooks * 2 ? ' shop-warn' : '';
       return `<div class="flex items-center gap-2 text-sm">
-        <span class="w-32 text-gray-300 truncate">${shopNames[sid]||sid}</span>
+        <span class="w-40 text-gray-300 truncate">${shopNames[sid]||sid}</span>
+        <span class="w-16 text-xs text-gray-500">${shopStyles[sid]||''}</span>
         <div class="flex-1"><div class="bar" style="width:${w}%"></div></div>
         <span class="w-8 text-right${warn}">${count}${warn ? ' ⚠️' : ''}</span>
       </div>`;

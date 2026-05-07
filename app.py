@@ -47,12 +47,24 @@ client = OpenAI(
 )
 
 MOCK_SHOPS = [
-    {"id": "shop_001", "name": "粉黛美甲(陆家嘴店)", "rating": 4.8, "distance_km": 0.5, "price_avg": 188},
-    {"id": "shop_002", "name": "莫里斯美甲(静安寺店)", "rating": 4.6, "distance_km": 1.2, "price_avg": 268},
-    {"id": "shop_003", "name": "甲艺工坊(田子坊店)", "rating": 4.9, "distance_km": 2.1, "price_avg": 158},
-    {"id": "shop_004", "name": "Nail Lab(新天地店)", "rating": 4.7, "distance_km": 1.8, "price_avg": 328},
-    {"id": "shop_005", "name": "甜心美甲(豫园店)", "rating": 4.5, "distance_km": 2.5, "price_avg": 128},
+    {"id": "shop_001", "name": "Maison Pureté · 三里屯", "style": "A", "rating": 4.8, "distance_km": 0.5, "price_avg": 188, "desc": "简约清透风"},
+    {"id": "shop_002", "name": "Fleur Rosé · 五道口", "style": "B", "rating": 4.6, "distance_km": 1.2, "price_avg": 168, "desc": "甜美可爱风"},
+    {"id": "shop_003", "name": "Bijou Lumière · 国贸", "style": "C", "rating": 4.9, "distance_km": 2.1, "price_avg": 328, "desc": "华丽璀璨风"},
+    {"id": "shop_004", "name": "Noir Atelier · 望京", "style": "D", "rating": 4.7, "distance_km": 1.8, "price_avg": 258, "desc": "暗黑酷飒风"},
+    {"id": "shop_005", "name": "L'Avant-Garde · 中关村", "style": "E", "rating": 4.5, "distance_km": 2.5, "price_avg": 298, "desc": "潮流前卫风"},
 ]
+
+STYLE_CATEGORIES = {
+    "nail_01": "A", "nail_10": "A", "nail_13": "A", "nail_14": "A", "nail_23": "A",
+    "nail_02": "B", "nail_05": "B", "nail_15": "B", "nail_16": "B", "nail_25": "B",
+    "nail_06": "C", "nail_11": "C", "nail_17": "C", "nail_18": "C", "nail_19": "C",
+    "nail_03": "D", "nail_08": "D", "nail_09": "D", "nail_12": "D",
+    "nail_04": "E", "nail_07": "E", "nail_20": "E", "nail_21": "E", "nail_22": "E", "nail_24": "E",
+}
+
+CATEGORY_NAMES = {
+    "A": "简约清透", "B": "甜美可爱", "C": "华丽璀璨", "D": "暗黑酷飒", "E": "潮流前卫",
+}
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
@@ -80,10 +92,13 @@ def list_styles():
     for f in files:
         sid = os.path.splitext(f)[0]
         num = sid.replace('nail_', '').lstrip('0') or '0'
+        cat = STYLE_CATEGORIES.get(sid, '?')
         styles.append({
             "id": sid,
             "name": f"款式 {num}",
             "url": f"/static/nails/{f}",
+            "category": cat,
+            "category_name": CATEGORY_NAMES.get(cat, ''),
         })
     return jsonify(styles)
 
@@ -280,6 +295,13 @@ def admin_stats():
     latencies = [r.get('latency_ms', 0) for r in successes if r.get('latency_ms')]
     avg_latency = round(sum(latencies) / len(latencies)) if latencies else 0
 
+    # 风格分类统计
+    cat_counts = {}
+    for r in starts:
+        cat = STYLE_CATEGORIES.get(r.get('style_id', ''), '?')
+        cat_counts[cat] = cat_counts.get(cat, 0) + 1
+    cat_stats = sorted(cat_counts.items(), key=lambda x: -x[1])
+
     return jsonify({
         "total_tryons": len(starts),
         "total_success": len(successes),
@@ -291,6 +313,8 @@ def admin_stats():
         "like_rates": like_rates,
         "top_shops": top_shops,
         "top_users": top_users,
+        "category_stats": cat_stats,
+        "category_names": CATEGORY_NAMES,
     })
 
 
@@ -316,7 +340,14 @@ def admin_chat():
                     "你是「甲趣」美甲平台的 AI 运营助手。下面是最近的用户行为日志（JSONL 格式），"
                     "包含试戴开始(tryon_start)、试戴成功(tryon_success)、用户反馈(feedback: like/dislike/book)等事件。"
                     "每条记录有 user_id、nickname、style_id、shop_id 等字段。\n\n"
+                    "平台有 5 家门店，每家专做一种风格：\n"
+                    "- shop_001 Maison Pureté(三里屯) → A 简约清透风 (nail_01,10,13,14,23)\n"
+                    "- shop_002 Fleur Rosé(五道口) → B 甜美可爱风 (nail_02,05,15,16,25)\n"
+                    "- shop_003 Bijou Lumière(国贸) → C 华丽璀璨风 (nail_06,11,17,18,19)\n"
+                    "- shop_004 Noir Atelier(望京) → D 暗黑酷飒风 (nail_03,08,09,12)\n"
+                    "- shop_005 L'Avant-Garde(中关村) → E 潮流前卫风 (nail_04,07,20,21,22,24)\n\n"
                     "请基于这些真实数据回答运营人员的问题，给出具体的数据分析和可执行的运营建议。"
+                    "注意发现异常（如某门店预约量异常高可能是刷量）。"
                     "回复用中文，格式清晰，善用表格和数字。\n\n"
                     f"--- 行为日志（共 {len(logs)} 条，展示最近 {len(recent)} 条）---\n{log_text}"
                 )},
