@@ -50,6 +50,7 @@
   .chat-messages {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 16px;
   }
   .msg-user {
@@ -119,6 +120,26 @@
     padding-left: 12px;
     color: #6b7280;
     margin: 8px 0;
+  }
+  .msg-ai .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    margin: 8px 0;
+    border-radius: 8px;
+    border: 1px solid #fce7f3;
+  }
+  .msg-ai .table-wrap table {
+    margin: 0;
+    width: max-content;
+    min-width: 100%;
+    font-size: 0.85em;
+    border: none;
+  }
+  .msg-ai .table-wrap th,
+  .msg-ai .table-wrap td {
+    white-space: nowrap;
+    padding: 6px 10px;
   }
   .msg-ai table {
     width: 100%;
@@ -355,7 +376,16 @@ const chatSend = $('#chat-send');
 
 function renderMarkdown(text) {
   marked.setOptions({ breaks: true, gfm: true });
-  return marked.parse(text || '');
+  const html = marked.parse(text || '');
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  tmp.querySelectorAll('table').forEach(t => {
+    const wrap = document.createElement('div');
+    wrap.className = 'table-wrap';
+    t.parentNode.insertBefore(wrap, t);
+    wrap.appendChild(t);
+  });
+  return tmp.innerHTML;
 }
 
 function extractReplyText(reply) {
