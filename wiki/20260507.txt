@@ -16,6 +16,9 @@ http://124.221.15.86:25688/vjglhx
 换 root 用户：
 sudo -i
 
+检查服务状态：
+curl -s http://localhost:5000/health
+
 美甲试戴：
 http://124.221.15.86:5000
 

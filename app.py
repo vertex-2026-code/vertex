@@ -20,13 +20,38 @@ from openai import OpenAI
 
 # ============ 配置 ============
 ARK_API_KEY = os.environ.get("ARK_API_KEY", "")
-MODEL_ID = "doubao-seedream-4-5-251128"
 
-PROMPT = (
-    "保留第一张图片中的手部，包括手型、肤色、手指姿势、戒指和背景，"
-    "全部完全不变。仅将每根手指的指甲款式替换为第二张图片中的美甲"
-    "设计风格、颜色、图案。输出图片必须保持第一张图的整体构图和氛围。"
-)
+MODELS = {
+    "4.5": {
+        "model_id": "doubao-seedream-4-5-251128",
+        "prompt": (
+            "图像编辑任务：以第一张图为基底，仅对指甲区域做局部修改。"
+            "第一张图是用户真实手部照片，第二张图是美甲款式参考。"
+            "【必须逐像素保留】：手部轮廓、五根手指的完整形状与数量、"
+            "每根手指的弯曲角度与姿势、皮肤纹理与肤色、戒指、"
+            "背景、光照方向、阴影、构图、图像宽高比。"
+            "【唯一允许修改】：每根手指甲面的颜色与图案，"
+            "参考第二张图的美甲设计逐指替换。"
+            "【严禁】：重新生成手部结构、增减手指数量、改变手指姿势、"
+            "改变手掌朝向、添加或移除戒指、改变拍摄角度。"
+            "如不确定某区域是否为指甲，保持原图不变。"
+        ),
+    },
+    "5.0": {
+        "model_id": "doubao-seedream-5-0-260128",
+        "prompt": (
+            "局部编辑任务：以 image_1 为基底进行精准局部修改。"
+            "image_1 是用户的真实手部照片，image_2 是美甲款式参考图。"
+            "唯一编辑区域：image_1 中每根手指甲面（指甲盖部分）。"
+            "编辑内容：将每片指甲的颜色与图案替换为 image_2 中对应的美甲设计。"
+            "严格保持不变：手部轮廓、五指完整、手指姿势、皮肤纹理与肤色、"
+            "戒指、袖口、背景、光照、阴影、构图、宽高比。"
+            "禁止重新绘制手部任何非指甲区域。如不确定某区域是否为指甲，按原图保留。"
+        ),
+    },
+}
+
+DEFAULT_MODEL_VERSION = os.environ.get("SEEDREAM_VERSION", "5.0")
 
 if os.path.isdir("/opt/jiaqu"):
     BASE_DIR = "/opt/jiaqu"
@@ -130,6 +155,10 @@ def tryon():
     custom_style_image = data.get('custom_style_image')
     user_id = data.get('user_id', 'anonymous')
     nickname = data.get('nickname', '')
+    model_version = data.get('model_version', DEFAULT_MODEL_VERSION)
+    if model_version not in MODELS:
+        model_version = DEFAULT_MODEL_VERSION
+    model_cfg = MODELS[model_version]
 
     if not hand_image:
         return jsonify({"error": "缺少手部照片"}), 400
@@ -180,13 +209,13 @@ def tryon():
         "nickname": nickname,
         "style_id": style_label,
         "style_kind": style_kind,
+        "model_version": model_version,
     })
 
     try:
-        # 高清自适应输出：保持手图比例 + 2K 分辨率
         resp = client.images.generate(
-            model=MODEL_ID,
-            prompt=PROMPT,
+            model=model_cfg["model_id"],
+            prompt=model_cfg["prompt"],
             size="2k",
             extra_body={
                 "image": [hand_image, style_data_url],
@@ -209,6 +238,7 @@ def tryon():
             "nickname": nickname,
             "style_id": style_label,
             "style_kind": style_kind,
+            "model_version": model_version,
             "latency_ms": latency,
             "result_url": f"/static/results/{result_filename}",
         })
@@ -225,6 +255,7 @@ def tryon():
             "nickname": nickname,
             "style_id": style_label,
             "style_kind": style_kind,
+            "model_version": model_version,
             "error": str(e),
         })
         return jsonify({"error": str(e)}), 500
