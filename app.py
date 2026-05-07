@@ -253,8 +253,12 @@ def load_logs():
     with open(LOG_FILE) as f:
         for line in f:
             line = line.strip()
-            if line:
+            if not line:
+                continue
+            try:
                 records.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
     return records
 
 
