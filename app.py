@@ -33,11 +33,13 @@ else:
 
 DATA_DIR = f"{BASE_DIR}/data"
 RESULTS_DIR = f"{BASE_DIR}/static/results"
+UPLOADS_DIR = f"{BASE_DIR}/static/uploads"
 NAILS_DIR = f"{BASE_DIR}/static/nails"
 STATIC_DIR = f"{BASE_DIR}/static"
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
+os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 LOG_FILE = f"{DATA_DIR}/tryon.jsonl"
 
@@ -152,6 +154,20 @@ def tryon():
 
     request_id = uuid.uuid4().hex[:12]
     t0 = time.time()
+
+    def save_upload(data_url, tag):
+        try:
+            header, b64 = data_url.split(",", 1)
+            img_bytes = base64.b64decode(b64)
+            path = f"{UPLOADS_DIR}/{request_id}_{tag}.png"
+            with open(path, "wb") as fp:
+                fp.write(img_bytes)
+        except Exception:
+            pass
+
+    save_upload(hand_image, "hand")
+    if custom_style_image:
+        save_upload(custom_style_image, "style")
 
     log_event("tryon_start", {
         "request_id": request_id,
