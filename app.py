@@ -1,5 +1,5 @@
 """
-甲趣 - AI 美甲试戴 Flask 后端 (v2)
+Vertex · 甲趣 - AI 美甲试戴 Flask 后端
 更新:
 - 支持自定义款式图上传 (custom_style_image base64)
 - Seedream 输出 2K + 自适应比例
@@ -337,7 +337,7 @@ def admin_chat():
             model="deepseek-chat",
             messages=[
                 {"role": "system", "content": (
-                    "你是「甲趣」美甲平台的 AI 运营助手。下面是最近的用户行为日志（JSONL 格式），"
+                    "你是「Vertex · 甲趣」美甲平台的 AI 运营助手。下面是最近的用户行为日志（JSONL 格式），"
                     "包含试戴开始(tryon_start)、试戴成功(tryon_success)、用户反馈(feedback: like/dislike/book)等事件。"
                     "每条记录有 user_id、nickname、style_id、shop_id 等字段。\n\n"
                     "平台有 5 家门店，每家专做一种风格：\n"
@@ -362,5 +362,5 @@ def admin_chat():
 
 
 if __name__ == '__main__':
-    print(f"甲趣 v3 启动 | BASE_DIR={BASE_DIR} | 日志: {LOG_FILE}")
+    print(f"Vertex · 甲趣启动 | BASE_DIR={BASE_DIR} | 日志: {LOG_FILE}")
     app.run(host='0.0.0.0', port=5000, debug=False)
