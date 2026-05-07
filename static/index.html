@@ -168,6 +168,7 @@
       <button data-action="dislike" class="feedback-btn bg-gray-100 active:bg-gray-200 text-gray-600 py-3 rounded-xl font-bold text-sm">🤔 一般</button>
     </div>
     <button data-action="book" class="feedback-btn btn-primary text-white py-3.5 rounded-xl w-full font-bold text-sm mb-2">📍 找附近门店做这款</button>
+    <button id="save-img" class="bg-gray-100 active:bg-gray-200 text-gray-700 py-3 rounded-xl w-full font-bold text-sm mb-2">💾 保存图片</button>
     <button id="close-result" class="text-gray-500 py-2 w-full text-xs">再试一款</button>
   </div>
 </div>
@@ -389,6 +390,19 @@
   }
   $('#close-shops').addEventListener('click', () => {
     $('#shops-overlay').classList.add('hidden');
+  });
+
+  // === 保存图片 ===
+  $('#save-img').addEventListener('click', () => {
+    const img = $('#result-img');
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `甲趣试戴_${lastRequestId || 'result'}.png`;
+    a.click();
   });
 </script>
 </body>

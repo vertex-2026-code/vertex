@@ -17,6 +17,7 @@ from openai import OpenAI
 
 # ============ 配置 ============
 ARK_API_KEY = os.environ.get("ARK_API_KEY", "")
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 MODEL_ID = "doubao-seedream-4-5-251128"
 
 PROMPT = (
@@ -210,6 +211,123 @@ def feedback():
 @app.route('/health')
 def health():
     return jsonify({"status": "ok", "ts": now_iso()})
+
+
+# ============ B 端运营大屏 ============
+
+def load_logs():
+    if not os.path.exists(LOG_FILE):
+        return []
+    records = []
+    with open(LOG_FILE) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                records.append(json.loads(line))
+    return records
+
+
+@app.route('/admin')
+def admin():
+    return send_from_directory(STATIC_DIR, 'admin.html')
+
+
+@app.route('/api/admin/stats')
+def admin_stats():
+    logs = load_logs()
+    starts = [r for r in logs if r.get('event') == 'tryon_start']
+    successes = [r for r in logs if r.get('event') == 'tryon_success']
+    feedbacks = [r for r in logs if r.get('event') == 'feedback']
+    likes = [r for r in feedbacks if r.get('action') == 'like']
+    dislikes = [r for r in feedbacks if r.get('action') == 'dislike']
+    books = [r for r in feedbacks if r.get('action') == 'book']
+
+    # 款式热度
+    style_counts = {}
+    for r in starts:
+        sid = r.get('style_id', '?')
+        style_counts[sid] = style_counts.get(sid, 0) + 1
+    top_styles = sorted(style_counts.items(), key=lambda x: -x[1])[:10]
+
+    # 款式喜欢率
+    style_likes = {}
+    style_fb_total = {}
+    for r in feedbacks:
+        if r.get('action') in ('like', 'dislike'):
+            sid = r.get('style_id', '?')
+            style_fb_total[sid] = style_fb_total.get(sid, 0) + 1
+            if r.get('action') == 'like':
+                style_likes[sid] = style_likes.get(sid, 0) + 1
+    like_rates = {}
+    for sid, total in style_fb_total.items():
+        like_rates[sid] = round(style_likes.get(sid, 0) / total * 100, 1)
+
+    # 门店预约
+    shop_counts = {}
+    for r in books:
+        shop = r.get('shop_id', '?')
+        shop_counts[shop] = shop_counts.get(shop, 0) + 1
+    top_shops = sorted(shop_counts.items(), key=lambda x: -x[1])
+
+    # 用户活跃度
+    user_counts = {}
+    for r in starts:
+        uid = r.get('nickname') or r.get('user_id', '?')
+        user_counts[uid] = user_counts.get(uid, 0) + 1
+    top_users = sorted(user_counts.items(), key=lambda x: -x[1])[:10]
+
+    # 平均延迟
+    latencies = [r.get('latency_ms', 0) for r in successes if r.get('latency_ms')]
+    avg_latency = round(sum(latencies) / len(latencies)) if latencies else 0
+
+    return jsonify({
+        "total_tryons": len(starts),
+        "total_success": len(successes),
+        "total_likes": len(likes),
+        "total_dislikes": len(dislikes),
+        "total_books": len(books),
+        "avg_latency_ms": avg_latency,
+        "top_styles": top_styles,
+        "like_rates": like_rates,
+        "top_shops": top_shops,
+        "top_users": top_users,
+    })
+
+
+@app.route('/api/admin/chat', methods=['POST'])
+def admin_chat():
+    data = request.get_json(force=True)
+    user_msg = data.get('message', '')
+    if not user_msg:
+        return jsonify({"error": "消息不能为空"}), 400
+    if not DEEPSEEK_API_KEY:
+        return jsonify({"error": "未配置 DEEPSEEK_API_KEY"}), 500
+
+    logs = load_logs()
+    recent = logs[-500:] if len(logs) > 500 else logs
+    log_text = "\n".join(json.dumps(r, ensure_ascii=False) for r in recent)
+
+    ds_client = OpenAI(base_url="https://api.deepseek.com", api_key=DEEPSEEK_API_KEY)
+    try:
+        resp = ds_client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": (
+                    "你是「甲趣」美甲平台的 AI 运营助手。下面是最近的用户行为日志（JSONL 格式），"
+                    "包含试戴开始(tryon_start)、试戴成功(tryon_success)、用户反馈(feedback: like/dislike/book)等事件。"
+                    "每条记录有 user_id、nickname、style_id、shop_id 等字段。\n\n"
+                    "请基于这些真实数据回答运营人员的问题，给出具体的数据分析和可执行的运营建议。"
+                    "回复用中文，格式清晰，善用表格和数字。\n\n"
+                    f"--- 行为日志（共 {len(logs)} 条，展示最近 {len(recent)} 条）---\n{log_text}"
+                )},
+                {"role": "user", "content": user_msg},
+            ],
+            max_tokens=2000,
+        )
+        reply = resp.choices[0].message.content
+        return jsonify({"reply": reply})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == '__main__':
