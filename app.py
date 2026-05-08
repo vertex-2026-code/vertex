@@ -10,10 +10,11 @@ import json
 import time
 import uuid
 import base64
+import sqlite3
 import subprocess
 import requests
 from datetime import datetime, timezone, timedelta
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, g
 
 # ============ 配置 ============
 from openai import OpenAI
@@ -63,12 +64,15 @@ RESULTS_DIR = f"{BASE_DIR}/static/results"
 UPLOADS_DIR = f"{BASE_DIR}/static/uploads"
 NAILS_DIR = f"{BASE_DIR}/static/nails"
 STATIC_DIR = f"{BASE_DIR}/static"
+HANDS_DIR = f"{BASE_DIR}/static/uploads/hands"
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
+os.makedirs(HANDS_DIR, exist_ok=True)
 
 LOG_FILE = f"{DATA_DIR}/tryon.jsonl"
+DB_PATH = f"{DATA_DIR}/jiaqu.db"
 
 client = OpenAI(
     base_url="https://ark.cn-beijing.volces.com/api/v3",
@@ -96,6 +100,57 @@ CATEGORY_NAMES = {
 }
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
+
+
+def get_db():
+    if 'db' not in g:
+        g.db = sqlite3.connect(DB_PATH)
+        g.db.row_factory = sqlite3.Row
+        g.db.execute("PRAGMA journal_mode=WAL")
+    return g.db
+
+
+@app.teardown_appcontext
+def close_db(exc):
+    db = g.pop('db', None)
+    if db:
+        db.close()
+
+
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS hand_originals (
+            user_id TEXT PRIMARY KEY,
+            image_path TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS favorites (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            style_id TEXT NOT NULL,
+            style_url TEXT,
+            shop_id TEXT,
+            shop_name TEXT,
+            created_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS tryon_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            request_id TEXT NOT NULL,
+            style_id TEXT,
+            hand_image_url TEXT,
+            result_image_url TEXT,
+            model_version TEXT,
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_fav_user ON favorites(user_id);
+        CREATE INDEX IF NOT EXISTS idx_history_user ON tryon_history(user_id);
+    """)
+    conn.close()
+
+
+init_db()
 
 
 BJT = timezone(timedelta(hours=8))
@@ -196,12 +251,30 @@ def tryon():
             path = f"{UPLOADS_DIR}/{request_id}_{tag}.png"
             with open(path, "wb") as fp:
                 fp.write(img_bytes)
+            return img_bytes
         except Exception:
-            pass
+            return None
 
-    save_upload(hand_image, "hand")
+    hand_bytes = save_upload(hand_image, "hand")
     if custom_style_image:
         save_upload(custom_style_image, "style")
+
+    # 保存用户最新原始手部图片（覆盖式）
+    if hand_bytes and user_id != 'anonymous':
+        hand_orig_path = f"{HANDS_DIR}/{user_id}.png"
+        try:
+            with open(hand_orig_path, "wb") as fp:
+                fp.write(hand_bytes)
+            db = get_db()
+            db.execute(
+                "INSERT INTO hand_originals(user_id, image_path, updated_at) "
+                "VALUES(?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET "
+                "image_path=excluded.image_path, updated_at=excluded.updated_at",
+                (user_id, f"/static/uploads/hands/{user_id}.png", now_iso()),
+            )
+            db.commit()
+        except Exception:
+            pass
 
     log_event("tryon_start", {
         "request_id": request_id,
@@ -243,6 +316,26 @@ def tryon():
             "result_url": f"/static/results/{result_filename}",
         })
 
+        # 写入试戴历史
+        if user_id != 'anonymous':
+            try:
+                style_url = ""
+                if style_kind == "preset" and style_path:
+                    style_url = f"/static/nails/{os.path.basename(style_path)}"
+                elif style_kind == "custom":
+                    style_url = f"/static/uploads/{request_id}_style.png"
+                db = get_db()
+                db.execute(
+                    "INSERT INTO tryon_history"
+                    "(user_id, request_id, style_id, hand_image_url, result_image_url, model_version, created_at) "
+                    "VALUES(?, ?, ?, ?, ?, ?, ?)",
+                    (user_id, request_id, style_label, f"/static/uploads/{request_id}_hand.png",
+                     f"/static/results/{result_filename}", model_version, now_iso()),
+                )
+                db.commit()
+            except Exception:
+                pass
+
         return jsonify({
             "request_id": request_id,
             "result_url": f"/static/results/{result_filename}",
@@ -264,15 +357,128 @@ def tryon():
 @app.route('/api/feedback', methods=['POST'])
 def feedback():
     data = request.get_json(force=True)
+    user_id = data.get('user_id', 'anonymous')
+    action = data.get('action')
+    style_id = data.get('style_id')
+    shop_id = data.get('shop_id')
+
     log_event("feedback", {
         "request_id": data.get('request_id'),
-        "user_id": data.get('user_id', 'anonymous'),
+        "user_id": user_id,
         "nickname": data.get('nickname', ''),
-        "style_id": data.get('style_id'),
-        "action": data.get('action'),
-        "shop_id": data.get('shop_id'),
+        "style_id": style_id,
+        "action": action,
+        "shop_id": shop_id,
     })
+
+    # 点赞时写入收藏夹
+    if action == 'like' and user_id != 'anonymous' and style_id:
+        try:
+            style_url = ""
+            if style_id and style_id != '用户上传':
+                for ext in ('png', 'jpg', 'jpeg'):
+                    if os.path.exists(f"{NAILS_DIR}/{style_id}.{ext}"):
+                        style_url = f"/static/nails/{style_id}.{ext}"
+                        break
+            db = get_db()
+            existing = db.execute(
+                "SELECT id FROM favorites WHERE user_id=? AND style_id=?",
+                (user_id, style_id),
+            ).fetchone()
+            if not existing:
+                db.execute(
+                    "INSERT INTO favorites(user_id, style_id, style_url, shop_id, shop_name, created_at) "
+                    "VALUES(?, ?, ?, ?, ?, ?)",
+                    (user_id, style_id, style_url, shop_id or "",
+                     next((s["name"] for s in MOCK_SHOPS if s["id"] == shop_id), ""),
+                     now_iso()),
+                )
+                db.commit()
+        except Exception:
+            pass
+
     return jsonify({"ok": True})
+
+
+# ============ 用户数据 API ============
+
+@app.route('/api/user/hand')
+def user_hand():
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({"error": "缺少 user_id"}), 400
+    db = get_db()
+    row = db.execute("SELECT image_path, updated_at FROM hand_originals WHERE user_id=?", (user_id,)).fetchone()
+    if not row:
+        return jsonify({"image_path": None})
+    return jsonify({"image_path": row["image_path"], "updated_at": row["updated_at"]})
+
+
+@app.route('/api/user/favorites')
+def user_favorites_list():
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({"error": "缺少 user_id"}), 400
+    db = get_db()
+    rows = db.execute(
+        "SELECT id, style_id, style_url, shop_id, shop_name, created_at "
+        "FROM favorites WHERE user_id=? ORDER BY created_at DESC",
+        (user_id,),
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/user/favorites', methods=['POST'])
+def user_favorites_add():
+    data = request.get_json(force=True)
+    user_id = data.get('user_id')
+    style_id = data.get('style_id')
+    if not user_id or not style_id:
+        return jsonify({"error": "缺少 user_id 或 style_id"}), 400
+    style_url = data.get('style_url', '')
+    shop_id = data.get('shop_id', '')
+    shop_name = data.get('shop_name', '')
+    if shop_id and not shop_name:
+        shop_name = next((s["name"] for s in MOCK_SHOPS if s["id"] == shop_id), "")
+    db = get_db()
+    existing = db.execute(
+        "SELECT id FROM favorites WHERE user_id=? AND style_id=? AND shop_id=?",
+        (user_id, style_id, shop_id),
+    ).fetchone()
+    if existing:
+        return jsonify({"ok": True, "id": existing["id"], "already_exists": True})
+    cur = db.execute(
+        "INSERT INTO favorites(user_id, style_id, style_url, shop_id, shop_name, created_at) "
+        "VALUES(?, ?, ?, ?, ?, ?)",
+        (user_id, style_id, style_url, shop_id, shop_name, now_iso()),
+    )
+    db.commit()
+    return jsonify({"ok": True, "id": cur.lastrowid})
+
+
+@app.route('/api/user/favorites/<int:fav_id>', methods=['DELETE'])
+def user_favorites_delete(fav_id):
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({"error": "缺少 user_id"}), 400
+    db = get_db()
+    db.execute("DELETE FROM favorites WHERE id=? AND user_id=?", (fav_id, user_id))
+    db.commit()
+    return jsonify({"ok": True})
+
+
+@app.route('/api/user/history')
+def user_history():
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({"error": "缺少 user_id"}), 400
+    db = get_db()
+    rows = db.execute(
+        "SELECT id, request_id, style_id, hand_image_url, result_image_url, model_version, created_at "
+        "FROM tryon_history WHERE user_id=? ORDER BY created_at DESC LIMIT 50",
+        (user_id,),
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
 
 
 @app.route('/health')

@@ -103,12 +103,54 @@
     object-fit: contain;
     background: #ffe5ec;
   }
+  .my-tab {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .my-tab.active {
+    background: linear-gradient(135deg, #ff6b9d, #ff8fab);
+    color: white;
+  }
+  .my-tab:not(.active) {
+    background: #fce7f3;
+    color: #9d174d;
+  }
+  .history-thumb {
+    border-radius: 12px;
+    aspect-ratio: 1;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .history-thumb:active { transform: scale(0.95); }
+  .fav-card {
+    background: #fff5f7;
+    border-radius: 16px;
+    padding: 12px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .fav-card img {
+    width: 56px; height: 56px;
+    border-radius: 12px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
 </style>
 </head>
 <body>
 <div class="max-w-md mx-auto px-4 py-5 pb-32">
 
-  <header class="text-center mb-5">
+  <header class="text-center mb-5 relative">
+    <button id="my-btn" class="absolute right-0 top-1 bg-white/80 backdrop-blur text-pink-500 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm active:bg-pink-50 border border-pink-200">
+      我的
+    </button>
     <h1 class="text-4xl font-black gradient-text tracking-tight">Vertex · 甲趣</h1>
     <p class="text-xs text-gray-500 mt-1 tracking-wider">AI · 美甲一秒上身</p>
   </header>
@@ -205,6 +247,46 @@
     <p class="text-center text-xs text-gray-400 mb-4">能做这款美甲 · 按距离排序</p>
     <div id="shops-list" class="space-y-2 mb-3"></div>
     <button id="close-shops" class="text-gray-500 py-2 w-full text-xs">返回</button>
+  </div>
+</div>
+
+<!-- 我的 弹层 -->
+<div id="my-overlay" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center z-50 p-3">
+  <div class="bg-white rounded-3xl p-5 max-w-sm w-full max-h-[95vh] overflow-y-auto fade-in">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-black gradient-text">我的</h2>
+      <button id="close-my" class="text-gray-400 text-xl leading-none px-2">&times;</button>
+    </div>
+    <!-- Tabs -->
+    <div class="flex gap-2 mb-4">
+      <span class="my-tab active" data-my-tab="history">试戴历史</span>
+      <span class="my-tab" data-my-tab="favorites">收藏夹</span>
+      <span class="my-tab" data-my-tab="hand">我的手部</span>
+    </div>
+    <!-- Tab contents -->
+    <div id="my-tab-history" class="my-tab-content">
+      <div id="history-grid" class="grid grid-cols-3 gap-2"></div>
+      <p id="history-empty" class="text-center text-gray-400 text-sm py-8 hidden">还没有试戴记录</p>
+    </div>
+    <div id="my-tab-favorites" class="my-tab-content hidden">
+      <div id="favorites-list" class="space-y-2"></div>
+      <p id="favorites-empty" class="text-center text-gray-400 text-sm py-8 hidden">还没有收藏</p>
+    </div>
+    <div id="my-tab-hand" class="my-tab-content hidden">
+      <div id="hand-original-container" class="text-center">
+        <p id="hand-empty" class="text-gray-400 text-sm py-8">还没有上传过手部照片</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 历史详情弹层 -->
+<div id="history-detail" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center z-[60] p-3">
+  <div class="bg-white rounded-3xl p-4 max-w-sm w-full max-h-[95vh] overflow-y-auto fade-in">
+    <h2 class="text-center text-lg font-black gradient-text mb-3">试戴详情</h2>
+    <img id="history-detail-img" class="rounded-2xl mb-3 w-full" style="max-height: 60vh; object-fit: contain; background: #ffe5ec;">
+    <div id="history-detail-info" class="text-xs text-gray-500 text-center mb-3"></div>
+    <button id="close-history-detail" class="text-gray-500 py-2 w-full text-xs">返回</button>
   </div>
 </div>
 
@@ -445,6 +527,137 @@
     a.download = `Vertex甲趣_${lastRequestId || 'result'}.png`;
     a.click();
   });
+
+  // === 「我的」页面 ===
+  $('#my-btn').addEventListener('click', () => {
+    $('#my-overlay').classList.remove('hidden');
+    $('#my-overlay').classList.add('flex');
+    loadMyData('history');
+  });
+  $('#close-my').addEventListener('click', () => {
+    $('#my-overlay').classList.add('hidden');
+    $('#my-overlay').classList.remove('flex');
+  });
+
+  // tab 切换
+  document.querySelectorAll('.my-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.my-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const target = tab.dataset.myTab;
+      document.querySelectorAll('.my-tab-content').forEach(c => c.classList.add('hidden'));
+      $(`#my-tab-${target}`).classList.remove('hidden');
+      loadMyData(target);
+    });
+  });
+
+  function loadMyData(tab) {
+    if (tab === 'history') loadHistory();
+    else if (tab === 'favorites') loadFavorites();
+    else if (tab === 'hand') loadHandOriginal();
+  }
+
+  async function loadHistory() {
+    const grid = $('#history-grid');
+    const empty = $('#history-empty');
+    grid.innerHTML = '<p class="text-gray-400 text-xs col-span-3 text-center py-4">加载中...</p>';
+    empty.classList.add('hidden');
+    try {
+      const r = await fetch(`/api/user/history?user_id=${encodeURIComponent(userId)}`);
+      const items = await r.json();
+      if (!items.length) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      grid.innerHTML = items.map(item => `
+        <img src="${item.result_image_url}" class="history-thumb w-full"
+             data-result="${item.result_image_url}"
+             data-style="${item.style_id || ''}"
+             data-time="${item.created_at || ''}"
+             loading="lazy">
+      `).join('');
+    } catch { grid.innerHTML = '<p class="text-red-400 text-xs col-span-3 text-center">加载失败</p>'; }
+  }
+
+  // 点击历史图查看详情
+  $('#history-grid').addEventListener('click', e => {
+    const thumb = e.target.closest('.history-thumb');
+    if (!thumb) return;
+    $('#history-detail-img').src = thumb.dataset.result;
+    const time = thumb.dataset.time ? new Date(thumb.dataset.time).toLocaleString('zh-CN') : '';
+    $('#history-detail-info').textContent = `${thumb.dataset.style || ''}${time ? ' · ' + time : ''}`;
+    $('#history-detail').classList.remove('hidden');
+    $('#history-detail').classList.add('flex');
+  });
+  $('#close-history-detail').addEventListener('click', () => {
+    $('#history-detail').classList.add('hidden');
+    $('#history-detail').classList.remove('flex');
+  });
+
+  async function loadFavorites() {
+    const list = $('#favorites-list');
+    const empty = $('#favorites-empty');
+    list.innerHTML = '<p class="text-gray-400 text-xs text-center py-4">加载中...</p>';
+    empty.classList.add('hidden');
+    try {
+      const r = await fetch(`/api/user/favorites?user_id=${encodeURIComponent(userId)}`);
+      const items = await r.json();
+      if (!items.length) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      list.innerHTML = items.map(item => `
+        <div class="fav-card" data-fav-id="${item.id}">
+          ${item.style_url ? `<img src="${item.style_url}" alt="">` : '<div class="w-14 h-14 rounded-xl bg-pink-100 flex items-center justify-center text-pink-300 text-lg shrink-0">?</div>'}
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-sm text-gray-800 truncate">${item.style_id || '自定义款式'}</div>
+            ${item.shop_name ? `<div class="text-xs text-gray-500 mt-0.5">${item.shop_name}</div>` : ''}
+            <div class="text-[10px] text-gray-400 mt-0.5">${item.created_at ? new Date(item.created_at).toLocaleString('zh-CN') : ''}</div>
+          </div>
+          <button class="unfav-btn text-pink-400 text-xs font-bold px-2 py-1 rounded-lg bg-pink-50 active:bg-pink-100 shrink-0">取消</button>
+        </div>
+      `).join('');
+    } catch { list.innerHTML = '<p class="text-red-400 text-xs text-center">加载失败</p>'; }
+  }
+
+  // 取消收藏
+  $('#favorites-list').addEventListener('click', async e => {
+    const btn = e.target.closest('.unfav-btn');
+    if (!btn) return;
+    const card = btn.closest('.fav-card');
+    const favId = card.dataset.favId;
+    try {
+      await fetch(`/api/user/favorites/${favId}?user_id=${encodeURIComponent(userId)}`, { method: 'DELETE' });
+      card.remove();
+      if (!$('#favorites-list').children.length) {
+        $('#favorites-empty').classList.remove('hidden');
+      }
+    } catch {}
+  });
+
+  async function loadHandOriginal() {
+    const container = $('#hand-original-container');
+    const empty = $('#hand-empty');
+    container.innerHTML = '<p class="text-gray-400 text-xs py-4">加载中...</p>';
+    try {
+      const r = await fetch(`/api/user/hand?user_id=${encodeURIComponent(userId)}`);
+      const data = await r.json();
+      if (!data.image_path) {
+        container.innerHTML = '';
+        container.appendChild(empty);
+        empty.classList.remove('hidden');
+        return;
+      }
+      const time = data.updated_at ? new Date(data.updated_at).toLocaleString('zh-CN') : '';
+      container.innerHTML = `
+        <img src="${data.image_path}?t=${Date.now()}" class="rounded-2xl w-full mb-2" style="max-height: 60vh; object-fit: contain; background: #ffe5ec;">
+        <p class="text-xs text-gray-400">${time ? '最近上传 · ' + time : ''}</p>
+        <p class="text-xs text-gray-400 mt-1">每次试戴会自动保存你的原始手部照片</p>
+      `;
+    } catch { container.innerHTML = '<p class="text-red-400 text-xs">加载失败</p>'; }
+  }
 </script>
 </body>
 </html>
