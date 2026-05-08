@@ -142,6 +142,24 @@
     object-fit: cover;
     flex-shrink: 0;
   }
+  .fav-heart {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    line-height: 1;
+    z-index: 2;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .fav-heart:active { transform: scale(1.3); }
+  .fav-heart.liked { background: #ff6b9d; color: white; }
 </style>
 </head>
 <body>
@@ -317,6 +335,22 @@
 
   // === 加载预设款式 ===
   let allStyleCards = [];
+  let userFavSet = new Set();
+
+  async function loadUserFavs() {
+    if (!getNickname()) return;
+    try {
+      const r = await fetch(`/api/user/favorites?user_id=${encodeURIComponent(userId)}`);
+      const items = await r.json();
+      userFavSet.clear();
+      items.forEach(f => userFavSet.add(f.style_id));
+      $$('.fav-heart').forEach(h => {
+        h.classList.toggle('liked', userFavSet.has(h.dataset.styleId));
+        h.textContent = userFavSet.has(h.dataset.styleId) ? '♥' : '♡';
+      });
+    } catch {}
+  }
+
   fetch('/api/styles').then(r => r.json()).then(styles => {
     $('#styles-loading')?.remove();
     const grid = $('#styles-grid');
@@ -325,10 +359,14 @@
       card.className = 'style-card rounded-xl overflow-hidden cursor-pointer relative bg-pink-50';
       card.dataset.id = s.id;
       card.dataset.cat = s.category;
-      card.innerHTML = `<img src="${s.url}" class="w-full aspect-square object-cover" loading="lazy">`;
+      card.innerHTML = `
+        <img src="${s.url}" class="w-full aspect-square object-cover" loading="lazy">
+        <span class="fav-heart" data-style-id="${s.id}" data-style-url="${s.url}">♡</span>
+      `;
       grid.appendChild(card);
       allStyleCards.push(card);
     });
+    loadUserFavs();
   });
 
   // === 分类筛选 ===
@@ -345,6 +383,37 @@
 
   // === 选预设款式 ===
   $('#styles-grid').addEventListener('click', e => {
+    // 收藏心形按钮
+    const heart = e.target.closest('.fav-heart');
+    if (heart) {
+      e.stopPropagation();
+      if (!getNickname()) { alert('请先输入昵称'); return; }
+      const sid = heart.dataset.styleId;
+      const surl = heart.dataset.styleUrl;
+      if (userFavSet.has(sid)) {
+        // 取消收藏：先找到 fav id
+        fetch(`/api/user/favorites?user_id=${encodeURIComponent(userId)}`)
+          .then(r => r.json())
+          .then(items => {
+            const fav = items.find(f => f.style_id === sid);
+            if (fav) fetch(`/api/user/favorites/${fav.id}?user_id=${encodeURIComponent(userId)}`, { method: 'DELETE' });
+            userFavSet.delete(sid);
+            heart.classList.remove('liked');
+            heart.textContent = '♡';
+          });
+      } else {
+        fetch('/api/user/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, style_id: sid, style_url: surl }),
+        });
+        userFavSet.add(sid);
+        heart.classList.add('liked');
+        heart.textContent = '♥';
+      }
+      return;
+    }
+
     const c = e.target.closest('.style-card');
     if (!c) return;
     if (c.id === 'custom-tile') return;  // 自定义那格交给 input 自己处理
@@ -476,6 +545,12 @@
         style_id: selectedStyle === '__custom__' ? '用户上传' : selectedStyle,
         action,
       }),
+    }).then(() => {
+      if (action === 'like' && selectedStyle && selectedStyle !== '__custom__') {
+        userFavSet.add(selectedStyle);
+        const heart = $(`.fav-heart[data-style-id="${selectedStyle}"]`);
+        if (heart) { heart.classList.add('liked'); heart.textContent = '♥'; }
+      }
     });
   });
 
