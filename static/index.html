@@ -254,7 +254,7 @@
 <div id="my-overlay" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center z-50 p-3">
   <div class="bg-white rounded-3xl p-5 max-w-sm w-full max-h-[95vh] overflow-y-auto fade-in">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-black gradient-text">我的</h2>
+      <h2 class="text-lg font-black gradient-text">我的 · <span id="my-nickname" class="text-pink-400"></span></h2>
       <button id="close-my" class="text-gray-400 text-xl leading-none px-2">&times;</button>
     </div>
     <!-- Tabs -->
@@ -530,6 +530,12 @@
 
   // === 「我的」页面 ===
   $('#my-btn').addEventListener('click', () => {
+    if (!getNickname()) {
+      alert('请先输入昵称哦～');
+      $('#nickname-input').focus();
+      return;
+    }
+    $('#my-nickname').textContent = getNickname();
     $('#my-overlay').classList.remove('hidden');
     $('#my-overlay').classList.add('flex');
     loadMyData('history');
