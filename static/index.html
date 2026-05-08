@@ -330,6 +330,7 @@
   nicknameInput.addEventListener('input', () => {
     localStorage.setItem('jiaqu_nickname', nicknameInput.value.trim());
     checkReady();
+    tryLoadSavedHand();
   });
   function getNickname() { return nicknameInput.value.trim(); }    // 已点过的 action，防重复
 
@@ -462,12 +463,40 @@
     r.readAsDataURL(f);
   });
 
+  // === 自动加载已保存的手部原图 ===
+  let savedHandLoaded = false;
+  async function tryLoadSavedHand() {
+    if (!getNickname() || savedHandLoaded) return;
+    try {
+      const r = await fetch(`/api/user/hand?user_id=${encodeURIComponent(userId)}`);
+      const data = await r.json();
+      if (!data.image_path || handImage) return;
+      const imgResp = await fetch(data.image_path + '?t=' + Date.now());
+      const blob = await imgResp.blob();
+      const reader = new FileReader();
+      reader.onload = ev => {
+        handImage = ev.target.result;
+        savedHandLoaded = true;
+        const time = data.updated_at ? new Date(data.updated_at).toLocaleString('zh-CN') : '';
+        $('#hand-preview').innerHTML = `
+          <img src="${handImage}" class="rounded-xl w-full max-h-72 object-contain bg-pink-50">
+          <p class="text-[10px] text-pink-400 font-bold mt-1">已自动加载保存的手部照片${time ? ' · ' + time : ''}</p>
+          <p class="text-[10px] text-gray-400">点击上方可重新拍照</p>
+        `;
+        $('#hand-preview').classList.remove('py-10', 'border-dashed');
+        checkReady();
+      };
+      reader.readAsDataURL(blob);
+    } catch {}
+  }
+
   function checkReady() {
     const styleReady = !!(selectedStyle && (selectedStyle !== '__custom__' || customStyleImage));
     $('#tryon-btn').disabled = !(handImage && styleReady && getNickname());
     $('#my-btn').disabled = !getNickname();
   }
   checkReady();
+  tryLoadSavedHand();
 
   // === 试戴 ===
   $('#tryon-btn').addEventListener('click', async () => {
