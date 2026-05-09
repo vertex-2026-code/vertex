@@ -420,6 +420,29 @@ def user_check():
     })
 
 
+@app.route('/api/user/migrate', methods=['POST'])
+def user_migrate():
+    data = request.get_json(force=True)
+    old_id = data.get('old_id')
+    new_id = data.get('new_id')
+    if not old_id or not new_id or old_id == new_id:
+        return jsonify({"error": "参数无效"}), 400
+    db = get_db()
+    db.execute("UPDATE hand_originals SET user_id=? WHERE user_id=?", (new_id, old_id))
+    db.execute("UPDATE favorites SET user_id=? WHERE user_id=?", (new_id, old_id))
+    db.execute("UPDATE tryon_history SET user_id=? WHERE user_id=?", (new_id, old_id))
+    db.commit()
+    old_hand = os.path.join(HANDS_DIR, f"{old_id}.png")
+    new_hand = os.path.join(HANDS_DIR, f"{new_id}.png")
+    if os.path.exists(old_hand):
+        os.rename(old_hand, new_hand)
+        db.execute("UPDATE hand_originals SET image_path=? WHERE user_id=?",
+                   (f"/static/uploads/hands/{new_id}.png", new_id))
+        db.commit()
+    log_event("user_migrate", {"old_id": old_id, "new_id": new_id})
+    return jsonify({"ok": True})
+
+
 @app.route('/api/user/hand')
 def user_hand():
     user_id = request.args.get('user_id')
