@@ -222,7 +222,6 @@
   <div id="plaza-section" class="hidden mb-3">
     <div id="plaza-feed" class="grid grid-cols-2 gap-2"></div>
     <p id="plaza-empty" class="text-center text-gray-400 text-sm py-8 hidden">还没有人分享</p>
-    <button id="plaza-load-more" class="hidden w-full text-center text-pink-400 text-xs font-bold py-3 active:text-pink-600">加载更多</button>
   </div>
 
   <!-- 试戴区域 -->
@@ -902,7 +901,7 @@
       if (target === 'plaza') {
         $('#home-section').classList.add('hidden');
         $('#plaza-section').classList.remove('hidden');
-        loadPlaza(1);
+        loadPlaza();
       } else {
         $('#home-section').classList.remove('hidden');
         $('#plaza-section').classList.add('hidden');
@@ -911,22 +910,15 @@
   });
 
   // === 广场 ===
-  let plazaPage = 1;
-  let plazaTotal = 0;
-
-  async function loadPlaza(page) {
+  async function loadPlaza() {
     const feed = $('#plaza-feed');
     const empty = $('#plaza-empty');
-    const more = $('#plaza-load-more');
-    if (page === 1) feed.innerHTML = '';
+    feed.innerHTML = '';
     try {
-      const r = await fetch(`/api/plaza/feed?page=${page}&per_page=20`);
+      const r = await fetch('/api/plaza/feed');
       const data = await r.json();
-      plazaPage = page;
-      plazaTotal = data.total;
-      if (!data.items.length && page === 1) {
+      if (!data.items.length) {
         empty.classList.remove('hidden');
-        more.classList.add('hidden');
         return;
       }
       empty.classList.add('hidden');
@@ -949,11 +941,9 @@
         `;
         feed.appendChild(card);
       });
-      more.classList.toggle('hidden', plazaPage * 20 >= plazaTotal);
-    } catch { if (page === 1) feed.innerHTML = '<p class="text-red-400 text-xs text-center col-span-2 py-4">加载失败</p>'; }
+    } catch { feed.innerHTML = '<p class="text-red-400 text-xs text-center col-span-2 py-4">加载失败</p>'; }
   }
 
-  $('#plaza-load-more').addEventListener('click', () => loadPlaza(plazaPage + 1));
 
   // 广场点赞
   $('#plaza-feed').addEventListener('click', async e => {
