@@ -710,7 +710,6 @@ def plaza_feed():
         "SELECT id, user_id, style_id, result_image_url, caption, likes, created_at "
         "FROM plaza ORDER BY RANDOM() LIMIT ?",
         (per_page,),
-        (per_page,),
     ).fetchall()
     total = db.execute("SELECT COUNT(*) FROM plaza").fetchone()[0]
     return jsonify({"items": [dict(r) for r in rows], "total": total})
