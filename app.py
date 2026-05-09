@@ -146,6 +146,17 @@ def init_db():
         );
         CREATE INDEX IF NOT EXISTS idx_fav_user ON favorites(user_id);
         CREATE INDEX IF NOT EXISTS idx_history_user ON tryon_history(user_id);
+        CREATE TABLE IF NOT EXISTS plaza (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            request_id TEXT,
+            style_id TEXT,
+            result_image_url TEXT NOT NULL,
+            caption TEXT DEFAULT '',
+            likes INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_plaza_created ON plaza(created_at DESC);
     """)
     conn.close()
 
@@ -666,6 +677,54 @@ def admin_chat():
         return jsonify({"error": "AI 响应超时，请重试"}), 504
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+
+# ============ 广场 API ============
+
+@app.route('/api/plaza/share', methods=['POST'])
+def plaza_share():
+    data = request.get_json(force=True)
+    user_id = data.get('user_id')
+    result_image_url = data.get('result_image_url')
+    if not user_id or not result_image_url:
+        return jsonify({"error": "缺少参数"}), 400
+    db = get_db()
+    db.execute(
+        "INSERT INTO plaza(user_id, request_id, style_id, result_image_url, caption, created_at) "
+        "VALUES(?, ?, ?, ?, ?, ?)",
+        (user_id, data.get('request_id'), data.get('style_id'),
+         result_image_url, data.get('caption', ''), now_iso()),
+    )
+    db.commit()
+    log_event("plaza_share", {"user_id": user_id, "style_id": data.get('style_id')})
+    return jsonify({"ok": True})
+
+
+@app.route('/api/plaza/feed')
+def plaza_feed():
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    offset = (page - 1) * per_page
+    db = get_db()
+    rows = db.execute(
+        "SELECT id, user_id, style_id, result_image_url, caption, likes, created_at "
+        "FROM plaza ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        (per_page, offset),
+    ).fetchall()
+    total = db.execute("SELECT COUNT(*) FROM plaza").fetchone()[0]
+    return jsonify({"items": [dict(r) for r in rows], "total": total, "page": page})
+
+
+@app.route('/api/plaza/<int:post_id>/like', methods=['POST'])
+def plaza_like(post_id):
+    db = get_db()
+    db.execute("UPDATE plaza SET likes = likes + 1 WHERE id = ?", (post_id,))
+    db.commit()
+    row = db.execute("SELECT likes FROM plaza WHERE id = ?", (post_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "帖子不存在"}), 404
+    return jsonify({"ok": True, "likes": row["likes"]})
 
 
 if __name__ == '__main__':

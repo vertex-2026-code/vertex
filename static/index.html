@@ -160,6 +160,10 @@
   }
   .fav-heart:active { transform: scale(1.3); }
   .fav-heart.liked { background: #ff6b9d; color: white; }
+  .main-tab { background: #fce7f3; color: #9d174d; }
+  .main-tab.active { background: linear-gradient(135deg, #ff6b9d, #ff8fab); color: white; }
+  .plaza-card { border-radius: 16px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .plaza-card img { width: 100%; aspect-ratio: 1; object-fit: cover; }
 </style>
 </head>
 <body>
@@ -208,6 +212,21 @@
     <div id="user-badge" class="hidden text-xs text-pink-400 mt-2 font-bold"></div>
   </header>
 
+  <!-- 主页/广场 切换 -->
+  <div class="flex gap-2 mb-3">
+    <button class="main-tab active flex-1 py-2 rounded-xl text-sm font-bold text-center transition" data-tab="home">试戴</button>
+    <button class="main-tab flex-1 py-2 rounded-xl text-sm font-bold text-center transition" data-tab="plaza">广场</button>
+  </div>
+
+  <!-- 广场 feed -->
+  <div id="plaza-section" class="hidden mb-3">
+    <div id="plaza-feed" class="grid grid-cols-2 gap-2"></div>
+    <p id="plaza-empty" class="text-center text-gray-400 text-sm py-8 hidden">还没有人分享</p>
+    <button id="plaza-load-more" class="hidden w-full text-center text-pink-400 text-xs font-bold py-3 active:text-pink-600">加载更多</button>
+  </div>
+
+  <!-- 试戴区域 -->
+  <div id="home-section">
   <!-- 步骤 1: 上传手部 -->
   <section class="bg-white/80 backdrop-blur rounded-3xl p-5 shadow-sm mb-3 slide-up">
     <h2 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
@@ -249,6 +268,7 @@
       <div class="text-center text-gray-400 col-span-2 py-4 text-sm" id="styles-loading">加载款式中...</div>
     </div>
   </section>
+  </div><!-- /home-section -->
 </div>
 
 <!-- 底部固定按钮 -->
@@ -280,6 +300,7 @@
     </div>
     <button data-action="book" class="feedback-btn btn-primary text-white py-3.5 rounded-xl w-full font-bold text-sm mb-2">📍 找附近门店做这款</button>
     <button id="save-img" class="bg-gray-100 active:bg-gray-200 text-gray-700 py-3 rounded-xl w-full font-bold text-sm mb-2">💾 保存图片</button>
+    <button id="share-plaza" class="bg-purple-100 active:bg-purple-200 text-purple-600 py-3 rounded-xl w-full font-bold text-sm mb-2">📢 分享到广场</button>
     <button id="close-result" class="text-gray-500 py-2 w-full text-xs">再试一款</button>
   </div>
 </div>
@@ -871,6 +892,108 @@
       `;
     } catch { container.innerHTML = '<p class="text-red-400 text-xs">加载失败</p>'; }
   }
+
+  // === 主页/广场 tab 切换 ===
+  document.querySelectorAll('.main-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const target = tab.dataset.tab;
+      if (target === 'plaza') {
+        $('#home-section').classList.add('hidden');
+        $('#plaza-section').classList.remove('hidden');
+        loadPlaza(1);
+      } else {
+        $('#home-section').classList.remove('hidden');
+        $('#plaza-section').classList.add('hidden');
+      }
+    });
+  });
+
+  // === 广场 ===
+  let plazaPage = 1;
+  let plazaTotal = 0;
+
+  async function loadPlaza(page) {
+    const feed = $('#plaza-feed');
+    const empty = $('#plaza-empty');
+    const more = $('#plaza-load-more');
+    if (page === 1) feed.innerHTML = '';
+    try {
+      const r = await fetch(`/api/plaza/feed?page=${page}&per_page=20`);
+      const data = await r.json();
+      plazaPage = page;
+      plazaTotal = data.total;
+      if (!data.items.length && page === 1) {
+        empty.classList.remove('hidden');
+        more.classList.add('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+      data.items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'plaza-card mb-2';
+        const time = item.created_at ? new Date(item.created_at).toLocaleString('zh-CN') : '';
+        card.innerHTML = `
+          <img src="${item.result_image_url}" loading="lazy">
+          <div class="p-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-gray-700">${item.user_id}</span>
+              <button class="plaza-like-btn text-xs text-pink-400 active:scale-110 transition" data-id="${item.id}">
+                ♥ ${item.likes || 0}
+              </button>
+            </div>
+            ${item.caption ? `<p class="text-xs text-gray-500 mt-1">${item.caption}</p>` : ''}
+            <p class="text-[10px] text-gray-400 mt-1">${time}</p>
+          </div>
+        `;
+        feed.appendChild(card);
+      });
+      more.classList.toggle('hidden', plazaPage * 20 >= plazaTotal);
+    } catch { if (page === 1) feed.innerHTML = '<p class="text-red-400 text-xs text-center col-span-2 py-4">加载失败</p>'; }
+  }
+
+  $('#plaza-load-more').addEventListener('click', () => loadPlaza(plazaPage + 1));
+
+  // 广场点赞
+  $('#plaza-feed').addEventListener('click', async e => {
+    const btn = e.target.closest('.plaza-like-btn');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    try {
+      const r = await fetch(`/api/plaza/${id}/like`, { method: 'POST' });
+      const data = await r.json();
+      if (data.ok) btn.textContent = `♥ ${data.likes}`;
+    } catch {}
+  });
+
+  // === 分享到广场 ===
+  $('#share-plaza').addEventListener('click', async () => {
+    if (!lastRequestId) return;
+    const btn = $('#share-plaza');
+    btn.disabled = true;
+    btn.textContent = '分享中...';
+    try {
+      const r = await fetch('/api/plaza/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          request_id: lastRequestId,
+          result_image_url: $('#result-img').src,
+          style_id: selectedStyle === '__custom__' ? '自定义' : selectedStyle,
+          caption: '',
+        }),
+      });
+      const data = await r.json();
+      if (data.ok) {
+        btn.textContent = '✓ 已分享到广场';
+      }
+    } catch {
+      btn.textContent = '分享失败，点击重试';
+      btn.disabled = false;
+    }
+  });
 </script>
 </body>
 </html>
