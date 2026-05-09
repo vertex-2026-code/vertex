@@ -705,15 +705,15 @@ def plaza_share():
 def plaza_feed():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
-    offset = (page - 1) * per_page
     db = get_db()
     rows = db.execute(
         "SELECT id, user_id, style_id, result_image_url, caption, likes, created_at "
-        "FROM plaza ORDER BY created_at DESC LIMIT ? OFFSET ?",
-        (per_page, offset),
+        "FROM plaza ORDER BY RANDOM() LIMIT ?",
+        (per_page,),
+        (per_page,),
     ).fetchall()
     total = db.execute("SELECT COUNT(*) FROM plaza").fetchone()[0]
-    return jsonify({"items": [dict(r) for r in rows], "total": total, "page": page})
+    return jsonify({"items": [dict(r) for r in rows], "total": total})
 
 
 @app.route('/api/plaza/<int:post_id>/like', methods=['POST'])
