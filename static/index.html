@@ -163,27 +163,50 @@
 </style>
 </head>
 <body>
+
+<!-- 登录遮罩 -->
+<div id="login-gate" class="fixed inset-0 z-[100] flex items-center justify-center" style="background: linear-gradient(135deg, #fff5f7 0%, #ffe5ec 50%, #ffd6e0 100%);">
+  <div class="text-center px-8 w-full max-w-xs">
+    <h1 class="text-4xl font-black gradient-text tracking-tight mb-2">Vertex · 甲趣</h1>
+    <p class="text-xs text-gray-500 mb-8 tracking-wider">AI · 美甲一秒上身</p>
+    <input type="text" id="uid-input" maxlength="20"
+      placeholder="输入你的名字"
+      class="w-full border-2 border-pink-200 focus:border-pink-400 rounded-xl px-4 py-3 text-sm outline-none transition bg-white/80 placeholder-gray-400 text-center mb-3">
+    <p id="uid-hint" class="text-[10px] text-gray-400 mb-4"></p>
+    <button id="login-btn" class="btn-primary text-white font-bold py-3 rounded-2xl w-full text-base">
+      进入
+    </button>
+    <p class="text-[10px] text-gray-400 mt-4 leading-relaxed">第一次来？输入一个你喜欢的名字<br>下次用同样的名字就能找回你的记录</p>
+  </div>
+</div>
+
+<!-- 手图加载确认弹窗 -->
+<div id="hand-confirm" class="fixed inset-0 z-[101] bg-black/40 backdrop-blur-sm hidden items-center justify-center">
+  <div class="bg-white rounded-3xl p-6 mx-6 max-w-xs w-full text-center fade-in">
+    <p class="text-sm font-bold text-gray-700 mb-1">欢迎回来！</p>
+    <p id="hand-confirm-msg" class="text-xs text-gray-500 mb-4"></p>
+    <div class="flex gap-2">
+      <button id="hand-confirm-skip" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl text-sm font-bold active:bg-gray-200">跳过</button>
+      <button id="hand-confirm-load" class="flex-1 btn-primary text-white py-3 rounded-xl text-sm font-bold">加载</button>
+    </div>
+  </div>
+</div>
+
 <div class="max-w-md mx-auto px-4 py-5 pb-32">
 
   <header class="text-center mb-5">
-    <h1 class="text-4xl font-black gradient-text tracking-tight">Vertex · 甲趣</h1>
-    <p class="text-xs text-gray-500 mt-1 tracking-wider">AI · 美甲一秒上身</p>
-  </header>
-
-  <!-- 昵称输入 -->
-  <section class="bg-white/80 backdrop-blur rounded-3xl p-5 shadow-sm mb-3 slide-up">
-    <h2 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-      <span class="step-num">0</span><span>你的昵称</span>
-    </h2>
-    <div class="flex gap-2">
-      <input type="text" id="nickname-input" maxlength="12" placeholder="输入昵称，方便我们记住你"
-        class="flex-1 border-2 border-pink-200 focus:border-pink-400 rounded-xl px-4 py-3 text-sm outline-none transition bg-pink-50/50 placeholder-gray-400">
-      <button id="my-btn" disabled
-        class="btn-my bg-pink-100 text-pink-400 px-4 py-3 rounded-xl text-sm font-bold shrink-0 transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
+    <div class="flex items-center justify-between">
+      <div class="w-14"></div>
+      <div class="text-center flex-1">
+        <h1 class="text-4xl font-black gradient-text tracking-tight">Vertex · 甲趣</h1>
+        <p class="text-xs text-gray-500 mt-1 tracking-wider">AI · 美甲一秒上身</p>
+      </div>
+      <button id="my-btn" class="bg-pink-100 text-pink-500 px-3 py-2 rounded-xl text-xs font-bold shrink-0 transition active:scale-95 w-14">
         我的
       </button>
     </div>
-  </section>
+    <div id="user-badge" class="hidden text-xs text-pink-400 mt-2 font-bold"></div>
+  </header>
 
   <!-- 步骤 1: 上传手部 -->
   <section class="bg-white/80 backdrop-blur rounded-3xl p-5 shadow-sm mb-3 slide-up">
@@ -315,31 +338,119 @@
   const $ = q => document.querySelector(q);
   const $$ = q => document.querySelectorAll(q);
 
-  const userId = localStorage.getItem('jiaqu_uid') || 'u_' + Math.random().toString(36).slice(2, 10);
-  localStorage.setItem('jiaqu_uid', userId);
-
+  let userId = null;
+  let userConfirmed = false;
   let handImage = null;
-  let selectedStyle = null;        // 预设款式 id，如 "nail_05"
-  let customStyleImage = null;     // 自定义款式 data URL
+  let selectedStyle = null;
+  let customStyleImage = null;
   let lastRequestId = null;
   let feedbackSent = new Set();
 
-  // === 昵称持久化 ===
-  const nicknameInput = $('#nickname-input');
-  nicknameInput.value = localStorage.getItem('jiaqu_nickname') || '';
-  nicknameInput.addEventListener('input', () => {
-    localStorage.setItem('jiaqu_nickname', nicknameInput.value.trim());
-    checkReady();
-    tryLoadSavedHand();
+  // === 登录遮罩 ===
+  const lastUid = localStorage.getItem('jiaqu_uid');
+  if (lastUid) {
+    $('#uid-input').placeholder = `上次：${lastUid}`;
+    $('#uid-hint').textContent = `直接按"进入"可用上次的名字`;
+  }
+
+  $('#login-btn').addEventListener('click', async () => {
+    let inputId = $('#uid-input').value.trim();
+    if (!inputId && lastUid) inputId = lastUid;
+    if (!inputId) { $('#uid-input').focus(); return; }
+    $('#login-btn').disabled = true;
+    $('#login-btn').textContent = '检查中...';
+    try {
+      const r = await fetch(`/api/user/check?user_id=${encodeURIComponent(inputId)}`);
+      const data = await r.json();
+      userId = inputId;
+      localStorage.setItem('jiaqu_uid', userId);
+
+      if (data.has_hand) {
+        const time = data.hand_updated_at ? new Date(data.hand_updated_at).toLocaleString('zh-CN') : '';
+        let msg = `发现你之前保存的手部照片`;
+        if (time) msg += `（${time}）`;
+        if (data.history_count) msg += `\n还有 ${data.history_count} 条试戴记录`;
+        if (data.fav_count) msg += `、${data.fav_count} 个收藏`;
+        $('#hand-confirm-msg').textContent = msg;
+        $('#hand-confirm').classList.remove('hidden');
+        $('#hand-confirm').classList.add('flex');
+        $('#login-gate').classList.add('hidden');
+      } else if (data.exists) {
+        enterApp();
+      } else {
+        enterApp();
+        showToast('下次用同样的名字就能找回记录');
+      }
+    } catch {
+      alert('网络错误，请重试');
+    } finally {
+      $('#login-btn').disabled = false;
+      $('#login-btn').textContent = '进入';
+    }
   });
-  function getNickname() { return nicknameInput.value.trim(); }    // 已点过的 action，防重复
+
+  $('#uid-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') $('#login-btn').click();
+  });
+
+  $('#hand-confirm-load').addEventListener('click', () => {
+    $('#hand-confirm').classList.add('hidden');
+    enterApp();
+    loadSavedHand();
+  });
+  $('#hand-confirm-skip').addEventListener('click', () => {
+    $('#hand-confirm').classList.add('hidden');
+    enterApp();
+  });
+
+  function enterApp() {
+    userConfirmed = true;
+    $('#login-gate').classList.add('hidden');
+    $('#user-badge').textContent = `当前：${userId}`;
+    $('#user-badge').classList.remove('hidden');
+    loadUserFavs();
+    checkReady();
+  }
+
+  async function loadSavedHand() {
+    try {
+      const r = await fetch(`/api/user/hand?user_id=${encodeURIComponent(userId)}`);
+      const data = await r.json();
+      if (!data.image_path) return;
+      const imgResp = await fetch(data.image_path + '?t=' + Date.now());
+      const blob = await imgResp.blob();
+      const reader = new FileReader();
+      reader.onload = ev => {
+        handImage = ev.target.result;
+        const time = data.updated_at ? new Date(data.updated_at).toLocaleString('zh-CN') : '';
+        $('#hand-preview').innerHTML = `
+          <img src="${handImage}" class="rounded-xl w-full max-h-72 object-contain bg-pink-50">
+          <p class="text-[10px] text-pink-400 font-bold mt-1">已加载保存的手部照片${time ? ' · ' + time : ''}</p>
+          <p class="text-[10px] text-gray-400">点击上方可重新拍照</p>
+        `;
+        $('#hand-preview').classList.remove('py-10', 'border-dashed');
+        checkReady();
+      };
+      reader.readAsDataURL(blob);
+    } catch {}
+  }
+
+  function showToast(msg) {
+    const t = document.createElement('div');
+    t.className = 'fixed top-6 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs px-4 py-2 rounded-full z-[200] fade-in';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+  }
+
+  function getNickname() { return userId || ''; }
 
   // === 加载预设款式 ===
   let allStyleCards = [];
   let userFavSet = new Set();
 
   async function loadUserFavs() {
-    if (!getNickname()) return;
+    if (!userConfirmed) return;
     try {
       const r = await fetch(`/api/user/favorites?user_id=${encodeURIComponent(userId)}`);
       const items = await r.json();
@@ -388,7 +499,7 @@
     const heart = e.target.closest('.fav-heart');
     if (heart) {
       e.stopPropagation();
-      if (!getNickname()) { alert('请先输入昵称'); return; }
+      if (!userConfirmed) { alert('请先登录'); return; }
       const sid = heart.dataset.styleId;
       const surl = heart.dataset.styleUrl;
       if (userFavSet.has(sid)) {
@@ -463,40 +574,11 @@
     r.readAsDataURL(f);
   });
 
-  // === 自动加载已保存的手部原图 ===
-  let savedHandLoaded = false;
-  async function tryLoadSavedHand() {
-    if (!getNickname() || savedHandLoaded) return;
-    try {
-      const r = await fetch(`/api/user/hand?user_id=${encodeURIComponent(userId)}`);
-      const data = await r.json();
-      if (!data.image_path || handImage) return;
-      const imgResp = await fetch(data.image_path + '?t=' + Date.now());
-      const blob = await imgResp.blob();
-      const reader = new FileReader();
-      reader.onload = ev => {
-        handImage = ev.target.result;
-        savedHandLoaded = true;
-        const time = data.updated_at ? new Date(data.updated_at).toLocaleString('zh-CN') : '';
-        $('#hand-preview').innerHTML = `
-          <img src="${handImage}" class="rounded-xl w-full max-h-72 object-contain bg-pink-50">
-          <p class="text-[10px] text-pink-400 font-bold mt-1">已自动加载保存的手部照片${time ? ' · ' + time : ''}</p>
-          <p class="text-[10px] text-gray-400">点击上方可重新拍照</p>
-        `;
-        $('#hand-preview').classList.remove('py-10', 'border-dashed');
-        checkReady();
-      };
-      reader.readAsDataURL(blob);
-    } catch {}
-  }
-
   function checkReady() {
     const styleReady = !!(selectedStyle && (selectedStyle !== '__custom__' || customStyleImage));
-    $('#tryon-btn').disabled = !(handImage && styleReady && getNickname());
-    $('#my-btn').disabled = !getNickname();
+    $('#tryon-btn').disabled = !(handImage && styleReady && userConfirmed);
   }
   checkReady();
-  tryLoadSavedHand();
 
   // === 试戴 ===
   $('#tryon-btn').addEventListener('click', async () => {
@@ -639,8 +721,8 @@
 
   // === 「我的」页面 ===
   $('#my-btn').addEventListener('click', () => {
-    if (!getNickname()) return;
-    $('#my-nickname').textContent = getNickname();
+    if (!userConfirmed) return;
+    $('#my-nickname').textContent = userId;
     $('#my-overlay').classList.remove('hidden');
     $('#my-overlay').classList.add('flex');
     loadMyData('history');

@@ -402,6 +402,24 @@ def feedback():
 
 # ============ 用户数据 API ============
 
+@app.route('/api/user/check')
+def user_check():
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({"error": "缺少 user_id"}), 400
+    db = get_db()
+    hand = db.execute("SELECT updated_at FROM hand_originals WHERE user_id=?", (user_id,)).fetchone()
+    history_count = db.execute("SELECT COUNT(*) FROM tryon_history WHERE user_id=?", (user_id,)).fetchone()[0]
+    fav_count = db.execute("SELECT COUNT(*) FROM favorites WHERE user_id=?", (user_id,)).fetchone()[0]
+    return jsonify({
+        "exists": bool(hand or history_count or fav_count),
+        "has_hand": bool(hand),
+        "hand_updated_at": hand["updated_at"] if hand else None,
+        "history_count": history_count,
+        "fav_count": fav_count,
+    })
+
+
 @app.route('/api/user/hand')
 def user_hand():
     user_id = request.args.get('user_id')
