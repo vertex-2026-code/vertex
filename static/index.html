@@ -348,10 +348,12 @@
 
   // === 登录遮罩 ===
   const lastUid = localStorage.getItem('jiaqu_uid');
+  const oldNickname = localStorage.getItem('jiaqu_nickname');
   const hasOldAutoId = lastUid && lastUid.startsWith('u_');
-  if (hasOldAutoId) {
-    $('#uid-hint').textContent = `检测到你之前的数据，输入名字后会自动迁移`;
-  } else if (lastUid) {
+  if (hasOldAutoId && oldNickname) {
+    $('#uid-input').value = oldNickname;
+    $('#uid-hint').textContent = `检测到你之前的数据，点"进入"自动迁移`;
+  } else if (lastUid && !hasOldAutoId) {
     $('#uid-input').placeholder = `上次：${lastUid}`;
     $('#uid-hint').textContent = `直接按"进入"可用上次的名字`;
   }
@@ -363,8 +365,8 @@
     $('#login-btn').disabled = true;
     $('#login-btn').textContent = '检查中...';
     try {
-      // 如果有旧的自动 ID，先尝试迁移数据到新名字
-      if (hasOldAutoId && lastUid !== inputId) {
+      // 老用户：把 u_xxx 下的数据迁移到用户输入的名字下
+      if (hasOldAutoId) {
         const oldCheck = await fetch(`/api/user/check?user_id=${encodeURIComponent(lastUid)}`);
         const oldData = await oldCheck.json();
         if (oldData.exists) {
@@ -373,7 +375,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ old_id: lastUid, new_id: inputId }),
           });
-          showToast('已将你之前的数据迁移到新名字下');
+          showToast('已将你之前的数据迁移过来了');
         }
         localStorage.removeItem('jiaqu_nickname');
       }
