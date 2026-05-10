@@ -1,0 +1,48 @@
+# 批量改名（跑完 populate_plaza.py 之后执行）
+cd /opt/jiaqu && source venv/bin/activate && python3 -c "
+import sqlite3, os, shutil
+db = sqlite3.connect('data/jiaqu.db')
+
+renames = {
+    '阿哲': 'az',
+    '小美': 'mia',
+    '甜甜': 'tina',
+    '芳芳': 'fiona',
+    '小雅': 'yara',
+    '花花': 'hana',
+    '珍妮': 'jenny',
+}
+
+for old, new in renames.items():
+    changed = False
+    for t in ['hand_originals', 'favorites', 'tryon_history', 'plaza']:
+        n = db.execute(f'UPDATE {t} SET user_id=? WHERE user_id=?', (new, old)).rowcount
+        if n:
+            print(f'  {t}: {n} 条')
+            changed = True
+    old_f = f'static/uploads/hands/{old}.png'
+    new_f = f'static/uploads/hands/{new}.png'
+    if os.path.exists(old_f):
+        shutil.move(old_f, new_f)
+        db.execute('UPDATE hand_originals SET image_path=? WHERE user_id=?', (f'/static/uploads/hands/{new}.png', new))
+        print(f'  手图重命名')
+        changed = True
+    if changed:
+        print(f'{old} -> {new} 完成')
+    else:
+        print(f'{old} -> {new} 无数据，跳过')
+db.commit()
+print('全部完成')
+"
+
+
+# 把广场点赞数改成 0-7 更真实
+cd /opt/jiaqu && source venv/bin/activate && python3 -c "
+import sqlite3, random
+db = sqlite3.connect('data/jiaqu.db')
+rows = db.execute('SELECT id FROM plaza WHERE likes > 7').fetchall()
+for r in rows:
+    db.execute('UPDATE plaza SET likes=? WHERE id=?', (random.randint(0, 7), r[0]))
+db.commit()
+print(f'已修正 {len(rows)} 条')
+"
