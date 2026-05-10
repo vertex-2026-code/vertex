@@ -330,6 +330,7 @@ async function loadStats() {
       const w = Math.round(count / maxCount * 100);
       return `<div class="flex items-center gap-2 text-sm">
         <span class="text-gray-400 w-5 text-right">${i+1}</span>
+        <img src="/static/nails/${sid}.png" style="width:28px;height:28px;object-fit:cover;border-radius:4px;border:1px solid #eee;" onerror="this.style.display='none'">
         <span class="w-16 font-mono text-gray-600">${sid}</span>
         <div class="flex-1"><div class="bar" style="width:${w}%"></div></div>
         <span class="w-8 text-right text-gray-600">${count}</span>
