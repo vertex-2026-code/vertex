@@ -157,6 +157,17 @@ def init_db():
             created_at TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_plaza_created ON plaza(created_at DESC);
+        CREATE TABLE IF NOT EXISTS community_trends (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            platform TEXT NOT NULL,
+            style_tag TEXT NOT NULL,
+            mention_count INTEGER NOT NULL,
+            growth_rate REAL NOT NULL,
+            sample_posts TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_ct_date ON community_trends(date);
+        CREATE INDEX IF NOT EXISTS idx_ct_tag ON community_trends(style_tag);
     """)
     conn.close()
 
