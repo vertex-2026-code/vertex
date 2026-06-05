@@ -630,7 +630,7 @@ def user_recommend():
         if sid in picks or sid in fav_sids:
             continue
         picks.append(sid)
-    picks = picks[:4]
+    picks = picks[:7]
 
     # 输出（复用 list_styles 的字段格式）
     files = {os.path.splitext(f)[0]: f for f in os.listdir(NAILS_DIR)
