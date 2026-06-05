@@ -18,3 +18,6 @@ __pycache__/
 .idea/
 .DS_Store
 static/uploads/
+
+# 本地草稿/运维脚本
+draft.txt
