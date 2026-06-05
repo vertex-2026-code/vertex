@@ -622,9 +622,11 @@ def admin_stats():
     latencies = [r.get('latency_ms', 0) for r in successes if r.get('latency_ms')]
     avg_latency = round(sum(latencies) / len(latencies)) if latencies else 0
 
-    # 风格分类统计
+    # 风格分类统计（用户上传的 custom 图不属于预设风格分类）
     cat_counts = {}
     for r in starts:
+        if r.get('style_kind') == 'custom':
+            continue
         cat = STYLE_CATEGORIES.get(r.get('style_id', ''), '?')
         cat_counts[cat] = cat_counts.get(cat, 0) + 1
     cat_stats = sorted(cat_counts.items(), key=lambda x: -x[1])
