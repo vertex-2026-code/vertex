@@ -546,6 +546,112 @@ def user_history():
     return jsonify([dict(r) for r in rows])
 
 
+@app.route('/api/user/recommend')
+def user_recommend():
+    """
+    个性化推荐 4 个款式。
+    - 有正信号（收藏 / like / 试戴过）→ 偏好分类 TOP 1-2 × 全局排序
+    - 无信号 / 新访客 → 近 7 天热度 × 好评率（全局 trend）
+    - 候选不足 4 个 → 用全局 trend 补齐
+    自定义上传不参与推荐池。
+    """
+    user_id = (request.args.get('user_id') or '').strip()
+    logs = load_logs()
+    week_ago = datetime.now(BJT) - timedelta(days=7)
+
+    # 一次循环搞定全局信号 + 用户信号
+    style_likes, style_fb_total, recent_counts = {}, {}, {}
+    user_likes, user_dislikes = set(), set()
+    for r in logs:
+        sid = r.get('style_id')
+        if not sid or sid not in STYLE_CATEGORIES:
+            continue  # custom 上传 / 历史脏数据直接跳过
+        evt = r.get('event')
+        if evt == 'feedback':
+            action = r.get('action')
+            if action in ('like', 'dislike'):
+                style_fb_total[sid] = style_fb_total.get(sid, 0) + 1
+                if action == 'like':
+                    style_likes[sid] = style_likes.get(sid, 0) + 1
+                if user_id and (r.get('user_id') == user_id or r.get('nickname') == user_id):
+                    (user_likes if action == 'like' else user_dislikes).add(sid)
+        elif evt == 'tryon_start':
+            try:
+                if datetime.fromisoformat(r.get('ts', '')) >= week_ago:
+                    recent_counts[sid] = recent_counts.get(sid, 0) + 1
+            except (TypeError, ValueError):
+                pass
+
+    # 平滑好评率 + 全局综合分（避免冷启动 0 票就被永久压底）
+    def like_rate(sid):
+        return (style_likes.get(sid, 0) + 1) / (style_fb_total.get(sid, 0) + 2)
+    def global_score(sid):
+        return (recent_counts.get(sid, 0) + 0.5) * like_rate(sid)
+
+    all_sids = list(STYLE_CATEGORIES.keys())
+    global_ranked = sorted(all_sids, key=lambda s: -global_score(s))
+
+    # 用户 DB 信号（收藏 + 试戴历史）
+    fav_sids, history_sids = set(), set()
+    if user_id:
+        db = get_db()
+        fav_sids = {r['style_id'] for r in db.execute(
+            "SELECT style_id FROM favorites WHERE user_id=?", (user_id,)
+        ).fetchall()}
+        history_sids = {r['style_id'] for r in db.execute(
+            "SELECT style_id FROM tryon_history WHERE user_id=?", (user_id,)
+        ).fetchall() if r['style_id'] in STYLE_CATEGORIES}
+
+    # 用户加权（收藏 +3 / like +2 / 试戴 +1 / dislike -2）
+    user_weights = {}
+    for sid in fav_sids:     user_weights[sid] = user_weights.get(sid, 0) + 3
+    for sid in user_likes:   user_weights[sid] = user_weights.get(sid, 0) + 2
+    for sid in history_sids: user_weights[sid] = user_weights.get(sid, 0) + 1
+    for sid in user_dislikes:user_weights[sid] = user_weights.get(sid, 0) - 2
+    has_history = any(w > 0 for w in user_weights.values())
+
+    picks = []
+    if has_history:
+        # 偏好分类聚合 → TOP 1-2
+        cat_pref = {}
+        for sid, w in user_weights.items():
+            cat = STYLE_CATEGORIES.get(sid)
+            if cat:
+                cat_pref[cat] = cat_pref.get(cat, 0) + w
+        top_cats = [c for c, v in sorted(cat_pref.items(), key=lambda x: -x[1])[:2] if v > 0]
+        # 偏好分类候选：排除已收藏（保留试戴过未收藏，给二次机会）
+        cands = [s for s in all_sids
+                 if STYLE_CATEGORIES.get(s) in top_cats and s not in fav_sids]
+        cands.sort(key=lambda s: -global_score(s))
+        picks.extend(cands)
+
+    # 全局 trend 补齐（新用户走这条 / 老用户候选不足走这条）
+    for sid in global_ranked:
+        if sid in picks or sid in fav_sids:
+            continue
+        picks.append(sid)
+    picks = picks[:4]
+
+    # 输出（复用 list_styles 的字段格式）
+    files = {os.path.splitext(f)[0]: f for f in os.listdir(NAILS_DIR)
+             if f.lower().endswith(('.png', '.jpg', '.jpeg'))}
+    result = []
+    for sid in picks:
+        f = files.get(sid)
+        if not f:
+            continue
+        cat = STYLE_CATEGORIES.get(sid, '')
+        num = sid.replace('nail_', '').lstrip('0') or '0'
+        result.append({
+            "id": sid,
+            "name": f"款式 {num}",
+            "url": f"/static/nails/{f}",
+            "category": cat,
+            "category_name": CATEGORY_NAMES.get(cat, ''),
+        })
+    return jsonify(result)
+
+
 @app.route('/health')
 def health():
     return jsonify({"status": "ok", "ts": now_iso()})
