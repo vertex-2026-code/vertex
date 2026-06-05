@@ -4,382 +4,668 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vertex · 甲趣运营中心</title>
-<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Noto+Serif+SC:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  /* ============================================================
+     Vertex 甲趣运营中心 — Rosé Lens
+     色板移植自 hermes-agent themes/presets.ts (rose) + globals.css
+     语义 token 用 color-mix 从 midground 按比例混回 background,
+     文字实色为主、暖光晕 + 噪点做氛围 —— 复刻 Nous DS 的克制感。
+     ============================================================ */
+
+  :root {
+    /* —— LENS: Bordeaux & Champagne ——
+       暖调勃艮第底,文字为香槟奶油色,金色仅作珠宝点缀。 */
+    --bg:        #160b10;   /* deep aubergine-bordeaux */
+    --mid:       #f1dccf;   /* champagne cream (= 主文字) */
+    --warm-glow: rgba(212, 171, 124, 0.26);  /* 香槟金光晕 */
+    --accent:    #d4ab7c;   /* 香槟金 —— 唯一的金属点缀 */
+    --rose:      #c0808f;   /* 暮玫瑰 —— 次级强调 */
+    --gold:      #d4ab7c;
+
+    /* —— 衍生表面(midground 按 % 混回 bg)—— */
+    --card:     color-mix(in srgb, var(--mid) 4%,  var(--bg));
+    --elevated: color-mix(in srgb, var(--mid) 7%,  var(--bg));
+    --muted:    color-mix(in srgb, var(--mid) 9%,  var(--bg));
+    --hover:    color-mix(in srgb, var(--mid) 6%,  transparent);
+    --border:   color-mix(in srgb, var(--mid) 12%, transparent);
+    --hairline: color-mix(in srgb, var(--mid) 7%,  transparent);
+    --input:    color-mix(in srgb, var(--mid) 6%,  var(--bg));
+    --code-bg:  color-mix(in srgb, var(--mid) 10%, transparent);
+
+    /* —— 语义文字(实色 + alpha 分级)—— */
+    --t-primary:   var(--mid);
+    --t-secondary: color-mix(in srgb, var(--mid) 66%, transparent);
+    --t-tertiary:  color-mix(in srgb, var(--mid) 42%, transparent);
+
+    /* —— 字体栈 —— */
+    --font-display: "Fraunces", "Noto Serif SC", "Songti SC", "PingFang SC", serif;
+    --font-body:    "Fraunces", "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
+    --font-mono:    "DM Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+
+    --radius: 1rem;
+    --radius-sm: 0.625rem;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { font-size: 15px; }
+
   body {
-    font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
-    background: linear-gradient(135deg, #fff5f7 0%, #ffe5ec 50%, #ffd6e0 100%);
+    margin: 0;
     min-height: 100vh;
+    background: var(--bg);
+    color: var(--t-primary);
+    font-family: var(--font-body);
+    line-height: 1.55;
+    letter-spacing: 0.005em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
-  .gradient-text {
-    background: linear-gradient(135deg, #d4356b 0%, #ff6b9d 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+
+  /* ===== Backdrop:三层 fixed —— 暗角 + 暖光晕 + 噪点颗粒 ===== */
+  /* 复刻 Backdrop.tsx 的 z-99 暖光晕(opacity 0.22, lighten)
+     与 z-201 噪点(color-dodge, ~0.55×mul)。强度按源码,不夸张。 */
+  .bd { position: fixed; inset: 0; pointer-events: none; }
+  .bd-vignette {
+    z-index: -3;
+    background:
+      radial-gradient(120% 90% at 50% -10%,
+        color-mix(in srgb, var(--mid) 5%, transparent) 0%, transparent 55%),
+      radial-gradient(140% 120% at 50% 120%,
+        #000 0%, transparent 60%);
+    opacity: 0.9;
   }
-  .card {
-    background: rgba(255,255,255,0.8);
-    backdrop-filter: blur(8px);
-    border-radius: 24px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  .bd-glow {
+    z-index: -2;
+    background:
+      radial-gradient(ellipse at 0% 0%, transparent 56%, var(--warm-glow) 100%),
+      radial-gradient(ellipse 70% 50% at 100% 100%, transparent 60%, rgba(192,128,143,0.14) 100%);
+    mix-blend-mode: lighten;
+    opacity: 0.32;
   }
-  .stat-num {
-    font-size: 2rem;
-    font-weight: 900;
-    background: linear-gradient(135deg, #ff6b9d, #f472b6);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+  .bd-noise {
+    z-index: -1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%23dcc4a8' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+    background-size: 440px 440px;
+    mix-blend-mode: color-dodge;
+    opacity: 0.26;
+  }
+
+  /* ===== Shell ===== */
+  .shell {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(20px, 4vw, 44px) clamp(16px, 3vw, 32px) 80px;
+  }
+
+  /* ===== Topbar ===== */
+  .topbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 22px;
+    margin-bottom: clamp(24px, 4vw, 40px);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.6rem, 4.5vw, 2.45rem);
+    letter-spacing: 0;
+    line-height: 1.05;
+    color: var(--t-primary);
+  }
+  .wordmark .dot { color: var(--accent); font-weight: 400; }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.26em;
+    color: var(--t-tertiary);
+  }
+  .topbar-eyebrow { margin-top: 10px; }
+  .topbar-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 9px; }
+  .live {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--t-secondary);
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 70%, transparent);
+    animation: live-pulse 2.4s ease-out infinite;
+  }
+  @keyframes live-pulse {
+    0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); }
+    70%  { box-shadow: 0 0 0 7px transparent; }
+    100% { box-shadow: 0 0 0 0 transparent; }
+  }
+  .back-link {
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--t-tertiary); text-decoration: none;
+    transition: color 0.18s;
+  }
+  .back-link:hover { color: var(--accent); }
+
+  /* ===== Metrics ===== */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: clamp(10px, 1.4vw, 16px);
+    margin-bottom: clamp(16px, 2.4vw, 24px);
+  }
+  .metric {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 18px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  /* 极细顶部高光,模拟玻璃边缘 */
+  .metric::before {
+    content: ''; position: absolute; inset: 0 0 auto 0; height: 1px;
+    background: linear-gradient(90deg, transparent,
+      color-mix(in srgb, var(--accent) 38%, transparent) 50%, transparent);
+  }
+  .metric-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.22em;
+    color: var(--t-tertiary);
+    margin-bottom: 12px;
+  }
+  .metric-value {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(1.95rem, 4.4vw, 2.75rem);
+    line-height: 1;
+    letter-spacing: -0.015em;
+    color: var(--t-primary);
+    font-feature-settings: "tnum" 1, "ss01" 1;
+  }
+  .metric-value .unit { color: var(--accent); font-size: 0.42em; margin-left: 3px; letter-spacing: 0; font-family: var(--font-mono); vertical-align: 0.15em; }
+  .metric-sub {
+    display: block; margin-top: 9px;
+    font-size: 11.5px; color: var(--t-secondary);
+  }
+
+  /* ===== Grid ===== */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: clamp(12px, 1.6vw, 18px);
+  }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: clamp(20px, 2.4vw, 32px);
+    position: relative;
+  }
+  .span-7 { grid-column: span 7; }
+  .span-5 { grid-column: span 5; }
+  .span-12 { grid-column: 1 / -1; }
+
+  .panel-head { margin-bottom: 18px; }
+  .panel-head + .panel-head { margin-top: 28px; }
+  .panel-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.24em;
+    color: var(--t-tertiary);
+    display: block; margin-bottom: 5px;
+  }
+  .panel-title {
+    font-family: var(--font-display);
+    font-weight: 500; font-size: 1.3rem;
+    letter-spacing: 0.005em; color: var(--t-primary);
+    margin: 0;
+  }
+
+  /* ===== Rows (通用列表行) ===== */
+  .rows { display: flex; flex-direction: column; gap: 2px; }
+  .row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 8px;
+    margin: 0 -8px;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s;
+  }
+  .row:hover { background: var(--hover); }
+  .rank {
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--t-tertiary); width: 20px; text-align: right; flex-shrink: 0;
+    font-feature-settings: "tnum" 1;
+  }
+  .cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .row-name { color: var(--t-primary); font-size: 14px; }
+  .row-name.fixed { width: 132px; flex-shrink: 0; }
+  .row-tag {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--t-tertiary); letter-spacing: 0.04em;
+    flex-shrink: 0; width: 64px;
+  }
+  .row-sid {
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--t-secondary); width: 56px; flex-shrink: 0;
+  }
+  .row-val {
+    font-family: var(--font-mono); font-size: 13px;
+    color: var(--t-primary); text-align: right;
+    width: 44px; flex-shrink: 0;
+    font-feature-settings: "tnum" 1;
+  }
+  .row-rate {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--accent); text-align: right;
+    width: 42px; flex-shrink: 0;
+    font-feature-settings: "tnum" 1;
+  }
+  .thumb {
+    width: 30px; height: 30px; border-radius: 7px; object-fit: cover;
+    border: 1px solid var(--border); flex-shrink: 0; background: var(--muted);
+  }
+
+  /* ===== Bars ===== */
+  .bar-track {
+    flex: 1; height: 5px; min-width: 24px;
+    background: var(--muted);
+    border-radius: 999px; overflow: hidden;
   }
   .bar {
-    height: 24px;
-    background: linear-gradient(90deg, #ff6b9d, #f472b6);
-    border-radius: 6px;
-    transition: width 0.6s;
+    height: 100%; width: 0;
+    background: linear-gradient(90deg, var(--rose), var(--accent));
+    border-radius: 999px;
+    transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .chat-box {
-    background: rgba(255,255,255,0.8);
-    backdrop-filter: blur(8px);
-    border-radius: 24px;
-    display: flex;
-    flex-direction: column;
-    height: 420px;
+  .bar.solo { background: var(--accent); }
+
+  .warn { color: #e0a07e; }
+  .warn-tag { color: #e0a07e; font-size: 0.8em; }
+
+  /* ===== Chat ===== */
+  .chat-panel { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .chat-head {
+    padding: clamp(18px, 2vw, 24px) clamp(18px, 2vw, 26px) 16px;
+    border-bottom: 1px solid var(--hairline);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
   }
-  .chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 16px;
+  .chat-sub { font-size: 12px; color: var(--t-secondary); margin: 4px 0 0; }
+  .chat-box { display: flex; flex-direction: column; height: clamp(380px, 52vh, 520px); }
+  .chat-messages { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 18px clamp(18px, 2vw, 26px); }
+  .chat-messages::-webkit-scrollbar { width: 5px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .msg-user, .msg-ai {
+    font-size: 14px; line-height: 1.6;
+    border-radius: 14px; padding: 11px 15px; margin-bottom: 12px;
+    border: 1px solid var(--border);
+    animation: msg-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   }
+  @keyframes msg-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   .msg-user {
-    background: #fce7f3;
-    border-radius: 12px 12px 4px 12px;
-    padding: 10px 14px;
-    margin-left: 40px;
-    margin-bottom: 8px;
-    font-size: 14px;
-    color: #374151;
+    background: color-mix(in srgb, var(--mid) 10%, var(--bg));
+    border-radius: 14px 14px 4px 14px;
+    margin-left: clamp(28px, 18%, 80px);
+    color: var(--t-primary);
   }
   .msg-ai {
-    background: #fff0f5;
-    border: 1px solid #fce7f3;
-    border-radius: 12px 12px 12px 4px;
-    padding: 10px 14px;
-    margin-right: 40px;
-    margin-bottom: 8px;
-    font-size: 14px;
-    line-height: 1.6;
-    color: #374151;
+    background: color-mix(in srgb, var(--mid) 4%, var(--bg));
+    border-radius: 14px 14px 14px 4px;
+    margin-right: clamp(28px, 18%, 80px);
+    color: var(--t-primary);
   }
   .msg-ai h1, .msg-ai h2, .msg-ai h3, .msg-ai h4 {
-    font-weight: 700;
-    color: #1f2937;
-    margin: 12px 0 6px;
-    line-height: 1.3;
+    font-family: var(--font-display); font-weight: 600;
+    color: var(--t-primary); margin: 14px 0 6px; line-height: 1.3;
   }
-  .msg-ai h1 { font-size: 1.25em; }
-  .msg-ai h2 { font-size: 1.15em; }
-  .msg-ai h3 { font-size: 1.05em; }
+  .msg-ai h1 { font-size: 1.2em; } .msg-ai h2 { font-size: 1.1em; } .msg-ai h3 { font-size: 1em; }
   .msg-ai p { margin: 6px 0; }
-  .msg-ai ul, .msg-ai ol {
-    margin: 6px 0;
-    padding-left: 1.5em;
-  }
-  .msg-ai ul { list-style: disc; }
-  .msg-ai ol { list-style: decimal; }
-  .msg-ai li { margin: 2px 0; }
+  .msg-ai ul, .msg-ai ol { margin: 6px 0; padding-left: 1.4em; }
+  .msg-ai ul { list-style: disc; } .msg-ai ol { list-style: decimal; }
+  .msg-ai li { margin: 3px 0; }
   .msg-ai code {
-    background: rgba(219, 39, 119, 0.08);
-    color: #be185d;
-    padding: 1px 5px;
-    border-radius: 4px;
-    font-size: 0.9em;
-    font-family: "SF Mono", "Fira Code", monospace;
+    background: var(--code-bg); color: var(--accent);
+    padding: 1px 6px; border-radius: 4px; font-size: 0.88em; font-family: var(--font-mono);
   }
   .msg-ai pre {
-    background: #1f2937;
-    color: #e5e7eb;
-    border-radius: 8px;
-    padding: 10px 14px;
-    overflow-x: auto;
-    margin: 8px 0;
-    font-size: 0.85em;
-    line-height: 1.5;
+    background: color-mix(in srgb, #000 60%, var(--bg)); color: var(--mid);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 16px; overflow-x: auto; margin: 10px 0;
+    font-size: 0.85em; line-height: 1.55; font-family: var(--font-mono);
   }
-  .msg-ai pre code {
-    background: none;
-    color: inherit;
-    padding: 0;
-    border-radius: 0;
-    font-size: inherit;
-  }
+  .msg-ai pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
   .msg-ai blockquote {
-    border-left: 3px solid #f472b6;
-    padding-left: 12px;
-    color: #6b7280;
-    margin: 8px 0;
+    border-left: 2px solid var(--accent); padding-left: 12px;
+    color: var(--t-secondary); margin: 8px 0;
   }
+  .msg-ai strong { font-weight: 600; color: var(--mid); }
+  .msg-ai em { font-style: italic; color: var(--t-secondary); }
+  .msg-ai a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+  .msg-ai hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
   .msg-ai .table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    max-width: 100%;
-    margin: 8px 0;
-    border-radius: 8px;
-    border: 1px solid #fce7f3;
+    overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%;
+    margin: 8px 0; border-radius: 8px; border: 1px solid var(--border);
   }
-  .msg-ai .table-wrap table {
-    margin: 0;
-    width: max-content;
-    min-width: 100%;
-    font-size: 0.85em;
-    border: none;
-  }
-  .msg-ai .table-wrap th,
-  .msg-ai .table-wrap td {
-    white-space: nowrap;
-    padding: 6px 10px;
-  }
-  .msg-ai table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 8px 0;
-    font-size: 0.9em;
-  }
-  .msg-ai th, .msg-ai td {
-    border: 1px solid #fce7f3;
-    padding: 6px 10px;
-    text-align: left;
-  }
-  .msg-ai th {
-    background: #fdf2f8;
-    font-weight: 600;
-  }
-  .msg-ai strong { font-weight: 700; }
-  .msg-ai em { font-style: italic; }
-  .msg-ai hr {
-    border: none;
-    border-top: 1px solid #fce7f3;
-    margin: 10px 0;
-  }
-  .msg-ai a {
-    color: #db2777;
-    text-decoration: underline;
-  }
+  .msg-ai .table-wrap table { margin: 0; width: max-content; min-width: 100%; font-size: 0.85em; border: none; }
+  .msg-ai .table-wrap th, .msg-ai .table-wrap td { white-space: nowrap; }
+  .msg-ai table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 0.9em; }
+  .msg-ai th, .msg-ai td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+  .msg-ai th { background: var(--muted); font-family: var(--font-display); font-weight: 600; }
   .msg-ai > *:first-child { margin-top: 0; }
   .msg-ai > *:last-child { margin-bottom: 0; }
+
   .chat-input-area {
-    border-top: 1px solid #fce7f3;
-    padding: 12px;
-    display: flex;
-    gap: 8px;
+    border-top: 1px solid var(--hairline);
+    padding: 14px clamp(14px, 2vw, 18px);
+    display: flex; gap: 10px;
   }
   .chat-input-area input {
-    flex: 1;
-    background: #fff5f7;
-    border: 2px solid #fbcfe8;
-    border-radius: 12px;
-    padding: 10px 14px;
-    color: #374151;
-    font-size: 14px;
-    outline: none;
+    flex: 1; min-width: 0;
+    background: var(--input); border: 1px solid var(--border);
+    border-radius: 12px; padding: 11px 15px;
+    color: var(--t-primary); font-family: var(--font-body); font-size: 14px;
+    outline: none; transition: border-color 0.15s, box-shadow 0.15s;
   }
-  .chat-input-area input:focus { border-color: #f472b6; }
-  .chat-input-area button {
-    background: linear-gradient(135deg, #ff6b9d, #ff8fab);
-    border: none;
-    border-radius: 12px;
-    padding: 10px 20px;
-    color: white;
-    font-weight: 700;
-    font-size: 14px;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+  .chat-input-area input::placeholder { color: var(--t-tertiary); }
+  .chat-input-area input:focus {
+    border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
   }
-  .chat-input-area button:disabled { opacity: 0.4; cursor: not-allowed; }
-  .shop-warn { color: #dc2626; font-weight: 700; }
+  .chat-send {
+    background: var(--accent); border: none; border-radius: 12px;
+    padding: 0 22px; color: var(--bg);
+    font-family: var(--font-mono); font-weight: 500; font-size: 11px;
+    letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer;
+    transition: transform 0.12s, background 0.15s, opacity 0.15s;
+    flex-shrink: 0;
+  }
+  .chat-send:hover:not(:disabled) { background: var(--mid); transform: translateY(-1px); }
+  .chat-send:active:not(:disabled) { transform: translateY(0); }
+  .chat-send:disabled { opacity: 0.35; cursor: not-allowed; }
+
   .spinner-sm {
-    width: 18px; height: 18px;
-    border: 2px solid rgba(255, 107, 157, 0.2);
-    border-top-color: #ff6b9d;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    display: inline-block;
-    vertical-align: middle;
+    width: 15px; height: 15px;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+    display: inline-block; vertical-align: -2px; margin-right: 6px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-line { color: var(--t-tertiary); font-size: 13px; padding: 6px 0; }
+
+  /* ===== 入场交错 ===== */
+  .reveal { opacity: 0; transform: translateY(10px); animation: reveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  @keyframes reveal { to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { animation: none; opacity: 1; transform: none; }
+    .bar { transition: none; }
+  }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 920px) {
+    .grid { grid-template-columns: 1fr; }
+    .span-7, .span-5, .span-12 { grid-column: 1 / -1; }
+  }
+  @media (max-width: 560px) {
+    .metrics { grid-template-columns: 1fr 1fr; }
+    .row-name.fixed { width: 96px; }
+    .row-tag { display: none; }
+    .topbar { align-items: flex-start; }
+  }
 </style>
 </head>
 <body>
 
-<div class="max-w-6xl mx-auto px-4 py-6">
+<div class="bd bd-vignette"></div>
+<div class="bd bd-glow"></div>
+<div class="bd bd-noise"></div>
 
-  <!-- Header -->
-  <header class="flex items-center justify-between mb-6">
+<div class="shell">
+
+  <!-- Topbar -->
+  <header class="topbar reveal" style="animation-delay:.02s">
     <div>
-      <h1 class="text-2xl font-black gradient-text">Vertex · 甲趣运营中心</h1>
-      <p class="text-xs text-gray-500 mt-1">AI 驱动的美甲平台智能决策</p>
+      <h1 class="wordmark">Vertex<span class="dot"> · </span>甲趣运营中心</h1>
+      <div class="eyebrow topbar-eyebrow">AI-Driven Nail Salon Intelligence</div>
     </div>
-    <a href="/" class="text-xs text-gray-400 hover:text-pink-500 transition">← 返回 C 端</a>
+    <div class="topbar-right">
+      <span class="live"><span class="live-dot"></span>Live · 15s</span>
+      <a href="/" class="back-link">← 返回 C 端</a>
+    </div>
   </header>
 
-  <!-- 概览数字 -->
-  <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6" id="overview">
-    <div class="card text-center">
-      <div class="text-xs text-gray-500 mb-1">总试戴</div>
-      <div class="stat-num" id="s-tryons">--</div>
+  <!-- Metrics -->
+  <section class="metrics">
+    <div class="metric reveal" style="animation-delay:.06s">
+      <span class="metric-label">Tryons</span>
+      <div class="metric-value" id="s-tryons">—</div>
+      <span class="metric-sub">累计 AI 试戴</span>
     </div>
-    <div class="card text-center">
-      <div class="text-xs text-gray-500 mb-1">成功率</div>
-      <div class="stat-num" id="s-success-rate">--</div>
+    <div class="metric reveal" style="animation-delay:.10s">
+      <span class="metric-label">Success Rate</span>
+      <div class="metric-value" id="s-success-rate">—</div>
+      <span class="metric-sub">生成成功率</span>
     </div>
-    <div class="card text-center">
-      <div class="text-xs text-gray-500 mb-1">喜欢数</div>
-      <div class="stat-num" id="s-likes">--</div>
+    <div class="metric reveal" style="animation-delay:.14s">
+      <span class="metric-label">Likes</span>
+      <div class="metric-value" id="s-likes">—</div>
+      <span class="metric-sub">收藏 / 喜欢</span>
     </div>
-    <div class="card text-center">
-      <div class="text-xs text-gray-500 mb-1">预约数</div>
-      <div class="stat-num" id="s-books">--</div>
+    <div class="metric reveal" style="animation-delay:.18s">
+      <span class="metric-label">Bookings</span>
+      <div class="metric-value" id="s-books">—</div>
+      <span class="metric-sub">门店预约转化</span>
     </div>
-    <div class="card text-center">
-      <div class="text-xs text-gray-500 mb-1">平均耗时</div>
-      <div class="stat-num" id="s-latency">--</div>
+    <div class="metric reveal" style="animation-delay:.22s">
+      <span class="metric-label">Latency</span>
+      <div class="metric-value" id="s-latency">—</div>
+      <span class="metric-sub">平均生成耗时</span>
     </div>
-  </div>
+  </section>
 
-  <!-- 中间两列 -->
-  <div class="grid md:grid-cols-2 gap-4 mb-6">
-    <!-- 风格分类热度 -->
-    <div class="card">
-      <h2 class="text-sm font-bold text-gray-700 mb-3">风格分类热度</h2>
-      <div id="cat-stats" class="space-y-2"></div>
-      <h2 class="text-sm font-bold text-gray-700 mt-4 mb-3">热门款式 Top 10</h2>
-      <div id="top-styles" class="space-y-2"></div>
-    </div>
-    <!-- 门店预约 + 用户 -->
-    <div class="card">
-      <h2 class="text-sm font-bold text-gray-700 mb-3">门店预约排行</h2>
-      <div id="top-shops" class="space-y-2"></div>
-      <h2 class="text-sm font-bold text-gray-700 mt-4 mb-3">活跃用户 Top 10</h2>
-      <div id="top-users" class="space-y-2"></div>
-    </div>
-  </div>
+  <!-- Grid -->
+  <div class="grid">
+    <section class="panel span-7 reveal" style="animation-delay:.26s">
+      <div class="panel-head">
+        <span class="panel-eyebrow">Category Heat</span>
+        <h2 class="panel-title">风格分类热度</h2>
+      </div>
+      <div id="cat-stats" class="rows"></div>
 
-  <!-- AI 对话 -->
-  <div class="card" style="padding:0;">
-    <div class="px-5 pt-4 pb-2">
-      <h2 class="text-sm font-bold text-gray-700">AI 运营助手 · DeepSeek</h2>
-      <p class="text-xs text-gray-500 mt-1">基于实时用户行为数据，问任何运营问题</p>
-    </div>
-    <div class="chat-box" style="border:none; height:400px;">
-      <div class="chat-messages" id="chat-messages">
-        <div class="msg-ai">
-          <p>你好！我是 Vertex · 甲趣 AI 运营助手。我能实时读取用户行为日志，帮你分析 5 家门店的运营数据。</p>
-          <p><strong>5 家门店：</strong>Maison Pureté(简约) · Fleur Rosé(甜美) · Bijou Lumière(华丽) · Noir Atelier(暗黑) · L'Avant-Garde(前卫)</p>
-          <p>试试问我：</p>
-          <ul>
-            <li>「各风格分类的转化率对比」</li>
-            <li>「Bijou Lumière 的预约量是否异常？」</li>
-            <li>「给我一份今日运营简报和推荐策略」</li>
-          </ul>
+      <div class="panel-head">
+        <span class="panel-eyebrow">Top 10 Styles</span>
+        <h2 class="panel-title">热门款式</h2>
+      </div>
+      <div id="top-styles" class="rows"></div>
+    </section>
+
+    <section class="panel span-5 reveal" style="animation-delay:.30s">
+      <div class="panel-head">
+        <span class="panel-eyebrow">Shop Bookings</span>
+        <h2 class="panel-title">门店预约</h2>
+      </div>
+      <div id="top-shops" class="rows"></div>
+
+      <div class="panel-head">
+        <span class="panel-eyebrow">Top 10 Users</span>
+        <h2 class="panel-title">活跃用户</h2>
+      </div>
+      <div id="top-users" class="rows"></div>
+    </section>
+
+    <!-- AI Chat -->
+    <section class="panel chat-panel span-12 reveal" style="animation-delay:.34s">
+      <div class="chat-head">
+        <div>
+          <span class="panel-eyebrow">DeepSeek · Ops Assistant</span>
+          <h2 class="panel-title">AI 运营助手</h2>
+          <p class="chat-sub">基于实时用户行为数据,问任何运营问题</p>
+        </div>
+        <span class="live"><span class="live-dot"></span>Online</span>
+      </div>
+      <div class="chat-box">
+        <div class="chat-messages" id="chat-messages">
+          <div class="msg-ai">
+            <p>你好,我是 Vertex · 甲趣 AI 运营助手。我能实时读取用户行为日志,帮你分析 5 家门店的运营数据。</p>
+            <p><strong>5 家门店:</strong>Maison Pureté(简约) · Fleur Rosé(甜美) · Bijou Lumière(华丽) · Noir Atelier(暗黑) · L'Avant-Garde(前卫)</p>
+            <p>试试问我:</p>
+            <ul>
+              <li>各风格分类的转化率对比</li>
+              <li>Bijou Lumière 的预约量是否异常?</li>
+              <li>给我一份今日运营简报和推荐策略</li>
+            </ul>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <input type="text" id="chat-input" placeholder="问 AI 任何运营问题…" autocomplete="off">
+          <button id="chat-send" class="chat-send">发送</button>
         </div>
       </div>
-      <div class="chat-input-area">
-        <input type="text" id="chat-input" placeholder="问 AI 任何运营问题..." autocomplete="off">
-        <button id="chat-send">发送</button>
-      </div>
-    </div>
+    </section>
   </div>
-
 </div>
 
 <script>
 const $ = q => document.querySelector(q);
 
-// === 加载统计数据 ===
+const CAT_COLORS = { A:'#e8cdb0', B:'#cf9aa6', C:'#d4ab7c', D:'#9a7d8c', E:'#c98f76' };
+const SHOP_NAMES = {
+  shop_001:'Maison Pureté(三里屯)', shop_002:'Fleur Rosé(五道口)',
+  shop_003:'Bijou Lumière(国贸)', shop_004:'Noir Atelier(望京)',
+  shop_005:"L'Avant-Garde(中关村)"
+};
+const SHOP_STYLES = {
+  shop_001:'简约清透', shop_002:'甜美可爱', shop_003:'华丽璀璨',
+  shop_004:'暗黑酷飒', shop_005:'潮流前卫'
+};
+
+/* —— 数字滚动(easeOutCubic),刷新时从旧值平滑过渡 —— */
+function animateNum(el, to, { decimals = 0, unit = '', dur = 650 } = {}) {
+  const from = parseFloat(el.dataset.val || '0') || 0;
+  el.dataset.val = to;
+  const t0 = performance.now();
+  const unitHTML = unit ? `<span class="unit">${unit}</span>` : '';
+  const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  function tick(now) {
+    const p = Math.min(1, (now - t0) / dur);
+    const e = 1 - Math.pow(1 - p, 3);
+    const cur = from + (to - from) * e;
+    el.innerHTML = fmt(cur) + unitHTML;
+    if (p < 1) requestAnimationFrame(tick);
+    else el.innerHTML = fmt(+to) + unitHTML;
+  }
+  requestAnimationFrame(tick);
+}
+
+/* —— 离线预览用的样例数据(部署后由真实 /api/admin/stats 覆盖)—— */
+function demoStats() {
+  return {
+    total_tryons: 1284, total_success: 1192, total_likes: 706, total_books: 213, avg_latency_ms: 18400,
+    category_stats: [["B",412],["C",336],["A",268],["E",154],["D",114]],
+    category_names: { A:"简约清透", B:"甜美可爱", C:"华丽璀璨", D:"暗黑酷飒", E:"潮流前卫" },
+    top_styles: [["B_07",96],["C_03",88],["A_12",71],["B_15",64],["C_09",58],["E_02",47],["A_05",41],["D_08",33],["B_21",29],["E_11",22]],
+    like_rates: { B_07:82, C_03:77, A_12:69, B_15:74, C_09:61, E_02:58, A_05:66, D_08:49, B_21:71, E_11:55 },
+    top_shops: [["shop_003",140],["shop_002",74],["shop_001",52],["shop_005",41],["shop_004",28]],
+    top_users: [["小桃",58],["Luna",44],["阿may",39],["甜筒",31],["Vivi",27],["小满",24],["Coco",21],["阿哲",18],["糖糖",15],["Mia",12]]
+  };
+}
+
+function renderStats(d) {
+  animateNum($('#s-tryons'), d.total_tryons || 0);
+  const rate = d.total_tryons ? Math.round(d.total_success / d.total_tryons * 100) : 0;
+  animateNum($('#s-success-rate'), rate, { unit: '%' });
+  animateNum($('#s-likes'), d.total_likes || 0);
+  animateNum($('#s-books'), d.total_books || 0);
+  animateNum($('#s-latency'), (d.avg_latency_ms || 0) / 1000, { decimals: 1, unit: 's' });
+
+  // 风格分类热度
+  const maxCat = d.category_stats?.length ? d.category_stats[0][1] : 1;
+  $('#cat-stats').innerHTML = (d.category_stats || []).map(([cat, count]) => {
+    const w = Math.round(count / maxCat * 100);
+    const name = (d.category_names && d.category_names[cat]) || cat;
+    return `<div class="row">
+      <span class="cat-dot" style="background:${CAT_COLORS[cat] || 'var(--accent)'}"></span>
+      <span class="row-name fixed">${cat} · ${name}</span>
+      <span class="bar-track"><span class="bar" data-w="${w}"></span></span>
+      <span class="row-val">${count}</span>
+    </div>`;
+  }).join('');
+
+  // 热门款式
+  const maxStyle = d.top_styles?.length ? d.top_styles[0][1] : 1;
+  $('#top-styles').innerHTML = (d.top_styles || []).map(([sid, count], i) => {
+    const rate = d.like_rates && d.like_rates[sid] != null ? d.like_rates[sid] + '%' : '–';
+    const w = Math.round(count / maxStyle * 100);
+    return `<div class="row">
+      <span class="rank">${i + 1}</span>
+      <img class="thumb" src="/static/nails/${sid}.png" onerror="this.style.visibility='hidden'">
+      <span class="row-sid">${sid}</span>
+      <span class="bar-track"><span class="bar" data-w="${w}"></span></span>
+      <span class="row-val">${count}</span>
+      <span class="row-rate">${rate}</span>
+    </div>`;
+  }).join('');
+
+  // 门店预约(异常高亮)
+  const maxShop = d.top_shops?.length ? d.top_shops[0][1] : 1;
+  const avgShop = d.top_shops?.length ? d.top_shops.reduce((s, x) => s + x[1], 0) / d.top_shops.length : 0;
+  $('#top-shops').innerHTML = (d.top_shops || []).map(([sid, count]) => {
+    const w = Math.round(count / maxShop * 100);
+    const isWarn = count > avgShop * 2;
+    return `<div class="row">
+      <span class="row-name fixed" style="width:auto;flex:1">${SHOP_NAMES[sid] || sid}</span>
+      <span class="row-tag">${SHOP_STYLES[sid] || ''}</span>
+      <span class="bar-track"><span class="bar solo" data-w="${w}"></span></span>
+      <span class="row-val ${isWarn ? 'warn' : ''}">${count}${isWarn ? ' <span class="warn-tag">⚠</span>' : ''}</span>
+    </div>`;
+  }).join('');
+
+  // 活跃用户
+  $('#top-users').innerHTML = (d.top_users || []).map(([name, count], i) => `
+    <div class="row">
+      <span class="rank">${i + 1}</span>
+      <span class="row-name" style="flex:1">${name}</span>
+      <span class="row-sid" style="width:auto;color:var(--t-secondary)">${count} tryons</span>
+    </div>`).join('');
+
+  // 触发 bar 宽度动画
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.bar[data-w]').forEach(b => { b.style.width = b.dataset.w + '%'; });
+  });
+}
+
 async function loadStats() {
   try {
     const r = await fetch('/api/admin/stats');
-    const d = await r.json();
-
-    $('#s-tryons').textContent = d.total_tryons;
-    const rate = d.total_tryons ? Math.round(d.total_success / d.total_tryons * 100) : 0;
-    $('#s-success-rate').textContent = rate + '%';
-    $('#s-likes').textContent = d.total_likes;
-    $('#s-books').textContent = d.total_books;
-    $('#s-latency').textContent = (d.avg_latency_ms / 1000).toFixed(1) + 's';
-
-    // 风格分类
-    const catColors = {A:'#a7f3d0',B:'#fbcfe8',C:'#fde68a',D:'#9ca3af',E:'#93c5fd'};
-    const maxCat = d.category_stats.length ? d.category_stats[0][1] : 1;
-    $('#cat-stats').innerHTML = d.category_stats.map(([cat, count]) => {
-      const w = Math.round(count / maxCat * 100);
-      const name = d.category_names[cat] || cat;
-      return `<div class="flex items-center gap-2 text-sm">
-        <span class="w-20 text-gray-700 font-bold">${cat} ${name}</span>
-        <div class="flex-1"><div class="bar" style="width:${w}%;background:${catColors[cat]||'#ff6b9d'}"></div></div>
-        <span class="w-8 text-right text-gray-600">${count}</span>
-      </div>`;
-    }).join('');
-
-    // 热门款式
-    const maxCount = d.top_styles.length ? d.top_styles[0][1] : 1;
-    $('#top-styles').innerHTML = d.top_styles.map(([sid, count], i) => {
-      const likeRate = d.like_rates[sid] != null ? d.like_rates[sid] + '%' : '-';
-      const w = Math.round(count / maxCount * 100);
-      return `<div class="flex items-center gap-2 text-sm">
-        <span class="text-gray-400 w-5 text-right">${i+1}</span>
-        <img src="/static/nails/${sid}.png" style="width:28px;height:28px;object-fit:cover;border-radius:4px;border:1px solid #eee;" onerror="this.style.display='none'">
-        <span class="w-16 font-mono text-gray-600">${sid}</span>
-        <div class="flex-1"><div class="bar" style="width:${w}%"></div></div>
-        <span class="w-8 text-right text-gray-600">${count}</span>
-        <span class="w-12 text-right text-xs text-pink-500">${likeRate}</span>
-      </div>`;
-    }).join('');
-
-    // 门店预约
-    const shopNames = {shop_001:'Maison Pureté(三里屯)',shop_002:'Fleur Rosé(五道口)',shop_003:'Bijou Lumière(国贸)',shop_004:'Noir Atelier(望京)',shop_005:"L'Avant-Garde(中关村)"};
-    const shopStyles = {shop_001:'简约清透',shop_002:'甜美可爱',shop_003:'华丽璀璨',shop_004:'暗黑酷飒',shop_005:'潮流前卫'};
-    const maxShop = d.top_shops.length ? d.top_shops[0][1] : 1;
-    const avgShopBooks = d.top_shops.length ? d.top_shops.reduce((s,x)=>s+x[1],0) / d.top_shops.length : 0;
-    $('#top-shops').innerHTML = d.top_shops.map(([sid, count]) => {
-      const w = Math.round(count / maxShop * 100);
-      const warn = count > avgShopBooks * 2 ? ' shop-warn' : '';
-      return `<div class="flex items-center gap-2 text-sm">
-        <span class="w-40 text-gray-700 truncate">${shopNames[sid]||sid}</span>
-        <span class="w-16 text-xs text-gray-400">${shopStyles[sid]||''}</span>
-        <div class="flex-1"><div class="bar" style="width:${w}%"></div></div>
-        <span class="w-8 text-right${warn}">${count}${warn ? ' ⚠️' : ''}</span>
-      </div>`;
-    }).join('');
-
-    // 活跃用户
-    $('#top-users').innerHTML = d.top_users.map(([name, count], i) => {
-      return `<div class="flex items-center gap-2 text-sm">
-        <span class="text-gray-400 w-5 text-right">${i+1}</span>
-        <span class="flex-1 text-gray-700">${name}</span>
-        <span class="text-gray-500">${count} 次试戴</span>
-      </div>`;
-    }).join('');
-
-  } catch(e) {
-    console.error('Stats load failed:', e);
+    if (!r.ok) throw new Error('bad status');
+    renderStats(await r.json());
+  } catch (e) {
+    // 离线 / 未部署:用样例数据,先把质感看清楚
+    renderStats(demoStats());
   }
 }
 loadStats();
 setInterval(loadStats, 15000);
 
-// === AI 对话 ===
+/* ===== AI 对话 ===== */
 const chatMessages = $('#chat-messages');
 const chatInput = $('#chat-input');
 const chatSend = $('#chat-send');
 
 function renderMarkdown(text) {
   marked.setOptions({ breaks: true, gfm: true });
-  const html = marked.parse(text || '');
   const tmp = document.createElement('div');
-  tmp.innerHTML = html;
+  tmp.innerHTML = marked.parse(text || '');
   tmp.querySelectorAll('table').forEach(t => {
     const wrap = document.createElement('div');
     wrap.className = 'table-wrap';
@@ -400,24 +686,14 @@ function extractReplyText(reply) {
     return reply;
   }
   if (typeof reply === 'object') {
-    if (reply.result && Array.isArray(reply.result.payloads)) {
-      return reply.result.payloads
-        .map(p => (p && typeof p.text === 'string') ? p.text : '')
-        .filter(Boolean).join('\n\n');
-    }
-    if (Array.isArray(reply.payloads)) {
-      return reply.payloads
-        .map(p => (p && typeof p.text === 'string') ? p.text : '')
-        .filter(Boolean).join('\n\n');
-    }
-    if (Array.isArray(reply)) {
-      return reply
-        .map(p => (p && typeof p.text === 'string') ? p.text : '')
-        .filter(Boolean).join('\n\n');
-    }
-    for (const k of ['text', 'reply', 'message', 'content', 'output']) {
+    if (reply.result && Array.isArray(reply.result.payloads))
+      return reply.result.payloads.map(p => (p && typeof p.text === 'string') ? p.text : '').filter(Boolean).join('\n\n');
+    if (Array.isArray(reply.payloads))
+      return reply.payloads.map(p => (p && typeof p.text === 'string') ? p.text : '').filter(Boolean).join('\n\n');
+    if (Array.isArray(reply))
+      return reply.map(p => (p && typeof p.text === 'string') ? p.text : '').filter(Boolean).join('\n\n');
+    for (const k of ['text', 'reply', 'message', 'content', 'output'])
       if (typeof reply[k] === 'string') return reply[k];
-    }
     return '```json\n' + JSON.stringify(reply, null, 2) + '\n```';
   }
   return String(reply);
@@ -440,23 +716,23 @@ async function sendChat() {
   addMsg('user', msg);
   chatSend.disabled = true;
   const loading = addMsg('ai', '');
-  loading.innerHTML = '<span class="spinner-sm"></span> AI 正在分析数据...';
+  loading.innerHTML = '<span class="spinner-sm"></span>AI 正在分析数据…';
 
   try {
     const r = await fetch('/api/admin/chat', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({message: msg}),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg }),
     });
     const d = await r.json();
     if (d.error) throw new Error(d.error);
-    const cleanText = extractReplyText(d.reply !== undefined ? d.reply : d);
-    loading.innerHTML = renderMarkdown(cleanText);
-  } catch(e) {
-    loading.textContent = '出错了: ' + e.message;
+    loading.innerHTML = renderMarkdown(extractReplyText(d.reply !== undefined ? d.reply : d));
+  } catch (e) {
+    loading.innerHTML = renderMarkdown('**离线预览** — 当前页面未连接后端,所以无法真正分析数据。部署到 Hermes 服务后,这里会接入 `/api/admin/chat` 返回实时分析。\n\n> 错误信息: `' + e.message + '`');
   }
   chatSend.disabled = false;
   chatInput.focus();
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 chatSend.addEventListener('click', sendChat);

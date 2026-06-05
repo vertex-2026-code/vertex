@@ -5,357 +5,1270 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#160b10">
 <title>Vertex · 甲趣 AI 美甲试戴</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Noto+Serif+SC:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
 <style>
-  * { -webkit-tap-highlight-color: transparent; }
+  /* ============================================================
+     Vertex 甲趣 · C 端试戴 — 与 admin v2 同源 Bordeaux + 香槟金
+     设计 token 直接照搬 admin.html :root，新增 --stage 中性展台。
+     ============================================================ */
+
+  :root {
+    --bg:        #160b10;
+    --mid:       #f1dccf;
+    --warm-glow: rgba(212, 171, 124, 0.26);
+    --accent:    #d4ab7c;
+    --rose:      #c0808f;
+    --gold:      #d4ab7c;
+
+    --card:     color-mix(in srgb, var(--mid) 4%,  var(--bg));
+    --elevated: color-mix(in srgb, var(--mid) 7%,  var(--bg));
+    --muted:    color-mix(in srgb, var(--mid) 9%,  var(--bg));
+    --hover:    color-mix(in srgb, var(--mid) 6%,  transparent);
+    --border:   color-mix(in srgb, var(--mid) 12%, transparent);
+    --hairline: color-mix(in srgb, var(--mid) 7%,  transparent);
+    --input:    color-mix(in srgb, var(--mid) 6%,  var(--bg));
+
+    --t-primary:   var(--mid);
+    --t-secondary: color-mix(in srgb, var(--mid) 66%, transparent);
+    --t-tertiary:  color-mix(in srgb, var(--mid) 42%, transparent);
+
+    --font-display: "Fraunces", "Noto Serif SC", "Songti SC", "PingFang SC", serif;
+    --font-body:    "Fraunces", "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
+    --font-mono:    "DM Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+
+    --radius:    1rem;
+    --radius-sm: 0.625rem;
+
+    /* —— C 端新增：中性展台。展示用户手图 / 试戴结果时不受暖调污染。 */
+    --stage:      #141316;
+    --stage-line: rgba(255, 255, 255, 0.10);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { font-size: 15px; }
+
   body {
-    font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
-    background: linear-gradient(135deg, #fff5f7 0%, #ffe5ec 50%, #ffd6e0 100%);
+    margin: 0;
     min-height: 100vh;
+    background: var(--bg);
+    color: var(--t-primary);
+    font-family: var(--font-body);
+    line-height: 1.55;
+    letter-spacing: 0.005em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
   }
-  .gradient-text {
-    background: linear-gradient(135deg, #d4356b 0%, #ff6b9d 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+
+  button { font-family: inherit; color: inherit; }
+  input { font-family: inherit; }
+
+  /* ===== Backdrop：三层 fixed（与 admin v2 同源） ===== */
+  .bd { position: fixed; inset: 0; pointer-events: none; }
+  .bd-vignette {
+    z-index: -3;
+    background:
+      radial-gradient(120% 90% at 50% -10%,
+        color-mix(in srgb, var(--mid) 5%, transparent) 0%, transparent 55%),
+      radial-gradient(140% 120% at 50% 120%,
+        #000 0%, transparent 60%);
+    opacity: 0.9;
   }
-  .btn-primary {
-    background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
-    box-shadow: 0 8px 24px rgba(255, 107, 157, 0.35);
-    transition: transform 0.1s;
+  .bd-glow {
+    z-index: -2;
+    background:
+      radial-gradient(ellipse at 0% 0%, transparent 56%, var(--warm-glow) 100%),
+      radial-gradient(ellipse 70% 50% at 100% 100%, transparent 60%, rgba(192,128,143,0.14) 100%);
+    mix-blend-mode: lighten;
+    opacity: 0.32;
   }
-  .btn-primary:active:not(:disabled) { transform: scale(0.97); }
-  .btn-primary:disabled {
-    background: #e5e7eb;
-    color: #9ca3af;
-    box-shadow: none;
+  .bd-noise {
+    z-index: -1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%23dcc4a8' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+    background-size: 440px 440px;
+    mix-blend-mode: color-dodge;
+    opacity: 0.26;
   }
+
+  /* ===== Shell（移动端宽度） ===== */
+  .shell {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 22px 18px 120px;
+  }
+
+  /* ===== Topbar ===== */
+  .topbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.75rem;
+    letter-spacing: 0;
+    line-height: 1.05;
+    color: var(--t-primary);
+    margin: 0;
+  }
+  .wordmark .dot { color: var(--accent); font-weight: 400; }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.26em;
+    color: var(--t-tertiary);
+    margin-top: 8px;
+  }
+  .user-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--t-secondary);
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  /* ===== Tabs（主页/广场） ===== */
+  .main-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
+  }
+  .main-tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 9px 12px;
+    border-radius: 7px;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--t-secondary);
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+  }
+  .main-tab.active {
+    background: var(--elevated);
+    color: var(--t-primary);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 22%, transparent) inset;
+  }
+
+  /* ===== Panel ===== */
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 18px 20px;
+    position: relative;
+    margin-bottom: 14px;
+  }
+  .panel::before {
+    content: ''; position: absolute; inset: 0 0 auto 0; height: 1px;
+    background: linear-gradient(90deg, transparent,
+      color-mix(in srgb, var(--accent) 30%, transparent) 50%, transparent);
+  }
+  .panel-head {
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .panel-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.24em;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .panel-title {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 1.05rem;
+    letter-spacing: 0.005em;
+    color: var(--t-primary);
+    margin: 0;
+  }
+
+  /* ===== Stage：中性展台（铁律一） ===== */
+  .stage {
+    background: var(--stage);
+    border: 1px solid var(--stage-line);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ===== Step 1: 手图上传 ===== */
+  .hand-label { display: block; cursor: pointer; }
+  .hand-preview {
+    min-height: 160px;
+    padding: 28px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: border-color 0.18s, background 0.18s;
+  }
+  .hand-preview .hand-icon {
+    font-size: 36px;
+    color: var(--t-tertiary);
+    margin-bottom: 10px;
+  }
+  .hand-preview .hand-hint {
+    font-family: var(--font-display);
+    font-size: 14px;
+    color: var(--t-primary);
+    margin: 0 0 4px;
+  }
+  .hand-preview .hand-sub {
+    font-size: 11px;
+    color: var(--t-tertiary);
+    margin: 0;
+  }
+  .hand-preview.has-image {
+    padding: 10px;
+    background: var(--stage);
+  }
+  .hand-preview img.hand-image {
+    width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+    border-radius: 8px;
+    display: block;
+  }
+  .hand-loaded-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin: 8px 0 2px;
+    text-align: center;
+  }
+  .hand-loaded-hint {
+    font-size: 10px;
+    color: var(--t-tertiary);
+    margin: 0;
+    text-align: center;
+  }
+
+  /* ===== Step 2: 分类 + 款式网格 ===== */
+  .cat-tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    scrollbar-width: none;
+  }
+  .cat-tabs::-webkit-scrollbar { display: none; }
+  .cat-tab {
+    flex-shrink: 0;
+    padding: 6px 13px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--t-secondary);
+    background: transparent;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.18s, border-color 0.18s, background 0.18s;
+  }
+  .cat-tab.active {
+    color: var(--bg);
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .styles-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    max-height: 56vh;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+  .styles-grid::-webkit-scrollbar { width: 4px; }
+  .styles-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
   .style-card {
-    transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
-    border: 3px solid transparent;
+    position: relative;
+    aspect-ratio: 1 / 1;
+    min-width: 0;
+    min-height: 0;
+    background: var(--stage);
+    border: 1px solid var(--stage-line);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.18s, box-shadow 0.18s;
   }
+  /* img 绝对定位脱离 normal flow，防止 intrinsic 尺寸撑大 grid row、压垮 aspect-ratio */
+  .style-card > img {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .style-card:active { transform: scale(0.96); }
   .style-card.selected {
-    border-color: #ff6b9d;
-    transform: scale(1.05);
-    box-shadow: 0 8px 20px rgba(255, 107, 157, 0.4);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 6px 18px color-mix(in srgb, var(--accent) 26%, transparent);
+    transform: scale(1.02);
   }
-  .style-card:active { transform: scale(0.94); }
-  .style-card.selected:active { transform: scale(1.02); }
-  .upload-tile {
-    background: linear-gradient(135deg, #fff0f5 0%, #ffe5ec 100%);
-    border: 2px dashed #ff8fab;
+  .style-card.selected:active { transform: scale(0.99); }
+
+  .custom-tile {
+    background: color-mix(in srgb, var(--accent) 8%, var(--card));
+    border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .upload-tile.has-image {
+  .custom-tile-content {
+    text-align: center;
+    color: var(--accent);
+    padding: 4px;
+  }
+  .custom-tile-content i {
+    font-size: 22px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .custom-tile-content .label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    line-height: 1.3;
+  }
+  .custom-tile.has-image {
     border-style: solid;
-    background: white;
+    background: var(--stage);
   }
-  @keyframes pulse-pink {
-    0%, 100% { box-shadow: 0 8px 24px rgba(255, 107, 157, 0.35), 0 0 0 0 rgba(255, 107, 157, 0.6); }
-    50%      { box-shadow: 0 8px 24px rgba(255, 107, 157, 0.35), 0 0 0 16px rgba(255, 107, 157, 0); }
+  .custom-tile.has-image .custom-tag {
+    position: absolute;
+    bottom: 4px; left: 50%; transform: translateX(-50%);
+    background: var(--bg);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
   }
-  .pulse { animation: pulse-pink 2s infinite; }
-  .spinner {
-    width: 56px; height: 56px;
-    border: 5px solid rgba(255, 107, 157, 0.2);
-    border-top-color: #ff6b9d;
+
+  /* —— 心形按钮（铁律二：Tabler ti-heart / ti-heart-filled + 香槟金回弹） —— */
+  .fav-heart {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 28px; height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, #000 50%, transparent);
+    border: 1px solid var(--border);
     border-radius: 50%;
-    animation: spin 0.9s linear infinite;
+    color: var(--t-secondary);
+    font-size: 15px;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: color 0.18s, border-color 0.18s, background 0.18s;
+    z-index: 2;
+    line-height: 1;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  .fade-in { animation: fadeIn 0.2s; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .step-num {
-    background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
-    color: white;
-    width: 26px; height: 26px;
-    border-radius: 50%;
+  .fav-heart:hover { color: var(--accent); }
+  .fav-heart.liked {
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  }
+  @keyframes heart-pop {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+  .fav-heart.popping { animation: heart-pop 0.32s cubic-bezier(0.16, 1, 0.3, 1); }
+
+  .empty-line {
+    color: var(--t-tertiary);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-align: center;
+    padding: 20px 0;
+    margin: 0;
+  }
+  #styles-loading { grid-column: span 2; }
+
+  /* ===== Bottom CTA（铁律三：主按钮香槟金实底） ===== */
+  .bottom-bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, transparent 0%, var(--bg) 30%, var(--bg) 100%);
+    z-index: 40;
+  }
+  .bottom-bar-inner { max-width: 480px; margin: 0 auto; }
+
+  /* ===== Buttons ===== */
+  .btn-primary, .btn-secondary, .btn-ghost {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: transform 0.12s, background 0.18s, border-color 0.18s, color 0.18s, opacity 0.18s;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid transparent;
   }
-  .cat-tab {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
   }
-  .cat-tab.active {
-    background: linear-gradient(135deg, #ff6b9d, #ff8fab);
-    color: white;
+  .btn-primary:hover:not(:disabled) { background: var(--mid); }
+  .btn-primary:active:not(:disabled) { transform: translateY(1px); }
+  .btn-primary:disabled {
+    background: var(--muted);
+    color: var(--t-tertiary);
+    cursor: not-allowed;
   }
-  .cat-tab:not(.active) {
-    background: #fce7f3;
-    color: #9d174d;
+  .btn-secondary {
+    background: transparent;
+    color: var(--t-primary);
+    border-color: var(--border);
   }
-  /* 结果图：保持原图比例 + 占满弹窗宽度 */
-  #result-img {
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--hover);
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  .btn-secondary:active:not(:disabled) { transform: translateY(1px); }
+  .btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--t-tertiary);
+    border-color: transparent;
+    min-height: 36px;
+    padding: 0 12px;
+  }
+  .btn-ghost:hover { color: var(--accent); }
+
+  .btn-full { width: 100%; }
+  .btn-icon-only { padding: 0; width: 36px; min-height: 36px; gap: 0; }
+  .btn-icon-only i { font-size: 18px; }
+  .btn i { font-size: 16px; }
+  .btn-primary i, .btn-secondary i { font-size: 16px; }
+
+  .tryon-btn {
     width: 100%;
-    height: auto;
-    max-height: 70vh;
-    object-fit: contain;
-    background: #ffe5ec;
+    min-height: 52px;
+    font-size: 12px;
+    letter-spacing: 0.22em;
   }
-  .my-tab {
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
+  .tryon-btn:not(:disabled) {
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 24%, transparent),
+                0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent) inset;
   }
-  .my-tab.active {
-    background: linear-gradient(135deg, #ff6b9d, #ff8fab);
-    color: white;
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 24%, transparent),
+                           0 0 0 0 color-mix(in srgb, var(--accent) 35%, transparent); }
+    50%      { box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 32%, transparent),
+                           0 0 0 8px color-mix(in srgb, var(--accent) 0%, transparent); }
   }
-  .my-tab:not(.active) {
-    background: #fce7f3;
-    color: #9d174d;
-  }
-  .history-thumb {
-    border-radius: 12px;
-    aspect-ratio: 1;
-    object-fit: cover;
-    cursor: pointer;
-    transition: transform 0.1s;
-  }
-  .history-thumb:active { transform: scale(0.95); }
-  .fav-card {
-    background: #fff5f7;
-    border-radius: 16px;
-    padding: 12px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-  .fav-card img {
-    width: 56px; height: 56px;
-    border-radius: 12px;
-    object-fit: cover;
-    flex-shrink: 0;
-  }
-  .fav-heart {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 24px; height: 24px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.85);
+  .tryon-btn:not(:disabled) { animation: glow-pulse 2.6s ease-in-out infinite; }
+
+  /* ===== Modal overlay ===== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 100;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
-    line-height: 1;
-    z-index: 2;
-    cursor: pointer;
-    transition: transform 0.15s;
+    padding: 16px;
+    animation: overlay-in 0.22s ease-out;
   }
-  .fav-heart:active { transform: scale(1.3); }
-  .fav-heart.liked { background: #ff6b9d; color: white; }
-  .main-tab { background: #fce7f3; color: #9d174d; }
-  .main-tab.active { background: linear-gradient(135deg, #ff6b9d, #ff8fab); color: white; }
-  .plaza-card { border-radius: 16px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-  .plaza-card img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+  .modal-overlay.hidden { display: none; }
+  @keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 20px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+    animation: panel-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .modal-panel::before {
+    content: ''; position: absolute; inset: 0 0 auto 0; height: 1px;
+    background: linear-gradient(90deg, transparent,
+      color-mix(in srgb, var(--accent) 40%, transparent) 50%, transparent);
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  @keyframes panel-in {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to   { opacity: 1; transform: none; }
+  }
+  .modal-head {
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .modal-head-text { flex: 1; }
+  .modal-title {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 1.2rem;
+    margin: 4px 0 0;
+    color: var(--t-primary);
+  }
+  .modal-sub {
+    font-size: 12px;
+    color: var(--t-secondary);
+    margin: 6px 0 0;
+  }
+
+  /* ===== 登录遮罩 ===== */
+  .login-gate {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 120;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .login-gate.hidden { display: none; }
+  .login-inner {
+    text-align: center;
+    width: 100%;
+    max-width: 320px;
+    animation: panel-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .login-inner .wordmark { font-size: 2.4rem; }
+  .login-inner .eyebrow { margin-top: 12px; margin-bottom: 36px; }
+  .login-input {
+    width: 100%;
+    background: var(--input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 13px 16px;
+    color: var(--t-primary);
+    font-family: var(--font-body);
+    font-size: 15px;
+    outline: none;
+    text-align: center;
+    transition: border-color 0.18s, box-shadow 0.18s;
+    margin-bottom: 8px;
+  }
+  .login-input::placeholder { color: var(--t-tertiary); }
+  .login-input:focus {
+    border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .login-hint {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    min-height: 14px;
+    margin: 0 0 16px;
+  }
+  .login-footer {
+    margin-top: 22px;
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--t-tertiary);
+  }
+
+  /* ===== 手图确认弹窗 ===== */
+  .confirm-title {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    color: var(--t-primary);
+    margin: 0 0 6px;
+    text-align: center;
+  }
+  .confirm-msg {
+    font-size: 13px;
+    color: var(--t-secondary);
+    margin: 0 0 18px;
+    text-align: center;
+    white-space: pre-line;
+  }
+  .confirm-actions { display: flex; gap: 10px; }
+  .confirm-actions .btn-primary,
+  .confirm-actions .btn-secondary { flex: 1; }
+
+  /* ===== Loading ===== */
+  .loading-panel {
+    max-width: 280px;
+    text-align: center;
+    padding: 32px 24px;
+  }
+  .spinner {
+    width: 44px; height: 44px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.85s linear infinite;
+    margin: 0 auto 18px;
+  }
+  .spinner-sm {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.85s linear infinite;
+    display: inline-block;
+    vertical-align: -2px;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: var(--t-primary);
+    margin: 0 0 6px;
+  }
+  .loading-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--t-tertiary);
+    margin: 0;
+  }
+
+  /* ===== 结果弹层 ===== */
+  .result-stage {
+    margin-bottom: 16px;
+    padding: 8px;
+  }
+  .result-stage img {
+    width: 100%;
+    max-height: 56vh;
+    object-fit: contain;
+    border-radius: 8px;
+    display: block;
+  }
+  .feedback-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .feedback-btn { font-family: var(--font-mono); }
+  .feedback-btn[data-action="like"].liked {
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .result-actions > * { margin-bottom: 10px; }
+  .result-actions .btn-ghost { width: 100%; margin-top: 4px; }
+
+  /* ===== 门店列表 ===== */
+  .shop-card {
+    background: var(--elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: background 0.18s, border-color 0.18s;
+  }
+  .shop-card:hover, .shop-card:active {
+    background: var(--hover);
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  .shop-card-main { flex: 1; min-width: 0; }
+  .shop-name {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--t-primary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .shop-meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--t-secondary);
+    margin-top: 4px;
+  }
+  .shop-meta i { color: var(--accent); font-size: 13px; }
+  .shop-desc {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    margin-top: 4px;
+  }
+  .shop-book-btn {
+    flex-shrink: 0;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+  }
+  .shop-card:hover .shop-book-btn {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  /* ===== 我的弹层 ===== */
+  .my-panel { max-width: 460px; }
+  .my-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .my-head .modal-title { margin-top: 0; }
+  .my-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    background: var(--input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
+  }
+  .my-tab {
+    flex: 1;
+    text-align: center;
+    padding: 7px 8px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--t-secondary);
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+    user-select: none;
+  }
+  .my-tab.active {
+    background: var(--elevated);
+    color: var(--accent);
+  }
+  .my-tab-content.hidden { display: none; }
+
+  .history-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .history-thumb {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+    background: var(--stage);
+    border: 1px solid var(--stage-line);
+    cursor: pointer;
+    transition: transform 0.18s, border-color 0.18s;
+  }
+  .history-thumb:hover { border-color: var(--accent); }
+  .history-thumb:active { transform: scale(0.97); }
+
+  .fav-card {
+    background: var(--elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .fav-card img {
+    width: 52px; height: 52px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: var(--stage);
+    flex-shrink: 0;
+  }
+  .fav-placeholder {
+    width: 52px; height: 52px;
+    border-radius: 8px;
+    background: var(--stage);
+    border: 1px solid var(--stage-line);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--t-tertiary);
+  }
+  .fav-info { flex: 1; min-width: 0; }
+  .fav-id {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--t-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .fav-shop {
+    font-size: 11px;
+    color: var(--t-secondary);
+    margin-top: 2px;
+  }
+  .fav-time {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--t-tertiary);
+    margin-top: 2px;
+    letter-spacing: 0.06em;
+  }
+  .unfav-btn {
+    flex-shrink: 0;
+    background: transparent;
+    color: var(--t-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.18s, border-color 0.18s;
+  }
+  .unfav-btn:hover { color: var(--rose); border-color: var(--rose); }
+
+  .hand-original-img {
+    width: 100%;
+    max-height: 60vh;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+    background: var(--stage);
+    border: 1px solid var(--stage-line);
+    margin-bottom: 8px;
+  }
+  .hand-original-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--t-tertiary);
+    text-align: center;
+    margin: 0;
+  }
+
+  /* ===== 广场 ===== */
+  .plaza-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .plaza-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .plaza-card img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+    background: var(--stage);
+  }
+  .plaza-meta { padding: 8px 10px 10px; }
+  .plaza-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .plaza-user {
+    font-family: var(--font-display);
+    font-size: 12px;
+    color: var(--t-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .plaza-like-btn {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    margin: -4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    cursor: pointer;
+    line-height: 1;
+  }
+  .plaza-like-btn i { font-size: 13px; }
+  .plaza-caption {
+    font-size: 11px;
+    color: var(--t-secondary);
+    margin: 4px 0 0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .plaza-time {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--t-tertiary);
+    margin: 4px 0 0;
+  }
+
+  /* ===== Toast ===== */
+  #toast-root {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--elevated);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+    border-radius: var(--radius-sm);
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--t-primary);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    animation: toast-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: auto;
+    max-width: 340px;
+    text-align: center;
+  }
+  .toast::before {
+    content: ''; display: block; height: 1px; margin: -10px -16px 8px;
+    background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
+  }
+  .toast.leaving { animation: toast-out 0.22s ease-in forwards; }
+  @keyframes toast-in  { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+  @keyframes toast-out { to   { opacity: 0; transform: translateY(-8px); } }
+
+  /* ===== Reveal 入场 ===== */
+  .reveal { opacity: 0; transform: translateY(8px); animation: reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  @keyframes reveal { to { opacity: 1; transform: none; } }
+  .reveal.delay-1 { animation-delay: 0.06s; }
+  .reveal.delay-2 { animation-delay: 0.12s; }
+  .reveal.delay-3 { animation-delay: 0.18s; }
+
+  /* ===== 通用 ===== */
+  .hidden { display: none !important; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  /* ===== 响应式（小屏） ===== */
+  @media (max-width: 380px) {
+    html { font-size: 14px; }
+    .panel { padding: 16px 14px 18px; }
+    .modal-panel { padding: 20px 16px; }
+    .styles-grid { gap: 6px; }
+    .login-inner .wordmark { font-size: 2.1rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, .modal-panel, .modal-overlay, .toast,
+    .fav-heart.popping, .tryon-btn:not(:disabled) {
+      animation: none !important;
+      transition: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
 </style>
 </head>
 <body>
 
-<!-- 登录遮罩 -->
-<div id="login-gate" class="fixed inset-0 z-[100] flex items-center justify-center" style="background: linear-gradient(135deg, #fff5f7 0%, #ffe5ec 50%, #ffd6e0 100%);">
-  <div class="text-center px-8 w-full max-w-xs">
-    <h1 class="text-4xl font-black gradient-text tracking-tight mb-2">Vertex · 甲趣</h1>
-    <p class="text-xs text-gray-500 mb-8 tracking-wider">AI · 美甲一秒上身</p>
-    <input type="text" id="uid-input" maxlength="20"
-      placeholder="输入你的名字"
-      class="w-full border-2 border-pink-200 focus:border-pink-400 rounded-xl px-4 py-3 text-sm outline-none transition bg-white/80 placeholder-gray-400 text-center mb-3">
-    <p id="uid-hint" class="text-[10px] text-gray-400 mb-4"></p>
-    <button id="login-btn" class="btn-primary text-white font-bold py-3 rounded-2xl w-full text-base">
-      进入
-    </button>
-    <p class="text-[10px] text-gray-400 mt-4 leading-relaxed">第一次来？输入一个你喜欢的名字<br>下次用同样的名字就能找回你的记录</p>
+<div class="bd bd-vignette"></div>
+<div class="bd bd-glow"></div>
+<div class="bd bd-noise"></div>
+
+<!-- ============= 登录遮罩 ============= -->
+<div id="login-gate" class="login-gate">
+  <div class="login-inner">
+    <h1 class="wordmark">Vertex<span class="dot"> · </span>甲趣</h1>
+    <div class="eyebrow">AI · NAIL TRY-ON</div>
+    <input type="text" id="uid-input" maxlength="20" class="login-input" placeholder="输入你的名字" autocomplete="off">
+    <p id="uid-hint" class="login-hint"></p>
+    <button id="login-btn" class="btn-primary btn-full">进入</button>
+    <p class="login-footer">第一次来？输入一个你喜欢的名字<br>下次用同样的名字就能找回你的记录</p>
   </div>
 </div>
 
-<!-- 手图加载确认弹窗 -->
-<div id="hand-confirm" class="fixed inset-0 z-[101] bg-black/40 backdrop-blur-sm hidden items-center justify-center">
-  <div class="bg-white rounded-3xl p-6 mx-6 max-w-xs w-full text-center fade-in">
-    <p class="text-sm font-bold text-gray-700 mb-1">欢迎回来！</p>
-    <p id="hand-confirm-msg" class="text-xs text-gray-500 mb-4"></p>
-    <div class="flex gap-2">
-      <button id="hand-confirm-skip" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl text-sm font-bold active:bg-gray-200">跳过</button>
-      <button id="hand-confirm-load" class="flex-1 btn-primary text-white py-3 rounded-xl text-sm font-bold">加载</button>
+<!-- ============= 手图加载确认 ============= -->
+<div id="hand-confirm" class="modal-overlay hidden">
+  <div class="modal-panel" style="max-width: 340px;">
+    <p class="confirm-title">欢迎回来</p>
+    <p id="hand-confirm-msg" class="confirm-msg"></p>
+    <div class="confirm-actions">
+      <button id="hand-confirm-skip" class="btn-secondary">跳过</button>
+      <button id="hand-confirm-load" class="btn-primary">加载</button>
     </div>
   </div>
 </div>
 
-<div class="max-w-md mx-auto px-4 py-5 pb-32">
+<!-- ============= Shell ============= -->
+<div class="shell">
 
-  <header class="text-center mb-5">
-    <div class="flex items-center justify-between">
-      <div class="w-14"></div>
-      <div class="text-center flex-1">
-        <h1 class="text-4xl font-black gradient-text tracking-tight">Vertex · 甲趣</h1>
-        <p class="text-xs text-gray-500 mt-1 tracking-wider">AI · 美甲一秒上身</p>
-      </div>
-      <button id="my-btn" class="bg-pink-100 text-pink-500 px-3 py-2 rounded-xl text-xs font-bold shrink-0 transition active:scale-95 w-14">
-        我的
-      </button>
+  <!-- Topbar -->
+  <header class="topbar reveal">
+    <div>
+      <h1 class="wordmark">Vertex<span class="dot"> · </span>甲趣</h1>
+      <div class="eyebrow">AI · NAIL TRY-ON</div>
     </div>
-    <div id="user-badge" class="hidden text-xs text-pink-400 mt-2 font-bold"></div>
+    <button id="my-btn" class="btn-secondary" style="min-height:38px;padding:0 14px;">我的</button>
   </header>
 
-  <!-- 主页/广场 切换 -->
-  <div class="flex gap-2 mb-3">
-    <button class="main-tab active flex-1 py-2 rounded-xl text-sm font-bold text-center transition" data-tab="home">试戴</button>
-    <button class="main-tab flex-1 py-2 rounded-xl text-sm font-bold text-center transition" data-tab="plaza">广场</button>
+  <div id="user-badge" class="user-badge hidden"></div>
+
+  <!-- 主页/广场 tab -->
+  <div class="main-tabs reveal delay-1">
+    <button class="main-tab active" data-tab="home">试戴</button>
+    <button class="main-tab" data-tab="plaza">广场</button>
   </div>
 
   <!-- 广场 feed -->
-  <div id="plaza-section" class="hidden mb-3">
-    <div id="plaza-feed" class="grid grid-cols-2 gap-2"></div>
-    <p id="plaza-empty" class="text-center text-gray-400 text-sm py-8 hidden">还没有人分享</p>
+  <div id="plaza-section" class="hidden">
+    <div id="plaza-feed" class="plaza-grid"></div>
+    <p id="plaza-empty" class="empty-line hidden">还没有人分享</p>
   </div>
 
-  <!-- 试戴区域 -->
+  <!-- 试戴主页 -->
   <div id="home-section">
-  <!-- 步骤 1: 上传手部 -->
-  <section class="bg-white/80 backdrop-blur rounded-3xl p-5 shadow-sm mb-3 slide-up">
-    <h2 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-      <span class="step-num">1</span><span>上传你的手部照片</span>
-    </h2>
-    <label class="block">
-      <input type="file" accept="image/*" id="hand-input" class="hidden">
-      <div id="hand-preview" class="border-2 border-dashed border-pink-200 rounded-2xl text-center cursor-pointer hover:bg-pink-50/50 active:bg-pink-50 transition py-10">
-        <svg class="w-10 h-10 mx-auto text-pink-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        <p class="text-gray-500 text-sm font-medium">点这里拍照或选图</p>
-        <p class="text-gray-400 text-xs mt-1">五指张开 · 光线均匀效果最好</p>
-      </div>
-    </label>
-  </section>
 
-  <!-- 步骤 2: 选款式 -->
-  <section class="bg-white/80 backdrop-blur rounded-3xl p-5 shadow-sm mb-3 slide-up">
-    <h2 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-      <span class="step-num">2</span><span>选款式 · 或自己上传一张</span>
-    </h2>
-    <div id="cat-tabs" class="flex gap-1.5 mb-3 overflow-x-auto pb-1">
-      <span class="cat-tab active" data-cat="all">全部</span>
-      <span class="cat-tab" data-cat="A">Pureté</span>
-      <span class="cat-tab" data-cat="B">Rosé</span>
-      <span class="cat-tab" data-cat="C">Lumière</span>
-      <span class="cat-tab" data-cat="D">Noir</span>
-      <span class="cat-tab" data-cat="E">Avant-Garde</span>
-    </div>
-    <div id="styles-grid" class="grid grid-cols-3 gap-2 max-h-[60vh] overflow-y-auto">
-      <!-- 第一格：上传自定义款式 -->
-      <label class="style-card upload-tile rounded-xl overflow-hidden cursor-pointer relative aspect-square flex flex-col items-center justify-center" data-id="__custom__" id="custom-tile">
-        <input type="file" accept="image/*" id="custom-style-input" class="hidden">
-        <div id="custom-tile-content" class="text-center px-1">
-          <svg class="w-7 h-7 mx-auto text-pink-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-          <div class="text-[10px] font-bold text-pink-500 leading-tight">上传<br>自定义</div>
+    <!-- Step 1: 上传手部 -->
+    <section class="panel reveal delay-2">
+      <div class="panel-head">
+        <span class="panel-eyebrow">Step 01</span>
+        <h2 class="panel-title">上传你的手部照片</h2>
+      </div>
+      <label class="hand-label">
+        <input type="file" accept="image/*" id="hand-input" class="hidden">
+        <div id="hand-preview" class="hand-preview stage">
+          <i class="ti ti-photo-plus hand-icon" aria-hidden="true"></i>
+          <p class="hand-hint">点这里拍照或选图</p>
+          <p class="hand-sub">五指张开 · 光线均匀效果最好</p>
         </div>
       </label>
-      <!-- 25 个预设由 JS 注入 -->
-      <div class="text-center text-gray-400 col-span-2 py-4 text-sm" id="styles-loading">加载款式中...</div>
-    </div>
-  </section>
+    </section>
+
+    <!-- Step 2: 选款式 -->
+    <section class="panel reveal delay-3">
+      <div class="panel-head">
+        <span class="panel-eyebrow">Step 02</span>
+        <h2 class="panel-title">选款式 · 或上传一张</h2>
+      </div>
+      <div id="cat-tabs" class="cat-tabs">
+        <span class="cat-tab active" data-cat="all">全部</span>
+        <span class="cat-tab" data-cat="A">Pureté</span>
+        <span class="cat-tab" data-cat="B">Rosé</span>
+        <span class="cat-tab" data-cat="C">Lumière</span>
+        <span class="cat-tab" data-cat="D">Noir</span>
+        <span class="cat-tab" data-cat="E">Avant-Garde</span>
+      </div>
+      <div id="styles-grid" class="styles-grid">
+        <label class="style-card custom-tile" data-id="__custom__" id="custom-tile">
+          <input type="file" accept="image/*" id="custom-style-input" class="hidden">
+          <div id="custom-tile-content" class="custom-tile-content">
+            <i class="ti ti-plus" aria-hidden="true"></i>
+            <div class="label">上传<br>自定义</div>
+          </div>
+        </label>
+        <p id="styles-loading" class="empty-line">加载款式中...</p>
+      </div>
+    </section>
+
   </div><!-- /home-section -->
-</div>
+</div><!-- /shell -->
 
-<!-- 底部固定按钮 -->
-<div class="fixed bottom-0 inset-x-0 bg-gradient-to-t from-pink-50 via-pink-50 to-transparent pt-6 pb-5 px-4">
-  <div class="max-w-md mx-auto">
-    <button id="tryon-btn" class="btn-primary text-white font-bold py-4 rounded-2xl w-full text-base pulse" disabled>
-      ✨ 开始 AI 试戴
-    </button>
+<!-- ============= 底部固定 CTA ============= -->
+<div class="bottom-bar">
+  <div class="bottom-bar-inner">
+    <button id="tryon-btn" class="btn-primary tryon-btn" disabled>开始 AI 试戴</button>
   </div>
 </div>
 
-<!-- Loading -->
-<div id="loading-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden items-center justify-center z-50">
-  <div class="bg-white rounded-3xl p-8 text-center mx-4 fade-in min-w-[260px]">
-    <div class="spinner mx-auto mb-4"></div>
-    <p class="text-gray-800 font-bold">AI 正在为你试戴...</p>
-    <p class="text-gray-400 text-xs mt-2"><span id="loading-elapsed">0</span> 秒 · 通常 15-25 秒</p>
+<!-- ============= Loading ============= -->
+<div id="loading-overlay" class="modal-overlay hidden">
+  <div class="modal-panel loading-panel">
+    <div class="spinner"></div>
+    <p class="loading-title">AI 正在为你试戴</p>
+    <p class="loading-meta"><span id="loading-elapsed">0</span> SEC · TYPICALLY 15–25</p>
   </div>
 </div>
 
-<!-- 结果弹层 -->
-<div id="result-overlay" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center z-50 p-3">
-  <div class="bg-white rounded-3xl p-4 max-w-sm w-full max-h-[95vh] overflow-y-auto fade-in">
-    <h2 class="text-center text-lg font-black gradient-text mb-3">✨ 试戴完成</h2>
-    <img id="result-img" class="rounded-2xl mb-4">
-    <div class="grid grid-cols-2 gap-2.5 mb-2.5">
-      <button data-action="like" class="feedback-btn bg-pink-100 active:bg-pink-200 text-pink-600 py-3 rounded-xl font-bold text-sm">😍 喜欢</button>
-      <button data-action="dislike" class="feedback-btn bg-gray-100 active:bg-gray-200 text-gray-600 py-3 rounded-xl font-bold text-sm">🤔 一般</button>
+<!-- ============= 结果弹层 ============= -->
+<div id="result-overlay" class="modal-overlay hidden">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div class="modal-head-text">
+        <span class="panel-eyebrow">Result</span>
+        <h2 class="modal-title">试戴完成</h2>
+      </div>
     </div>
-    <button data-action="book" class="feedback-btn btn-primary text-white py-3.5 rounded-xl w-full font-bold text-sm mb-2">📍 找附近门店做这款</button>
-    <button id="save-img" class="bg-gray-100 active:bg-gray-200 text-gray-700 py-3 rounded-xl w-full font-bold text-sm mb-2">💾 保存图片</button>
-    <button id="share-plaza" class="bg-purple-100 active:bg-purple-200 text-purple-600 py-3 rounded-xl w-full font-bold text-sm mb-2">📢 分享到广场</button>
-    <button id="close-result" class="text-gray-500 py-2 w-full text-xs">再试一款</button>
-  </div>
-</div>
-
-<!-- 门店列表弹层 -->
-<div id="shops-overlay" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center z-50 p-3">
-  <div class="bg-white rounded-3xl p-5 max-w-sm w-full fade-in">
-    <h2 class="text-center text-lg font-black gradient-text mb-1">推荐门店</h2>
-    <p class="text-center text-xs text-gray-400 mb-4">能做这款美甲 · 按距离排序</p>
-    <div id="shops-list" class="space-y-2 mb-3"></div>
-    <button id="close-shops" class="text-gray-500 py-2 w-full text-xs">返回</button>
-  </div>
-</div>
-
-<!-- 我的 弹层 -->
-<div id="my-overlay" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center z-50 p-3">
-  <div class="bg-white rounded-3xl p-5 max-w-sm w-full max-h-[95vh] overflow-y-auto fade-in">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-black gradient-text">我的 · <span id="my-nickname" class="text-pink-400"></span></h2>
-      <button id="close-my" class="text-gray-400 text-xl leading-none px-2">&times;</button>
+    <div class="stage result-stage">
+      <img id="result-img" alt="试戴结果">
     </div>
-    <!-- Tabs -->
-    <div class="flex gap-2 mb-4">
+    <div class="result-actions">
+      <div class="feedback-row">
+        <button data-action="like" class="feedback-btn btn-secondary">
+          <i class="ti ti-heart" aria-hidden="true"></i><span>喜欢</span>
+        </button>
+        <button data-action="dislike" class="feedback-btn btn-secondary">
+          <i class="ti ti-mood-empty" aria-hidden="true"></i><span>一般</span>
+        </button>
+      </div>
+      <button data-action="book" class="feedback-btn btn-primary btn-full">
+        <i class="ti ti-map-pin" aria-hidden="true"></i><span>找门店</span>
+      </button>
+      <button id="save-img" class="btn-secondary btn-full">
+        <i class="ti ti-download" aria-hidden="true"></i><span>保存图片</span>
+      </button>
+      <button id="share-plaza" class="btn-secondary btn-full">
+        <i class="ti ti-share" aria-hidden="true"></i><span>分享到广场</span>
+      </button>
+      <button id="close-result" class="btn-ghost">再试一款</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============= 门店列表 ============= -->
+<div id="shops-overlay" class="modal-overlay hidden">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div class="modal-head-text">
+        <span class="panel-eyebrow">Salons</span>
+        <h2 class="modal-title">推荐门店</h2>
+        <p class="modal-sub">能做这款美甲 · 按距离排序</p>
+      </div>
+    </div>
+    <div id="shops-list"></div>
+    <button id="close-shops" class="btn-ghost btn-full" style="margin-top:8px;">返回</button>
+  </div>
+</div>
+
+<!-- ============= 我的弹层 ============= -->
+<div id="my-overlay" class="modal-overlay hidden">
+  <div class="modal-panel my-panel">
+    <div class="my-head">
+      <div class="modal-head-text">
+        <span class="panel-eyebrow">Profile</span>
+        <h2 class="modal-title">我的 · <span id="my-nickname"></span></h2>
+      </div>
+      <button id="close-my" class="btn-ghost btn-icon-only" aria-label="关闭"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </div>
+    <div class="my-tabs">
       <span class="my-tab active" data-my-tab="history">试戴历史</span>
-      <span class="my-tab" data-my-tab="favorites">收藏夹</span>
+      <span class="my-tab" data-my-tab="favorites">收藏</span>
       <span class="my-tab" data-my-tab="hand">我的手部</span>
     </div>
-    <!-- Tab contents -->
     <div id="my-tab-history" class="my-tab-content">
-      <div id="history-grid" class="grid grid-cols-3 gap-2"></div>
-      <p id="history-empty" class="text-center text-gray-400 text-sm py-8 hidden">还没有试戴记录</p>
+      <div id="history-grid" class="history-grid"></div>
+      <p id="history-empty" class="empty-line hidden">还没有试戴记录</p>
     </div>
     <div id="my-tab-favorites" class="my-tab-content hidden">
-      <div id="favorites-list" class="space-y-2"></div>
-      <p id="favorites-empty" class="text-center text-gray-400 text-sm py-8 hidden">还没有收藏</p>
+      <div id="favorites-list"></div>
+      <p id="favorites-empty" class="empty-line hidden">还没有收藏</p>
     </div>
     <div id="my-tab-hand" class="my-tab-content hidden">
-      <div id="hand-original-container" class="text-center">
-        <p id="hand-empty" class="text-gray-400 text-sm py-8">还没有上传过手部照片</p>
+      <div id="hand-original-container">
+        <p id="hand-empty" class="empty-line">还没有上传过手部照片</p>
       </div>
     </div>
   </div>
 </div>
 
-<!-- 历史详情弹层 -->
-<div id="history-detail" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center z-[60] p-3">
-  <div class="bg-white rounded-3xl p-4 max-w-sm w-full max-h-[95vh] overflow-y-auto fade-in">
-    <h2 class="text-center text-lg font-black gradient-text mb-3">试戴详情</h2>
-    <img id="history-detail-img" class="rounded-2xl mb-3 w-full" style="max-height: 60vh; object-fit: contain; background: #ffe5ec;">
-    <div id="history-detail-info" class="text-xs text-gray-500 text-center mb-3"></div>
-    <button id="close-history-detail" class="text-gray-500 py-2 w-full text-xs">返回</button>
+<!-- ============= 历史详情 ============= -->
+<div id="history-detail" class="modal-overlay hidden" style="z-index:110;">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div class="modal-head-text">
+        <span class="panel-eyebrow">Detail</span>
+        <h2 class="modal-title">试戴详情</h2>
+      </div>
+    </div>
+    <div class="stage result-stage">
+      <img id="history-detail-img" alt="">
+    </div>
+    <div id="history-detail-info" class="modal-sub" style="text-align:center;"></div>
+    <button id="close-history-detail" class="btn-ghost btn-full" style="margin-top:12px;">返回</button>
   </div>
 </div>
 
+<!-- ============= Toast 容器 ============= -->
+<div id="toast-root"></div>
+
 <script>
-  const $ = q => document.querySelector(q);
+  const $  = q => document.querySelector(q);
   const $$ = q => document.querySelectorAll(q);
 
   let userId = null;
@@ -366,16 +1279,45 @@
   let lastRequestId = null;
   let feedbackSent = new Set();
 
+  // === Toast 系统（替代所有 alert） ===
+  function toast(msg, opts = {}) {
+    const root = $('#toast-root');
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    root.appendChild(t);
+    const dur = opts.duration || 2600;
+    setTimeout(() => {
+      t.classList.add('leaving');
+      setTimeout(() => t.remove(), 240);
+    }, dur);
+  }
+  function showToast(msg) { toast(msg); } // 兼容旧名
+
+  // === 心形回弹动画 ===
+  function popHeart(el) {
+    el.classList.remove('popping');
+    // 强制重排以重启动画
+    void el.offsetWidth;
+    el.classList.add('popping');
+    setTimeout(() => el.classList.remove('popping'), 340);
+  }
+
+  // === Tabler 图标快捷构造 ===
+  function icon(name) {
+    return `<i class="ti ti-${name}" aria-hidden="true"></i>`;
+  }
+
   // === 登录遮罩 ===
   const lastUid = localStorage.getItem('jiaqu_uid');
   const oldNickname = localStorage.getItem('jiaqu_nickname');
   const hasOldAutoId = lastUid && lastUid.startsWith('u_');
   if (hasOldAutoId && oldNickname) {
     $('#uid-input').value = oldNickname;
-    $('#uid-hint').textContent = `检测到你之前的数据，点"进入"自动迁移`;
+    $('#uid-hint').textContent = '检测到你之前的数据，进入即自动迁移';
   } else if (lastUid && !hasOldAutoId) {
     $('#uid-input').placeholder = `上次：${lastUid}`;
-    $('#uid-hint').textContent = `直接按"进入"可用上次的名字`;
+    $('#uid-hint').textContent = '直接进入可继续使用上次的名字';
   }
 
   $('#login-btn').addEventListener('click', async () => {
@@ -385,7 +1327,6 @@
     $('#login-btn').disabled = true;
     $('#login-btn').textContent = '检查中...';
     try {
-      // 老用户：把 u_xxx 下的数据迁移到用户输入的名字下
       if (hasOldAutoId) {
         const oldCheck = await fetch(`/api/user/check?user_id=${encodeURIComponent(lastUid)}`);
         const oldData = await oldCheck.json();
@@ -395,7 +1336,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ old_id: lastUid, new_id: inputId }),
           });
-          showToast('已将你之前的数据迁移过来了');
+          showToast('已将你之前的数据迁移过来');
         }
         localStorage.removeItem('jiaqu_nickname');
       }
@@ -407,13 +1348,12 @@
 
       if (data.has_hand) {
         const time = data.hand_updated_at ? new Date(data.hand_updated_at).toLocaleString('zh-CN') : '';
-        let msg = `发现你之前保存的手部照片`;
+        let msg = '发现你之前保存的手部照片';
         if (time) msg += `（${time}）`;
         if (data.history_count) msg += `\n还有 ${data.history_count} 条试戴记录`;
         if (data.fav_count) msg += `、${data.fav_count} 个收藏`;
         $('#hand-confirm-msg').textContent = msg;
         $('#hand-confirm').classList.remove('hidden');
-        $('#hand-confirm').classList.add('flex');
         $('#login-gate').classList.add('hidden');
       } else if (data.exists) {
         enterApp();
@@ -422,7 +1362,7 @@
         showToast('下次用同样的名字就能找回记录');
       }
     } catch {
-      alert('网络错误，请重试');
+      showToast('网络错误，请重试');
     } finally {
       $('#login-btn').disabled = false;
       $('#login-btn').textContent = '进入';
@@ -446,7 +1386,7 @@
   function enterApp() {
     userConfirmed = true;
     $('#login-gate').classList.add('hidden');
-    $('#user-badge').textContent = `当前：${userId}`;
+    $('#user-badge').textContent = `当前 · ${userId}`;
     $('#user-badge').classList.remove('hidden');
     loadUserFavs();
     checkReady();
@@ -464,30 +1404,33 @@
         handImage = ev.target.result;
         const time = data.updated_at ? new Date(data.updated_at).toLocaleString('zh-CN') : '';
         $('#hand-preview').innerHTML = `
-          <img src="${handImage}" class="rounded-xl w-full max-h-72 object-contain bg-pink-50">
-          <p class="text-[10px] text-pink-400 font-bold mt-1">已加载保存的手部照片${time ? ' · ' + time : ''}</p>
-          <p class="text-[10px] text-gray-400">点击上方可重新拍照</p>
+          <img src="${handImage}" class="hand-image" alt="手部照片">
+          <p class="hand-loaded-meta">已加载保存的手部照片${time ? ' · ' + time : ''}</p>
+          <p class="hand-loaded-hint">点击可重新拍照</p>
         `;
-        $('#hand-preview').classList.remove('py-10', 'border-dashed');
+        $('#hand-preview').classList.add('has-image');
         checkReady();
       };
       reader.readAsDataURL(blob);
     } catch {}
   }
 
-  function showToast(msg) {
-    const t = document.createElement('div');
-    t.className = 'fixed top-6 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs px-4 py-2 rounded-full z-[200] fade-in';
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
-  }
-
   function getNickname() { return userId || ''; }
 
-  // === 加载预设款式 ===
+  // === 款式加载 ===
   let allStyleCards = [];
   let userFavSet = new Set();
+
+  function updateHeart(heart, liked) {
+    const i = heart.querySelector('i');
+    if (liked) {
+      heart.classList.add('liked');
+      if (i) i.className = 'ti ti-heart-filled';
+    } else {
+      heart.classList.remove('liked');
+      if (i) i.className = 'ti ti-heart';
+    }
+  }
 
   async function loadUserFavs() {
     if (!userConfirmed) return;
@@ -496,10 +1439,7 @@
       const items = await r.json();
       userFavSet.clear();
       items.forEach(f => userFavSet.add(f.style_id));
-      $$('.fav-heart').forEach(h => {
-        h.classList.toggle('liked', userFavSet.has(h.dataset.styleId));
-        h.textContent = userFavSet.has(h.dataset.styleId) ? '♥' : '♡';
-      });
+      $$('.fav-heart').forEach(h => updateHeart(h, userFavSet.has(h.dataset.styleId)));
     } catch {}
   }
 
@@ -508,12 +1448,14 @@
     const grid = $('#styles-grid');
     styles.forEach(s => {
       const card = document.createElement('div');
-      card.className = 'style-card rounded-xl overflow-hidden cursor-pointer relative bg-pink-50';
+      card.className = 'style-card';
       card.dataset.id = s.id;
       card.dataset.cat = s.category;
       card.innerHTML = `
-        <img src="${s.url}" class="w-full aspect-square object-cover" loading="lazy">
-        <span class="fav-heart" data-style-id="${s.id}" data-style-url="${s.url}">♡</span>
+        <img src="${s.url}" loading="lazy" alt="">
+        <button class="fav-heart" data-style-id="${s.id}" data-style-url="${s.url}" aria-label="收藏">
+          <i class="ti ti-heart" aria-hidden="true"></i>
+        </button>
       `;
       grid.appendChild(card);
       allStyleCards.push(card);
@@ -533,25 +1475,23 @@
     });
   });
 
-  // === 选预设款式 ===
+  // === 选预设款式 & 收藏切换 ===
   $('#styles-grid').addEventListener('click', e => {
-    // 收藏心形按钮
     const heart = e.target.closest('.fav-heart');
     if (heart) {
       e.stopPropagation();
-      if (!userConfirmed) { alert('请先登录'); return; }
+      if (!userConfirmed) { showToast('请先登录'); return; }
       const sid = heart.dataset.styleId;
       const surl = heart.dataset.styleUrl;
       if (userFavSet.has(sid)) {
-        // 取消收藏：先找到 fav id
         fetch(`/api/user/favorites?user_id=${encodeURIComponent(userId)}`)
           .then(r => r.json())
           .then(items => {
             const fav = items.find(f => f.style_id === sid);
             if (fav) fetch(`/api/user/favorites/${fav.id}?user_id=${encodeURIComponent(userId)}`, { method: 'DELETE' });
             userFavSet.delete(sid);
-            heart.classList.remove('liked');
-            heart.textContent = '♡';
+            updateHeart(heart, false);
+            popHeart(heart);
           });
       } else {
         fetch('/api/user/favorites', {
@@ -560,19 +1500,19 @@
           body: JSON.stringify({ user_id: userId, style_id: sid, style_url: surl }),
         });
         userFavSet.add(sid);
-        heart.classList.add('liked');
-        heart.textContent = '♥';
+        updateHeart(heart, true);
+        popHeart(heart);
       }
       return;
     }
 
     const c = e.target.closest('.style-card');
     if (!c) return;
-    if (c.id === 'custom-tile') return;  // 自定义那格交给 input 自己处理
+    if (c.id === 'custom-tile') return;
     $$('.style-card').forEach(x => x.classList.remove('selected'));
     c.classList.add('selected');
     selectedStyle = c.dataset.id;
-    customStyleImage = null;             // 选预设就清掉自定义
+    customStyleImage = null;
     checkReady();
   });
 
@@ -586,12 +1526,9 @@
       const tile = $('#custom-tile');
       tile.classList.add('has-image');
       $('#custom-tile-content').innerHTML = `
-        <img src="${customStyleImage}" class="absolute inset-0 w-full h-full object-cover">
-        <div class="absolute inset-0 bg-pink-500/20 flex items-end justify-center pb-1">
-          <span class="text-[9px] bg-white/90 text-pink-600 px-1.5 py-0.5 rounded-full font-bold">我的款式</span>
-        </div>
+        <img src="${customStyleImage}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
+        <div class="custom-tag">我的款式</div>
       `;
-      // 选中状态
       $$('.style-card').forEach(x => x.classList.remove('selected'));
       tile.classList.add('selected');
       selectedStyle = '__custom__';
@@ -607,8 +1544,8 @@
     const r = new FileReader();
     r.onload = ev => {
       handImage = ev.target.result;
-      $('#hand-preview').innerHTML = `<img src="${handImage}" class="rounded-xl w-full max-h-72 object-contain bg-pink-50">`;
-      $('#hand-preview').classList.remove('py-10', 'border-dashed');
+      $('#hand-preview').innerHTML = `<img src="${handImage}" class="hand-image" alt="手部照片">`;
+      $('#hand-preview').classList.add('has-image');
       checkReady();
     };
     r.readAsDataURL(f);
@@ -625,8 +1562,6 @@
     if ($('#tryon-btn').disabled) return;
     feedbackSent.clear();
     $('#loading-overlay').classList.remove('hidden');
-    $('#loading-overlay').classList.add('flex');
-    // 计时器
     const t0 = Date.now();
     const timer = setInterval(() => {
       $('#loading-elapsed').textContent = Math.floor((Date.now() - t0) / 1000);
@@ -650,26 +1585,26 @@
       if (data.error) throw new Error(data.error);
       lastRequestId = data.request_id;
       $('#result-img').src = data.result_url;
-      // 重置反馈按钮状态
+      // 重置反馈按钮（图标 + 文案）
       $$('.feedback-btn').forEach(b => {
         b.disabled = false;
-        b.classList.remove('opacity-50');
+        b.style.opacity = '';
+        b.classList.remove('liked');
         const a = b.dataset.action;
-        if (a === 'like') b.innerText = '😍 喜欢';
-        if (a === 'dislike') b.innerText = '🤔 一般';
-        if (a === 'book') b.innerText = '📍 找附近门店做这款';
+        if (a === 'like')     b.innerHTML = `${icon('heart')}<span>喜欢</span>`;
+        if (a === 'dislike')  b.innerHTML = `${icon('mood-empty')}<span>一般</span>`;
+        if (a === 'book')     b.innerHTML = `${icon('map-pin')}<span>找门店</span>`;
       });
       $('#loading-overlay').classList.add('hidden');
       $('#result-overlay').classList.remove('hidden');
-      $('#result-overlay').classList.add('flex');
     } catch (err) {
       clearInterval(timer);
       $('#loading-overlay').classList.add('hidden');
-      alert('试戴失败：' + err.message);
+      showToast('试戴失败：' + err.message);
     }
   });
 
-  // === 反馈（防重复点击）===
+  // === 反馈 ===
   document.addEventListener('click', e => {
     const btn = e.target.closest('.feedback-btn');
     if (!btn || btn.disabled) return;
@@ -680,14 +1615,18 @@
     }
     if (feedbackSent.has(action)) return;
     feedbackSent.add(action);
-    // disable 同组的两个互斥按钮
     if (action === 'like' || action === 'dislike') {
       $$('.feedback-btn[data-action="like"], .feedback-btn[data-action="dislike"]').forEach(b => {
         b.disabled = true;
-        b.classList.add('opacity-50');
+        b.style.opacity = '0.5';
       });
     }
-    btn.innerText = action === 'like' ? '✓ 已收藏' : '✓ 已记录';
+    if (action === 'like') {
+      btn.classList.add('liked');
+      btn.innerHTML = `${icon('check')}<span>已收藏</span>`;
+    } else {
+      btn.innerHTML = `${icon('check')}<span>已记录</span>`;
+    }
     fetch('/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -700,7 +1639,7 @@
       if (action === 'like' && selectedStyle && selectedStyle !== '__custom__') {
         userFavSet.add(selectedStyle);
         const heart = $(`.fav-heart[data-style-id="${selectedStyle}"]`);
-        if (heart) { heart.classList.add('liked'); heart.textContent = '♥'; }
+        if (heart) { updateHeart(heart, true); popHeart(heart); }
       }
     });
   });
@@ -710,36 +1649,37 @@
   });
 
   // === 门店列表 ===
+  let shopsBound = false;
   function showShops() {
     fetch('/api/shops').then(r => r.json()).then(shops => {
       $('#shops-list').innerHTML = shops.map(s => `
-        <div class="shop-card bg-pink-50 rounded-2xl p-3 active:bg-pink-100 cursor-pointer" data-shop="${s.id}">
-          <div class="flex items-start justify-between gap-2">
-            <div class="flex-1 min-w-0">
-              <div class="font-bold text-sm text-gray-800 truncate">${s.name}</div>
-              <div class="text-xs text-gray-500 mt-0.5">⭐ ${s.rating} · ${s.distance_km}km · 均价 ¥${s.price_avg}</div>
-              <div class="text-[10px] text-pink-500 font-bold mt-0.5">${s.desc || ''}</div>
-            </div>
-            <button class="bg-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shrink-0">预约</button>
+        <div class="shop-card" data-shop="${s.id}">
+          <div class="shop-card-main">
+            <p class="shop-name">${s.name}</p>
+            <p class="shop-meta">${icon('star')}<span>${s.rating}</span><span>·</span><span>${s.distance_km} km</span><span>·</span><span>均价 ¥${s.price_avg}</span></p>
+            ${s.desc ? `<p class="shop-desc">${s.desc}</p>` : ''}
           </div>
+          <button class="shop-book-btn">预约</button>
         </div>
       `).join('');
-      $('#shops-list').addEventListener('click', e => {
-        const card = e.target.closest('.shop-card');
-        if (!card) return;
-        fetch('/api/feedback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            request_id: lastRequestId, user_id: userId, nickname: getNickname(),
-            style_id: selectedStyle === '__custom__' ? '用户上传' : selectedStyle,
-            action: 'book', shop_id: card.dataset.shop,
-          }),
+      if (!shopsBound) {
+        shopsBound = true;
+        $('#shops-list').addEventListener('click', e => {
+          const card = e.target.closest('.shop-card');
+          if (!card) return;
+          fetch('/api/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              request_id: lastRequestId, user_id: userId, nickname: getNickname(),
+              style_id: selectedStyle === '__custom__' ? '用户上传' : selectedStyle,
+              action: 'book', shop_id: card.dataset.shop,
+            }),
+          });
+          showToast('预约请求已发送');
         });
-        alert('预约请求已发送 💅');
-      });
+      }
       $('#shops-overlay').classList.remove('hidden');
-      $('#shops-overlay').classList.add('flex');
     });
   }
   $('#close-shops').addEventListener('click', () => {
@@ -759,20 +1699,17 @@
     a.click();
   });
 
-  // === 「我的」页面 ===
+  // === 我的 ===
   $('#my-btn').addEventListener('click', () => {
     if (!userConfirmed) return;
     $('#my-nickname').textContent = userId;
     $('#my-overlay').classList.remove('hidden');
-    $('#my-overlay').classList.add('flex');
     loadMyData('history');
   });
   $('#close-my').addEventListener('click', () => {
     $('#my-overlay').classList.add('hidden');
-    $('#my-overlay').classList.remove('flex');
   });
 
-  // tab 切换
   document.querySelectorAll('.my-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.my-tab').forEach(t => t.classList.remove('active'));
@@ -785,15 +1722,15 @@
   });
 
   function loadMyData(tab) {
-    if (tab === 'history') loadHistory();
+    if (tab === 'history')        loadHistory();
     else if (tab === 'favorites') loadFavorites();
-    else if (tab === 'hand') loadHandOriginal();
+    else if (tab === 'hand')      loadHandOriginal();
   }
 
   async function loadHistory() {
     const grid = $('#history-grid');
     const empty = $('#history-empty');
-    grid.innerHTML = '<p class="text-gray-400 text-xs col-span-3 text-center py-4">加载中...</p>';
+    grid.innerHTML = '<p class="empty-line" style="grid-column:span 3;">加载中...</p>';
     empty.classList.add('hidden');
     try {
       const r = await fetch(`/api/user/history?user_id=${encodeURIComponent(userId)}`);
@@ -804,16 +1741,15 @@
         return;
       }
       grid.innerHTML = items.map(item => `
-        <img src="${item.result_image_url}" class="history-thumb w-full"
+        <img src="${item.result_image_url}" class="history-thumb"
              data-result="${item.result_image_url}"
              data-style="${item.style_id || ''}"
              data-time="${item.created_at || ''}"
-             loading="lazy">
+             loading="lazy" alt="">
       `).join('');
-    } catch { grid.innerHTML = '<p class="text-red-400 text-xs col-span-3 text-center">加载失败</p>'; }
+    } catch { grid.innerHTML = '<p class="empty-line" style="grid-column:span 3;color:var(--rose);">加载失败</p>'; }
   }
 
-  // 点击历史图查看详情
   $('#history-grid').addEventListener('click', e => {
     const thumb = e.target.closest('.history-thumb');
     if (!thumb) return;
@@ -821,17 +1757,15 @@
     const time = thumb.dataset.time ? new Date(thumb.dataset.time).toLocaleString('zh-CN') : '';
     $('#history-detail-info').textContent = `${thumb.dataset.style || ''}${time ? ' · ' + time : ''}`;
     $('#history-detail').classList.remove('hidden');
-    $('#history-detail').classList.add('flex');
   });
   $('#close-history-detail').addEventListener('click', () => {
     $('#history-detail').classList.add('hidden');
-    $('#history-detail').classList.remove('flex');
   });
 
   async function loadFavorites() {
     const list = $('#favorites-list');
     const empty = $('#favorites-empty');
-    list.innerHTML = '<p class="text-gray-400 text-xs text-center py-4">加载中...</p>';
+    list.innerHTML = '<p class="empty-line">加载中...</p>';
     empty.classList.add('hidden');
     try {
       const r = await fetch(`/api/user/favorites?user_id=${encodeURIComponent(userId)}`);
@@ -843,19 +1777,18 @@
       }
       list.innerHTML = items.map(item => `
         <div class="fav-card" data-fav-id="${item.id}">
-          ${item.style_url ? `<img src="${item.style_url}" alt="">` : '<div class="w-14 h-14 rounded-xl bg-pink-100 flex items-center justify-center text-pink-300 text-lg shrink-0">?</div>'}
-          <div class="flex-1 min-w-0">
-            <div class="font-bold text-sm text-gray-800 truncate">${item.style_id || '自定义款式'}</div>
-            ${item.shop_name ? `<div class="text-xs text-gray-500 mt-0.5">${item.shop_name}</div>` : ''}
-            <div class="text-[10px] text-gray-400 mt-0.5">${item.created_at ? new Date(item.created_at).toLocaleString('zh-CN') : ''}</div>
+          ${item.style_url ? `<img src="${item.style_url}" alt="">` : `<div class="fav-placeholder">${icon('photo')}</div>`}
+          <div class="fav-info">
+            <div class="fav-id">${item.style_id || '自定义款式'}</div>
+            ${item.shop_name ? `<div class="fav-shop">${item.shop_name}</div>` : ''}
+            <div class="fav-time">${item.created_at ? new Date(item.created_at).toLocaleString('zh-CN') : ''}</div>
           </div>
-          <button class="unfav-btn text-pink-400 text-xs font-bold px-2 py-1 rounded-lg bg-pink-50 active:bg-pink-100 shrink-0">取消</button>
+          <button class="unfav-btn">取消</button>
         </div>
       `).join('');
-    } catch { list.innerHTML = '<p class="text-red-400 text-xs text-center">加载失败</p>'; }
+    } catch { list.innerHTML = '<p class="empty-line" style="color:var(--rose);">加载失败</p>'; }
   }
 
-  // 取消收藏
   $('#favorites-list').addEventListener('click', async e => {
     const btn = e.target.closest('.unfav-btn');
     if (!btn) return;
@@ -873,7 +1806,7 @@
   async function loadHandOriginal() {
     const container = $('#hand-original-container');
     const empty = $('#hand-empty');
-    container.innerHTML = '<p class="text-gray-400 text-xs py-4">加载中...</p>';
+    container.innerHTML = '<p class="empty-line">加载中...</p>';
     try {
       const r = await fetch(`/api/user/hand?user_id=${encodeURIComponent(userId)}`);
       const data = await r.json();
@@ -885,11 +1818,11 @@
       }
       const time = data.updated_at ? new Date(data.updated_at).toLocaleString('zh-CN') : '';
       container.innerHTML = `
-        <img src="${data.image_path}?t=${Date.now()}" class="rounded-2xl w-full mb-2" style="max-height: 60vh; object-fit: contain; background: #ffe5ec;">
-        <p class="text-xs text-gray-400">${time ? '最近上传 · ' + time : ''}</p>
-        <p class="text-xs text-gray-400 mt-1">每次试戴会自动保存你的原始手部照片</p>
+        <img src="${data.image_path}?t=${Date.now()}" class="hand-original-img" alt="">
+        <p class="hand-original-meta">${time ? '最近上传 · ' + time : ''}</p>
+        <p class="hand-original-meta" style="margin-top:4px;">每次试戴会自动保存你的原始手部照片</p>
       `;
-    } catch { container.innerHTML = '<p class="text-red-400 text-xs">加载失败</p>'; }
+    } catch { container.innerHTML = '<p class="empty-line" style="color:var(--rose);">加载失败</p>'; }
   }
 
   // === 主页/广场 tab 切换 ===
@@ -924,26 +1857,25 @@
       empty.classList.add('hidden');
       data.items.forEach(item => {
         const card = document.createElement('div');
-        card.className = 'plaza-card mb-2';
+        card.className = 'plaza-card';
         const time = item.created_at ? new Date(item.created_at).toLocaleString('zh-CN') : '';
         card.innerHTML = `
-          <img src="${item.result_image_url}" loading="lazy">
-          <div class="p-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-gray-700">${item.user_id}</span>
-              <button class="plaza-like-btn text-xs text-pink-400 active:scale-110 transition" data-id="${item.id}">
-                ♥ ${item.likes || 0}
+          <img src="${item.result_image_url}" loading="lazy" alt="">
+          <div class="plaza-meta">
+            <div class="plaza-head">
+              <span class="plaza-user">${item.user_id}</span>
+              <button class="plaza-like-btn" data-id="${item.id}" aria-label="点赞">
+                ${icon('heart-filled')}<span>${item.likes || 0}</span>
               </button>
             </div>
-            ${item.caption ? `<p class="text-xs text-gray-500 mt-1">${item.caption}</p>` : ''}
-            <p class="text-[10px] text-gray-400 mt-1">${time}</p>
+            ${item.caption ? `<p class="plaza-caption">${item.caption}</p>` : ''}
+            <p class="plaza-time">${time}</p>
           </div>
         `;
         feed.appendChild(card);
       });
-    } catch { feed.innerHTML = '<p class="text-red-400 text-xs text-center col-span-2 py-4">加载失败</p>'; }
+    } catch { feed.innerHTML = '<p class="empty-line" style="grid-column:span 2;color:var(--rose);">加载失败</p>'; }
   }
-
 
   // 广场点赞
   $('#plaza-feed').addEventListener('click', async e => {
@@ -953,7 +1885,11 @@
     try {
       const r = await fetch(`/api/plaza/${id}/like`, { method: 'POST' });
       const data = await r.json();
-      if (data.ok) btn.textContent = `♥ ${data.likes}`;
+      if (data.ok) {
+        const countSpan = btn.querySelector('span');
+        if (countSpan) countSpan.textContent = data.likes;
+        popHeart(btn);
+      }
     } catch {}
   });
 
@@ -962,7 +1898,7 @@
     if (!lastRequestId) return;
     const btn = $('#share-plaza');
     btn.disabled = true;
-    btn.textContent = '分享中...';
+    btn.innerHTML = `<span class="spinner-sm"></span><span>分享中...</span>`;
     try {
       const r = await fetch('/api/plaza/share', {
         method: 'POST',
@@ -977,10 +1913,10 @@
       });
       const data = await r.json();
       if (data.ok) {
-        btn.textContent = '✓ 已分享到广场';
+        btn.innerHTML = `${icon('check')}<span>已分享到广场</span>`;
       }
     } catch {
-      btn.textContent = '分享失败，点击重试';
+      btn.innerHTML = `${icon('refresh')}<span>分享失败，点击重试</span>`;
       btn.disabled = false;
     }
   });

@@ -179,7 +179,9 @@ def log_event(event_type, data):
 
 @app.route('/')
 def index():
-    return send_from_directory(STATIC_DIR, 'index.html')
+    resp = send_from_directory(STATIC_DIR, 'index.html')
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return resp
 
 
 @app.route('/api/styles')
