@@ -1219,6 +1219,17 @@ async function loadMerchantList() {
   } catch(e) {}
 })();
 
+	// 默认30天日期
+	(function() {
+	  var t = new Date(), d30 = new Date(t);
+	  d30.setDate(d30.getDate() - 29);
+	  var f = function(d) { return d.toISOString().slice(0,10); };
+	  var elF = document.getElementById("gmv-from");
+	  var elT = document.getElementById("gmv-to");
+	  if (elF && !elF.value) elF.value = f(d30);
+	  if (elT && !elT.value) elT.value = f(t); loadGmvDashboard();
+	})();
+
 /* ===== AI 对话 ===== */
 const chatMessages = $('#chat-messages');
 const chatInput = $('#chat-input');
