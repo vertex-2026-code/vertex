@@ -1262,31 +1262,108 @@ def extract_openclaw_reply(raw):
     return _normalize_openclaw_result(raw).get("reply")
 
 
+# === @jiaqu-xxx → 后端 fast-path 调度表 =========================
+# chip 名 → SKILL_MAP key（直接调函数拿 raw data）
+# chip 名 → render_skill（前端 formatSkillResult switch case 名）
+JIAQU_CHIP_DISPATCH = {
+    "jiaqu-gmv-status":        {"skill_key": "gmv_status",        "render_skill": "get_gmv_status"},
+    "jiaqu-gmv-breakdown":     {"skill_key": "gmv_breakdown",     "render_skill": "breakdown_gmv"},
+    "jiaqu-style-ranking":     {"skill_key": "style_ranking",     "render_skill": "rank_styles"},
+    "jiaqu-shop-ranking":      {"skill_key": "shop_ranking",      "render_skill": "shop_ranking"},
+    "jiaqu-persona-strategy":  {"skill_key": "persona_strategy",  "render_skill": "persona_strategy"},
+    "jiaqu-risk-alert":        {"skill_key": "risk_alert",        "render_skill": "detect_risk"},
+    "jiaqu-prediction-review": {"skill_key": "prediction_review", "render_skill": "validate_prediction"},
+    "jiaqu-promo-copy":        {"skill_key": "promo_copy",        "render_skill": "generate_promo_copy"},
+    "jiaqu-whatif-sandbox":    {"skill_key": "whatif_sandbox",    "render_skill": "whatif"},
+    "jiaqu-trend-radar":       {"skill_key": "trend_radar",       "render_skill": "trend_mapper"},
+    "jiaqu-tryon-funnel":      {"skill_key": "tryon_funnel",      "render_skill": "vton_recovery"},
+    # jiaqu-daily-report 不在表里 — 走综合 markdown 路径
+}
+
+
+def _build_daily_report_prompt(db, user_msg):
+    """日报：并发拉 5 路 fast-path，把数据拍平塞 prompt，agent 只负责出 6 段 markdown。"""
+    from services.skills import SKILL_MAP
+    snapshots = {}
+    for k in ("gmv_status", "risk_alert", "trend_radar", "style_ranking", "shop_ranking"):
+        try:
+            snapshots[k] = SKILL_MAP[k](db)
+        except Exception as exc:
+            snapshots[k] = {"_error": str(exc)[:120]}
+    import json as _json
+    from datetime import date as _date
+    return (
+        f"你是甲趣运营 COO 的早会助手。下面是今天 ({_date.today().isoformat()}) "
+        f"5 路真实 fast-path 数据快照，**所有数字必须以此为准，禁止脑补字段**：\n\n"
+        f"```json\n{_json.dumps(snapshots, ensure_ascii=False, default=str)[:8000]}\n```\n\n"
+        f"严格按 /root/.openclaw/workspace/skills/jiaqu-daily-report/SKILL.md 里的 6 段模板输出 markdown 报告："
+        f"今日体温 / 异动焦点 / 风险预警 Top2 / 趋势机会 Top2 / 榜单速读 / 今日动作清单 3 条。"
+        f"**输出必须是 markdown 文本，禁止包 JSON、禁止 fenced code block**。\n\n"
+        f"用户问题：{user_msg or '给我一份今日运营日报'}"
+    )
+
+
 @app.route("/api/admin/chat", methods=["POST"])
 def admin_chat():
     data = request.get_json(force=True)
     user_msg = data.get("message", "")
     if not user_msg:
         return jsonify({"error": "message cannot be empty"}), 400
-    try:
-        # @jiaqu-xxx 前缀 → 提示 OpenClaw agent 优先加载该 skill
-        import re as _re
-        skill_match = _re.match(r"^@(jiaqu-[\w-]+)\s+(.*)", user_msg, _re.DOTALL)
-        if skill_match:
-            skill_name = skill_match.group(1)
-            actual_msg = (skill_match.group(2) or "").strip()
-            if not actual_msg:
-                actual_msg = "请用这个 skill 给我一份完整分析。"
-            user_msg = (
-                f"请优先使用「{skill_name}」skill。skill 文档在 /root/.openclaw/workspace/skills/{skill_name}/SKILL.md。"
-                f"按 skill 里的指示先 curl fast-path 接口拿数据，再按格式输出。\n\n"
-                f"用户问题：{actual_msg}"
-            )
 
-        # 意图检测 → 预调 skill 注入数据到 prompt
+    # @jiaqu-xxx 前缀解析
+    import re as _re
+    skill_match = _re.match(r"^@(jiaqu-[\w-]+)\s*(.*)", user_msg, _re.DOTALL)
+    chip = skill_match.group(1) if skill_match else None
+    actual_msg = (skill_match.group(2).strip() if skill_match else user_msg) or ""
+
+    # === 路线 A: 结构化 skill → fast-path 直出 envelope，agent 只产 narrative ===
+    if chip and chip in JIAQU_CHIP_DISPATCH:
+        dispatch = JIAQU_CHIP_DISPATCH[chip]
+        from services.skills import SKILL_MAP
+        try:
+            raw_data = SKILL_MAP[dispatch["skill_key"]](get_db())
+        except Exception as exc:
+            return jsonify({"error": f"fast-path {dispatch['skill_key']} 失败: {exc}"}), 500
+
+        # agent 只生成 1-2 段 narrative，不再瞎编 schema
+        import json as _json
+        narrative_prompt = (
+            f"以下是甲趣「{chip}」skill 的真实 fast-path 数据快照——前端会用卡片渲染，"
+            f"你只需要给出 1-2 段精炼中文叙述（≤120 字），点出关键拐点和动作建议。"
+            f"**禁止重复 JSON、禁止包装层、禁止 markdown 表格**：\n\n"
+            f"```json\n{_json.dumps(raw_data, ensure_ascii=False, default=str)[:6000]}\n```\n\n"
+            f"用户追问：{actual_msg or '（无追问，给默认叙述）'}"
+        )
+        narrative = ""
+        try:
+            result = subprocess.run(
+                ["openclaw", "agent", "--message", narrative_prompt, "--json",
+                 "--session-id", "vertex-admin", "--timeout", "60"],
+                capture_output=True, text=True, timeout=70,
+            )
+            if result.returncode == 0:
+                from services.merchant_skills import _normalize_openclaw_result
+                narrative = (_normalize_openclaw_result(result.stdout.strip()).get("reply") or "").strip()
+        except Exception:
+            narrative = ""
+
+        return jsonify({
+            "reply": narrative or "",
+            "envelope": {
+                "render_skill": dispatch["render_skill"],
+                "data": raw_data,
+                "narrative": narrative,
+            },
+        })
+
+    # === 路线 B: 日报 / 自由对话 → markdown 文本 ===
+    if chip == "jiaqu-daily-report":
+        augmented_msg = _build_daily_report_prompt(get_db(), actual_msg)
+    else:
         from services.skills.data_context import build_analysis_prompt
         augmented_msg = build_analysis_prompt(get_db(), user_msg)
 
+    try:
         result = subprocess.run(
             ["openclaw", "agent", "--message", augmented_msg, "--json",
              "--session-id", "vertex-admin", "--timeout", "120"],

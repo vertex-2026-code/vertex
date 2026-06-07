@@ -989,7 +989,8 @@
         </div>
         <div class="skill-bar" id="skill-bar">
           <span class="skill-bar-label">Quick Skills</span>
-          <span class="skill-chip" data-skill="jiaqu-gmv-status" data-label="本月GMV"><span class="chip-dot"></span>本月 GMV</span>
+          <span class="skill-chip" data-skill="jiaqu-daily-report" data-label="今日日报"><span class="chip-dot"></span>今日日报</span>
+          <span class="skill-chip" data-skill="jiaqu-gmv-status" data-label="本月GMV">本月 GMV</span>
           <span class="skill-chip" data-skill="jiaqu-gmv-breakdown" data-label="归因分析">归因分析</span>
           <span class="skill-chip" data-skill="jiaqu-style-ranking" data-label="款式排行">款式排行</span>
           <span class="skill-chip" data-skill="jiaqu-shop-ranking" data-label="商家排行">商家排行</span>
@@ -1377,8 +1378,20 @@ async function sendChat() {
     });
     const data = await r.json();
     if (data.error) throw new Error(data.error);
-    const replyText = typeof data.reply === 'string' ? data.reply : JSON.stringify(data.reply, null, 2);
-    loading.innerHTML = window.marked ? window.marked.parse(replyText) : replyText.replace(/\n/g, '<br>');
+    // 双轨渲染：envelope → 卡片 + narrative；否则 markdown
+    if (data.envelope && data.envelope.render_skill && data.envelope.data) {
+      var cardHtml = formatSkillResult(data.envelope.render_skill, data.envelope.data);
+      var narrative = (data.envelope.narrative || '').trim();
+      var narrativeHtml = narrative
+        ? '<div class="skill-narrative" style="margin-top:10px;padding-top:8px;border-top:1px solid var(--hairline);font-size:12px;color:var(--t-secondary);line-height:1.55">'
+          + (window.marked ? window.marked.parse(narrative) : narrative.replace(/\n/g, '<br>'))
+          + '</div>'
+        : '';
+      loading.innerHTML = cardHtml + narrativeHtml;
+    } else {
+      const replyText = typeof data.reply === 'string' ? data.reply : JSON.stringify(data.reply, null, 2);
+      loading.innerHTML = window.marked ? window.marked.parse(replyText) : replyText.replace(/\n/g, '<br>');
+    }
   } catch (e) {
     loading.innerHTML = '<span style="color:#e0a07e">查询失败：' + (e.message || e) + '</span>';
   } finally {
@@ -1455,6 +1468,14 @@ function formatSkillResult(skill,data){
       return '<h3>趋势雷达</h3>'+(data.trends||[]).map(function(t){return '<div class=\"viz-card highlight\"><div class=\"card-head\"><span class=\"card-title\">'+t.tag+'</span><span class=\"card-badge badge-up\">+'+t.growth_pct+'%</span></div><p style=\"font-size:12px;color:var(--t-secondary)\">'+t.suggestion+'</p></div>'}).join('')+'<p>'+data.narrative+'</p>';
     case 'vton_recovery':
       return '<h3>试戴漏斗</h3><p>'+data.narrative+'</p>'+((data.suggestions||[]).map(function(s){return '<div class=\"viz-card '+(s.priority==='high'?'warn-card':'')+'\"><div class=\"card-head\"><span class=\"card-title\">'+s.action+'</span></div><p style=\"font-size:12px;color:var(--t-secondary)\">'+s.detail+'</p><p style=\"font-size:12px;color:var(--accent)\">'+s.impact+'</p></div>'}).join(''));
+    case 'shop_ranking':
+      var metricLabel={monthly_revenue:'月营收',repeat_customer_rate:'复购率',refund_rate:'退款率',complaint_rate:'投诉率',rating:'评分',avg_ticket:'客单价'}[data.metric]||data.metric;
+      var srows=(data.shops||[]).slice(0,8).map(function(s,i){var v=data.metric==='monthly_revenue'||data.metric==='avg_ticket'?'¥'+F(s[data.metric]):(data.metric==='repeat_customer_rate'||data.metric==='refund_rate'||data.metric==='complaint_rate'?((s[data.metric]||0)*100).toFixed(1)+'%':s[data.metric]);return '<tr><td>'+(i+1)+'</td><td>'+s.shop_name+'</td><td>'+s.city+'·'+s.district+'</td><td>'+(s.style_name||s.style)+'</td><td>'+v+'</td><td>★'+s.rating+'</td></tr>'}).join('');
+      var bench=data.benchmark||{};
+      return '<h3>商家排行 · '+metricLabel+' ('+(data.direction==='top'?'高→低':'低→高')+')</h3><p style=\"font-size:12px;color:var(--t-secondary)\">范围：'+data.city+' · 共 '+bench.total_shops+' 家 · 均值 '+(data.metric==='monthly_revenue'||data.metric==='avg_ticket'?'¥'+F(bench.avg):(bench.avg||0).toFixed(2))+'</p><div class=\"table-wrap\"><table><thead><tr><th>#</th><th>门店</th><th>城市</th><th>风格</th><th>'+metricLabel+'</th><th>评分</th></tr></thead><tbody>'+srows+'</tbody></table></div>';
+    case 'persona_strategy':
+      var prows=(data.personas||[]).slice(0,10).map(function(p,i){return '<tr><td>'+(i+1)+'</td><td>'+p.persona_name+'</td><td>'+p.shop_count+'</td><td>'+p.style_count+'</td><td>¥'+F(p.avg_revenue)+'</td><td>¥'+F(p.total_style_gmv_30d)+'</td><td>'+((p.avg_repeat_rate||0)*100).toFixed(1)+'%</td><td>'+((p.avg_refund_rate||0)*100).toFixed(1)+'%</td></tr>'}).join('');
+      return '<h3>Persona 战略 · '+data.total_personas+' 个人设</h3><div class=\"table-wrap\"><table><thead><tr><th>#</th><th>Persona</th><th>商家数</th><th>款数</th><th>均营收</th><th>30d 总 GMV</th><th>复购</th><th>退款</th></tr></thead><tbody>'+prows+'</tbody></table></div>';
     default: return '<pre><code>'+JSON.stringify(data,null,2)+'</code></pre>';
   }
 }
