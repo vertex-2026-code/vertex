@@ -13,9 +13,15 @@ def safe_div(a, b):
 
 
 def _get_date_bounds(db):
-    """(data_start, data_end)"""
-    r = db.execute("SELECT MIN(date), MAX(date) FROM merchant_shop_daily_metrics").fetchone()
-    return (date.fromisoformat(r[0]), date.fromisoformat(r[1]))
+    """(data_start, data_end)，无数据时返回今天"""
+    try:
+        r = db.execute("SELECT MIN(date), MAX(date) FROM merchant_shop_daily_metrics").fetchone()
+        if r and r[0] and r[1]:
+            return (date.fromisoformat(str(r[0])), date.fromisoformat(str(r[1])))
+    except Exception:
+        pass
+    today = date.today()
+    return (today - timedelta(days=29), today)
 
 
 def get_gmv_curve(db, days=30):

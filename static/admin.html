@@ -677,33 +677,62 @@
   @media (max-width: 920px) {
     .grid { grid-template-columns: 1fr; }
     .span-7, .span-5, .span-12 { grid-column: 1 / -1; }
+    .chat-box { height: clamp(380px, 55vh, 520px); }
   }
   @media (max-width: 560px) {
+    html { font-size: 14px; }
+    .shell { padding: 10px 6px 60px; }
     .metrics { grid-template-columns: 1fr 1fr; }
-    .row-name.fixed { width: 96px; }
+    .metric { padding: 12px 14px 10px; }
+    .metric-value { font-size: 1.6rem; }
+    .row-name.fixed { width: 80px; }
     .row-tag { display: none; }
-    .topbar { align-items: flex-start; }
-    .skill-bar { gap: 5px; padding: 6px 8px; }
+    .topbar { align-items: flex-start; padding-bottom: 12px; margin-bottom: 14px; }
+    .topbar-right { gap: 4px; }
+    .wordmark { font-size: 1.3rem; }
+    /* 技能栏 — 横向滚动 */
+    .skill-bar { gap: 4px; padding: 6px 6px; }
     .skill-bar-label { display: none; }
-    .skill-chip { font-size: 10px; padding: 4px 8px; border-radius: 5px; }
-    /* 消息内容自适应 */
-    .msg-ai { margin-right: 4px; margin-left: 4px; font-size: 13px; padding: 10px 12px; }
-    .msg-user { margin-left: 16px; margin-right: 4px; }
-    .msg-ai .table-wrap { margin: 4px -12px; border-radius: 0; border-left: none; border-right: none; }
-    .msg-ai .table-wrap table { font-size: 0.75em; }
-    .msg-ai th, .msg-ai td { padding: 4px 5px; white-space: normal; }
-    /* viz 组件自适应 */
-    .viz-kpi .kpi-number { font-size: 2rem; }
-    .viz-meta { gap: 8px; }
-    .viz-meta-item { min-width: 44px; }
-    .viz-meta-item .v { font-size: 1rem; }
-    .viz-bar-row .bar-label { width: 36px; font-size: 10px; }
-    .viz-bar-row .bar-val { width: 44px; font-size: 10px; }
-    .viz-bar-row .bar-contrib { width: 52px; font-size: 10px; }
-    .viz-card { padding: 10px 12px; }
+    .skill-chip { font-size: 10px; padding: 4px 7px; border-radius: 5px; }
+    /* 消息 — 撑满宽度 */
+    .msg-ai, .msg-user { margin: 0 2px 10px; font-size: 13px; padding: 10px 11px; border-radius: 10px; }
+    /* 表格 — 去边距、可横向滚动 */
+    .msg-ai .table-wrap { margin: 4px -11px; border-radius: 0; border-left: none; border-right: none; overflow-x: auto; }
+    .msg-ai .table-wrap table { font-size: 0.72em; min-width: 100%; }
+    .msg-ai th, .msg-ai td { padding: 3px 4px; white-space: nowrap; font-size: 0.85em; }
+    /* KPI 大数 */
+    .viz-kpi .kpi-number { font-size: 1.8rem; }
+    .viz-kpi .kpi-number .unit { font-size: 0.9rem; }
+    .viz-meta { gap: 6px; justify-content: center; }
+    .viz-meta-item { min-width: 40px; }
+    .viz-meta-item .v { font-size: 0.95rem; }
+    .viz-meter { padding: 8px 12px; }
+    /* 条形图行 — 缩窄固定宽度 */
+    .viz-bar-row { gap: 4px; padding: 3px 0; }
+    .viz-bar-row .bar-label { width: 30px; font-size: 9px; }
+    .viz-bar-row .bar-val { width: 40px; font-size: 10px; }
+    .viz-bar-row .bar-contrib { width: 48px; font-size: 10px; }
+    .viz-bar-row .viz-track { height: 5px; }
+    /* 卡片 */
+    .viz-card { padding: 8px 10px; margin: 5px 0; }
     .viz-card .card-title { font-size: 12px; }
-    .viz-card .card-badge { font-size: 9px; padding: 1px 6px; }
-    .copy-card.card-banner .copy-main { font-size: 1.1rem; }
+    .viz-card .card-head { gap: 6px; }
+    .viz-card .card-badge { font-size: 8px; padding: 1px 5px; }
+    .rec-card { padding: 10px 12px; }
+    .rec-card .rec-title { font-size: 12px; }
+    .rec-card .rec-meta { gap: 8px; flex-wrap: wrap; }
+    /* 文案卡片 */
+    .copy-gallery { grid-template-columns: 1fr; gap: 8px; }
+    .copy-card.card-banner .copy-main { font-size: 1rem; }
+    .copy-card.card-banner .copy-inner { padding: 18px 14px 16px; }
+    .copy-card.card-push .copy-main { font-size: 12px; }
+    /* 聊天输入 */
+    .chat-input-area { padding: 8px 10px; gap: 6px; }
+    .chat-input-area input { font-size: 12px; padding: 8px 10px; }
+    .chat-send { padding: 0 14px; font-size: 10px; }
+    /* 预测卡片 */
+    .forecast-bar { flex-wrap: wrap; gap: 4px; }
+    .forecast-bar .f-num { font-size: 1rem; }
   }
 </style>
 </head>

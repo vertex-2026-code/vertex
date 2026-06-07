@@ -144,7 +144,22 @@ body{
 
 /* ===== Responsive ===== */
 @media(max-width:1100px){.kpi-row{grid-template-columns:repeat(3,1fr)}.dash-grid,.dash-grid.three{grid-template-columns:1fr}}
-@media(max-width:680px){.kpi-row{grid-template-columns:1fr 1fr}.dash-grid{grid-template-columns:1fr}}
+@media(max-width:680px){
+  .kpi-row{grid-template-columns:1fr 1fr}
+  .dash-grid,.dash-grid.three{grid-template-columns:1fr}
+  .kpi-card .kpi-val{font-size:1.5rem}
+  .kpi-card{padding:12px 14px}
+  .shell{padding:8px 6px 60px}
+  .topbar{padding-bottom:10px;margin-bottom:12px}
+  .wordmark{font-size:1.2rem}
+  .panel{padding:14px 12px}
+  .chart-wrap{height:200px}
+  .sty-table th,.sty-table td{font-size:10px;padding:4px}
+  .sty-table .sty-code{font-size:10px}
+  .rec-card{padding:8px 10px}
+  .rec-title{font-size:11px}
+  .rec-meta{gap:6px;flex-wrap:wrap}
+}
 </style>
 </head>
 <body>
