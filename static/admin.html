@@ -792,6 +792,21 @@
       <div class="metric-value" id="s-latency">—</div>
       <span class="metric-sub">平均生成耗时</span>
     </div>
+    <div class="metric reveal" style="animation-delay:.24s">
+      <span class="metric-label">Merchants</span>
+      <div class="metric-value" id="s-shops">—</div>
+      <span class="metric-sub">入驻商家</span>
+    </div>
+    <div class="metric reveal" style="animation-delay:.26s">
+      <span class="metric-label">Styles</span>
+      <div class="metric-value" id="s-styles">—</div>
+      <span class="metric-sub">款式总量</span>
+    </div>
+    <div class="metric reveal" style="animation-delay:.30s">
+      <span class="metric-label">Platform GMV</span>
+      <div class="metric-value" id="s-gmv">—</div>
+      <span class="metric-sub">平台累计交易额</span>
+    </div>
   </section>
 
   <!-- Grid -->
@@ -917,6 +932,9 @@ function renderStats(d) {
   animateNum($('#s-likes'), d.total_likes || 0);
   animateNum($('#s-books'), d.total_books || 0);
   animateNum($('#s-latency'), (d.avg_latency_ms || 0) / 1000, { decimals: 1, unit: 's' });
+  animateNum($('#s-shops'), d.db_shops || 0);
+  animateNum($('#s-styles'), d.db_styles_total || 0);
+  animateNum($('#s-gmv'), (d.shop_gmv_total || 0), { unit: '¥', decimals: 0 });
 
   // 风格分类热度
   const maxCat = d.category_stats?.length ? d.category_stats[0][1] : 1;
