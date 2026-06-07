@@ -67,8 +67,20 @@
     min-height: 640px;
   }
 
+  body.auth-pending .app,
   body.auth-locked .app {
     grid-template-columns: 1fr;
+  }
+
+  body.auth-pending .sidebar,
+  body.auth-pending .topbar,
+  body.auth-pending .assistant-fab,
+  body.auth-pending .dashboard-scroll {
+    display: none;
+  }
+
+  body.auth-pending .auth-gate {
+    display: none;
   }
 
   body.auth-locked .sidebar,
@@ -139,13 +151,7 @@
   }
 
   .section-title {
-    padding: 12px 8px 7px;
-    color: var(--faint);
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
+    display: none;
   }
 
   .skill-item {
@@ -1345,6 +1351,7 @@
     border: 1px solid rgba(241, 220, 207, 0.12);
     background: rgba(241, 220, 207, 0.04);
     color: var(--text);
+    text-decoration: none;
   }
 
   .ghost-btn:hover {
@@ -1373,6 +1380,77 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .today-advice-shell {
+    margin-top: 8px;
+    border: 1px solid rgba(212, 171, 124, 0.16);
+    border-radius: 18px;
+    background: rgba(20, 15, 17, 0.34);
+    padding: 18px;
+    display: grid;
+    gap: 14px;
+  }
+
+  .today-advice-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .today-advice-head h4 {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.15;
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+
+  .today-advice-summary {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.72;
+  }
+
+  .today-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .today-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(212, 171, 124, 0.18);
+    background: rgba(212, 171, 124, 0.08);
+    color: var(--text);
+    font-size: 12px;
+  }
+
+  .today-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .today-item {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 12px;
+    background: rgba(241, 220, 207, 0.035);
+    padding: 12px 14px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.72;
+  }
+
+  .today-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
   .kpi-strip {
@@ -1958,6 +2036,44 @@
     gap: 10px;
   }
 
+  .mini-style-visual {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .mini-style-thumb {
+    width: 104px;
+    height: 104px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    background: rgba(241, 220, 207, 0.03);
+  }
+
+  .mini-style-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 8px;
+    color: var(--faint);
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.45;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(212, 171, 124, 0.16), transparent 44%),
+      rgba(241, 220, 207, 0.03);
+  }
+
   .mini-style-title {
     color: var(--text);
     font-size: 14px;
@@ -2006,7 +2122,20 @@
     margin-top: 12px;
   }
 
+  .locked-note {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px dashed rgba(212, 171, 124, 0.26);
+    border-radius: 12px;
+    color: var(--muted);
+    background: rgba(212, 171, 124, 0.05);
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
   .peer-public-card {
+    width: 100%;
+    text-align: left;
     border: 1px solid rgba(241, 220, 207, 0.08);
     border-radius: 12px;
     padding: 12px;
@@ -2031,6 +2160,50 @@
     color: var(--muted);
     font-size: 12px;
     line-height: 1.7;
+  }
+
+  .vip-paywall {
+    position: fixed;
+    inset: 0;
+    z-index: 36;
+    display: none;
+    place-items: center;
+    padding: 24px;
+    background: rgba(12, 8, 9, 0.68);
+    backdrop-filter: blur(8px);
+  }
+
+  .vip-paywall.open {
+    display: grid;
+  }
+
+  .vip-card {
+    width: min(420px, 100%);
+    border-radius: 18px;
+    border: 1px solid rgba(212, 171, 124, 0.18);
+    background: linear-gradient(180deg, rgba(33, 25, 28, 0.98), rgba(21, 16, 18, 0.98));
+    padding: 22px;
+    box-shadow: 0 30px 68px rgba(0, 0, 0, 0.4);
+  }
+
+  .vip-card h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 28px;
+    line-height: 1.1;
+  }
+
+  .vip-card p {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .vip-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
   }
 
   .manager-modal {
@@ -2231,7 +2404,7 @@
   }
 </style>
 </head>
-<body class="auth-locked">
+<body class="auth-pending">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
@@ -2248,7 +2421,6 @@
         <button class="nav-link" type="button" data-target="overviewSection">经营总览</button>
         <button class="nav-link" type="button" data-target="stylesSection">款式经营</button>
         <button class="nav-link" type="button" data-target="competitorSection">竞品与趋势</button>
-        <button class="nav-link" type="button" data-target="actionsSection">动作中心</button>
         <button class="nav-link" type="button" data-target="historyBoard">最近记录</button>
         <button class="sidebar-logout" id="sidebarLogoutBtn" type="button" hidden>退出登录</button>
       </div>
@@ -2331,7 +2503,8 @@
           <div class="hero-copy-block">
             <span class="hero-label">门店经营总览</span>
             <h3 class="hero-heading" id="heroShopTitle">登录后查看你的门店经营状态</h3>
-            <p class="hero-paragraph" id="heroSummary">这里会展示门店主风格、核心转化、近期机会和本周动作建议。商家先看结果，不需要先理解技能。</p>
+            <p class="hero-paragraph" id="heroSummary"></p>
+            <div class="today-advice-shell" id="todayAdvice"></div>
             <div class="hero-chips" id="heroChips"></div>
           </div>
           <div class="hero-tools">
@@ -2365,27 +2538,13 @@
             <div id="revenueTrend"></div>
           </article>
 
-          <article class="overview-card span-12">
-            <div class="chart-head">
-              <div>
-                <h4>经营结构拆解</h4>
-                <div class="chart-sub">把当前周期的转化漏斗和风格成交结构一起放到总览区，方便商家快速判断问题在哪一层。</div>
-              </div>
-              <span class="chart-badge">结构图</span>
-            </div>
-            <div class="overview-bottom-grid">
-              <div id="funnelSummary"></div>
-              <div id="categoryMix"></div>
-            </div>
-          </article>
         </section>
 
         <div class="section-grid">
           <article class="board span-12" id="profileSection">
             <div class="board-head">
               <div>
-                <h3>门店画像</h3>
-                <p class="board-copy">先看风格识别度、优势和风险，再决定要不要扩款或调价。</p>
+                <h3>门店资料</h3>
               </div>
               <div class="board-actions">
                 <button class="ghost-btn action-trigger" type="button" data-run-skill="merchant_style_profile">深度画像</button>
@@ -2398,48 +2557,29 @@
             <div class="board-head">
               <div>
                 <h3>款式经营</h3>
-                <p class="board-copy">系统先帮你挑出值得放大的款和需要处理的低效款。</p>
               </div>
               <div class="board-actions">
-                <button class="ghost-btn action-trigger" type="button" data-run-skill="hot_style_launch">查爆款</button>
-                <button class="ghost-btn action-trigger" type="button" data-run-skill="cold_style_retire">查低效款</button>
                 <button class="ghost-btn action-trigger" id="openStyleManagerBtn" type="button">管理全部款式</button>
               </div>
             </div>
-            <div class="focus-grid" id="styleHighlights"></div>
             <div class="ops-dual-grid">
               <div id="hotStyleBoard"></div>
               <div id="coldStyleBoard"></div>
             </div>
           </article>
 
-          <article class="board span-6" id="competitorSection">
+          <article class="board span-12" id="competitorSection">
             <div class="board-head">
               <div>
                 <h3>竞品与趋势</h3>
-                <p class="board-copy">看同风格门店的对比结果和市场趋势，判断自己该补哪里。</p>
               </div>
               <div class="board-actions">
-                <button class="ghost-btn action-trigger" type="button" data-run-skill="same_style_competitor_analysis">看竞品差距</button>
-                <button class="ghost-btn action-trigger" id="boostTrafficBtn" type="button">投流放大热款</button>
+                <button class="ghost-btn action-trigger" id="vipCompetitorBtn" type="button">解锁完整竞品分析</button>
               </div>
             </div>
             <div class="stack-list" id="competitorSummary"></div>
             <div class="public-peer-grid" id="competitorPublicBoard"></div>
-          </article>
-
-          <article class="board span-6" id="actionsSection">
-            <div class="board-head">
-              <div>
-                <h3>动作中心</h3>
-                <p class="board-copy">把本周最该做的上新、改款、活动和竞品动作集中到一个地方。</p>
-              </div>
-              <div class="board-actions">
-                <button class="ghost-btn action-trigger" type="button" data-run-skill="automation_queue">生成动作队列</button>
-                <button class="ghost-btn action-trigger" type="button" data-chat-message="请根据当前门店状态，帮我解释这周最优先的三件事为什么要做">让 AI 解释</button>
-              </div>
-            </div>
-            <div class="stack-list" id="actionSummary"></div>
+            <div class="locked-note">完整竞品分析、竞价排名变化和更细的投流建议属于进阶能力，点击上方按钮后可查看 VIP 解锁提示。</div>
           </article>
 
           <article class="board span-12" id="historyBoard">
@@ -2514,6 +2654,17 @@
         <div class="manager-layout">
           <div class="manager-list" id="styleManagerList"></div>
           <div class="manager-detail" id="styleManagerDetail"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vip-paywall" id="vipPaywall">
+      <div class="vip-card">
+        <h3>充值 VIP 即可解锁</h3>
+        <p>完整竞品分析会展示更细的同风格门店对比、排名变化、竞价带建议和趋势深挖。当前先开放公开信息预览。</p>
+        <div class="vip-actions">
+          <button class="auth-submit" id="vipUpgradeBtn" type="button">充值</button>
+          <button class="ghost-btn" id="vipCloseBtn" type="button">退出</button>
         </div>
       </div>
     </div>
@@ -2697,19 +2848,16 @@ const heroChips = $('#heroChips');
 const dashboardKpis = $('#dashboardKpis');
 const trafficTrend = $('#trafficTrend');
 const revenueTrend = $('#revenueTrend');
-const funnelSummary = $('#funnelSummary');
-const categoryMix = $('#categoryMix');
+const todayAdvice = $('#todayAdvice');
 const profileHighlights = $('#profileHighlights');
-const styleHighlights = $('#styleHighlights');
 const hotStyleBoard = $('#hotStyleBoard');
 const coldStyleBoard = $('#coldStyleBoard');
 const competitorSummary = $('#competitorSummary');
 const competitorPublicBoard = $('#competitorPublicBoard');
-const actionSummary = $('#actionSummary');
 const historyPreview = $('#historyPreview');
 const refreshDashboardBtn = $('#refreshDashboardBtn');
 const openStyleManagerBtn = $('#openStyleManagerBtn');
-const boostTrafficBtn = $('#boostTrafficBtn');
+const vipCompetitorBtn = $('#vipCompetitorBtn');
 const assistantFab = $('#assistantFab');
 const assistantDrawer = $('#assistantDrawer');
 const assistantBackdrop = $('#assistantBackdrop');
@@ -2719,11 +2867,15 @@ const styleManagerBackdrop = $('#styleManagerBackdrop');
 const styleManagerCloseBtn = $('#styleManagerCloseBtn');
 const styleManagerList = $('#styleManagerList');
 const styleManagerDetail = $('#styleManagerDetail');
+const vipPaywall = $('#vipPaywall');
+const vipUpgradeBtn = $('#vipUpgradeBtn');
+const vipCloseBtn = $('#vipCloseBtn');
 const navLinks = Array.from(document.querySelectorAll('.nav-link'));
 
 async function init() {
   if (versionPill) versionPill.textContent = UI_VERSION;
   emptyState = $('#emptyState');
+  setAuthPending();
   renderSkills();
   bindEvents();
   syncTopbar();
@@ -2736,7 +2888,7 @@ function renderSkills() {
   skillList.innerHTML = '';
   const note = document.createElement('div');
   note.className = 'side-empty';
-  note.textContent = '首页已经按经营总览、款式经营、竞品与趋势和动作中心自动整理，不需要再手动挑选内置分析模板。';
+  note.textContent = '首页已经按经营总览、款式经营、竞品与趋势和最近记录自动整理。';
   skillList.appendChild(note);
   renderCustomSkills();
 }
@@ -2822,6 +2974,16 @@ function bindEvents() {
   });
 
   dashboardScroll.addEventListener('click', event => {
+    const jumpButton = event.target.closest('[data-dashboard-jump]');
+    if (jumpButton) {
+      scrollToBoard(jumpButton.dataset.dashboardJump || 'stylesSection');
+      return;
+    }
+    const autoButton = event.target.closest('[data-today-auto]');
+    if (autoButton) {
+      runTodayAutoExecute();
+      return;
+    }
     const actionButton = event.target.closest('[data-run-skill]');
     if (actionButton) {
       runSkill(actionButton.dataset.runSkill);
@@ -2887,7 +3049,17 @@ function bindEvents() {
     loadDashboard();
   });
   openStyleManagerBtn.addEventListener('click', () => openStyleManager());
-  boostTrafficBtn.addEventListener('click', () => boostTopHotStyle());
+  vipCompetitorBtn.addEventListener('click', openVipPaywall);
+  competitorPublicBoard.addEventListener('click', event => {
+    if (event.target.closest('[data-vip-lock]')) {
+      openVipPaywall();
+    }
+  });
+  competitorSummary.addEventListener('click', event => {
+    if (event.target.closest('[data-vip-lock]')) {
+      openVipPaywall();
+    }
+  });
   assistantFab.addEventListener('click', openAssistantDrawer);
   assistantBackdrop.addEventListener('click', closeAssistantDrawer);
   assistantCloseBtn.addEventListener('click', closeAssistantDrawer);
@@ -2906,9 +3078,25 @@ function bindEvents() {
       handleStyleAction(styleActionButton.dataset.styleAction, styleActionButton.dataset.styleId, styleActionButton.dataset.status || '');
     }
   });
+  vipPaywall.addEventListener('click', event => {
+    if (event.target === vipPaywall) {
+      closeVipPaywall();
+    }
+  });
+  vipUpgradeBtn.addEventListener('click', () => {
+    closeVipPaywall('VIP 充值功能演示中，后续可以接真实支付与会员系统。');
+  });
+  vipCloseBtn.addEventListener('click', () => closeVipPaywall());
+}
+
+function setAuthPending() {
+  document.body.classList.add('auth-pending');
+  document.body.classList.remove('auth-locked');
+  authGate.classList.add('hidden');
 }
 
 async function loadMerchantSession() {
+  setAuthPending();
   try {
     const payload = await getJson('/api/merchant/auth/session');
     if (payload.authenticated && payload.merchant) {
@@ -3025,12 +3213,14 @@ function clearMerchantSession() {
 }
 
 function showAuthGate() {
+  document.body.classList.remove('auth-pending');
   document.body.classList.add('auth-locked');
   authGate.classList.remove('hidden');
   loginError.textContent = '';
 }
 
 function hideAuthGate() {
+  document.body.classList.remove('auth-pending');
   document.body.classList.remove('auth-locked');
   authGate.classList.add('hidden');
   loginError.textContent = '';
@@ -3070,6 +3260,17 @@ function closeAssistantDrawer() {
   document.body.classList.remove('assistant-open');
 }
 
+function openVipPaywall() {
+  vipPaywall.classList.add('open');
+}
+
+function closeVipPaywall(message = '') {
+  vipPaywall.classList.remove('open');
+  if (message) {
+    heroSummary.textContent = message;
+  }
+}
+
 function scrollToBoard(targetId) {
   const target = document.getElementById(targetId);
   if (!target) return;
@@ -3079,7 +3280,7 @@ function scrollToBoard(targetId) {
 
 function updateActiveBoardByScroll() {
   if (!dashboardScroll) return;
-  const sectionIds = ['overviewSection', 'stylesSection', 'competitorSection', 'actionsSection', 'historyBoard'];
+  const sectionIds = ['overviewSection', 'stylesSection', 'competitorSection', 'historyBoard'];
   const currentOffset = dashboardScroll.scrollTop + 120;
   let activeId = sectionIds[0];
   sectionIds.forEach(sectionId => {
@@ -3123,13 +3324,25 @@ function renderDashboardLoggedOut() {
   workbenchSnapshot = null;
   managedStyleId = '';
   heroShopTitle.textContent = '登录后查看你的门店经营状态';
-  heroSummary.textContent = '这里会展示门店主风格、核心转化、近期机会和本周动作建议。商家先看结果，不需要先理解技能。';
+  heroSummary.textContent = '';
+  todayAdvice.innerHTML = `
+    <div class="today-advice-head">
+      <div>
+        <h4>今日运营建议</h4>
+        <div class="today-advice-summary">登录后系统会先帮你整理今天待加码的爆款、待优化的低效款，以及更适合今天执行的动作。</div>
+      </div>
+    </div>
+    <div class="today-chip-row">
+      <span class="today-chip">登录后自动读取当前门店</span>
+      <span class="today-chip">不再支持随意切换其他门店</span>
+    </div>
+  `;
   heroChips.innerHTML = '<span class="tag">登录后自动加载当前门店</span><span class="tag">不再支持随意切换其他门店</span>';
   dashboardKpis.innerHTML = [
-    ['本期转化', '—', '登录后查看当前周期核心转化'],
-    ['主力款', '—', '登录后查看本店主力款表现'],
-    ['本周动作', '—', '登录后查看系统建议动作'],
-    ['竞品差距', '—', '登录后查看同风格门店对比'],
+    ['搜索量', '—', '登录后查看当前周期流量规模'],
+    ['点击量', '—', '登录后查看搜索到进店点击'],
+    ['团购量', '—', '登录后查看真实成交'],
+    ['试戴样本', '—', '登录后查看兴趣样本'],
   ].map(([label, value, note]) => `
     <div class="kpi-card">
       <div class="kpi-label">${escapeHtml(label)}</div>
@@ -3139,15 +3352,11 @@ function renderDashboardLoggedOut() {
   `).join('');
   trafficTrend.innerHTML = '<div class="empty-chart">登录后这里会显示搜索、点击和团购的日趋势图。</div>';
   revenueTrend.innerHTML = '<div class="empty-chart">登录后这里会显示营收与投放的趋势图。</div>';
-  funnelSummary.innerHTML = '<div class="empty-chart">登录后这里会显示经营漏斗拆解。</div>';
-  categoryMix.innerHTML = '<div class="empty-chart">登录后这里会显示风格成交结构。</div>';
-  profileHighlights.innerHTML = '<div class="focus-card"><strong>先登录商家账号</strong><span>登录后这里会展示门店风格、优势、风险和推荐方向。</span></div>';
-  styleHighlights.innerHTML = '<div class="focus-card"><strong>先登录商家账号</strong><span>登录后这里会展示值得放大的款和需要处理的低效款。</span></div>';
+  profileHighlights.innerHTML = '<div class="focus-card"><strong>先登录商家账号</strong><span>登录后这里会展示商家数据库里的主风格、主推人群、评分、客单和店铺状态。</span></div>';
   hotStyleBoard.innerHTML = '<div class="empty-chart">登录后这里会显示卖得好的爆款清单。</div>';
   coldStyleBoard.innerHTML = '<div class="empty-chart">登录后这里会显示需要处理的冷门款列表。</div>';
-  competitorSummary.innerHTML = '<div class="stack-item"><div class="stack-title"><span>竞品与趋势</span></div><div class="stack-meta">登录后系统会自动比较同风格门店，并给出你该补齐的差距。</div></div>';
-  competitorPublicBoard.innerHTML = '<div class="empty-chart">登录后这里会展示竞品公开信息榜和可执行投流入口。</div>';
-  actionSummary.innerHTML = '<div class="stack-item"><div class="stack-title"><span>动作中心</span></div><div class="stack-meta">登录后会根据你的店铺数据自动整理本周动作队列。</div></div>';
+  competitorSummary.innerHTML = '<div class="stack-item"><div class="stack-title"><span>竞品公开信息</span></div><div class="stack-meta">登录后会先展示同风格门店的公开信息，完整竞品分析需要 VIP 解锁。</div></div>';
+  competitorPublicBoard.innerHTML = '<div class="empty-chart">登录后这里会展示竞品公开信息榜和 VIP 解锁入口。</div>';
   historyPreview.innerHTML = '<div class="history-preview-card"><strong>还没有记录</strong><span>登录并运行分析后，这里会自动保存最近的经营结果。</span></div>';
   renderStyleManager();
   navLinks.forEach(link => link.classList.toggle('active', link.dataset.target === 'overviewSection'));
@@ -3232,7 +3441,8 @@ async function loadDashboard() {
     return;
   }
   heroShopTitle.textContent = merchantSession.shop_name || '正在加载门店总览';
-  heroSummary.textContent = '正在根据当前门店和周期读取经营结果，请稍等…';
+  heroSummary.textContent = '';
+  todayAdvice.innerHTML = '<div class="today-item">正在整理今天该先处理的爆款、低效款和执行建议…</div>';
   dashboardKpis.innerHTML = Array.from({ length: 4 }).map(() => `
     <div class="kpi-card">
       <div class="kpi-label">加载中</div>
@@ -3242,8 +3452,6 @@ async function loadDashboard() {
   `).join('');
   trafficTrend.innerHTML = '<div class="empty-chart">正在读取当前门店的日级经营趋势…</div>';
   revenueTrend.innerHTML = '<div class="empty-chart">正在整理营收与投放走势…</div>';
-  funnelSummary.innerHTML = '<div class="empty-chart">正在拆解当前周期的经营漏斗…</div>';
-  categoryMix.innerHTML = '<div class="empty-chart">正在汇总风格成交结构…</div>';
   hotStyleBoard.innerHTML = '<div class="empty-chart">正在整理爆款列表…</div>';
   coldStyleBoard.innerHTML = '<div class="empty-chart">正在整理低效款列表…</div>';
   competitorPublicBoard.innerHTML = '<div class="empty-chart">正在生成竞品公开榜…</div>';
@@ -3262,58 +3470,48 @@ async function loadDashboard() {
   } catch (error) {
     dashboardSnapshot = null;
     workbenchSnapshot = null;
-    heroSummary.textContent = `经营总览加载失败：${error.message || String(error)}`;
+    heroSummary.textContent = '';
+    todayAdvice.innerHTML = `<div class="today-item">${escapeHtml(`经营总览加载失败：${error.message || String(error)}`)}</div>`;
     trafficTrend.innerHTML = `<div class="empty-chart">${escapeHtml(error.message || String(error))}</div>`;
     revenueTrend.innerHTML = `<div class="empty-chart">${escapeHtml(error.message || String(error))}</div>`;
-    funnelSummary.innerHTML = `<div class="empty-chart">${escapeHtml(error.message || String(error))}</div>`;
-    categoryMix.innerHTML = `<div class="empty-chart">${escapeHtml(error.message || String(error))}</div>`;
     profileHighlights.innerHTML = `<div class="focus-card tone-warning"><strong>加载失败</strong><span>${escapeHtml(error.message || String(error))}</span></div>`;
-    styleHighlights.innerHTML = '';
     hotStyleBoard.innerHTML = '';
     coldStyleBoard.innerHTML = '';
     competitorSummary.innerHTML = '';
     competitorPublicBoard.innerHTML = '';
-    actionSummary.innerHTML = '';
   }
 }
 
 function renderDashboard(payload, workbench = null) {
   const skills = payload?.skills || {};
   const overview = payload?.overview || {};
-  const profile = skills.merchant_style_profile || {};
   const report = skills.periodic_ops_report || {};
-  const competitors = skills.same_style_competitor_analysis || {};
-  const hot = skills.hot_style_launch || {};
-  const cold = skills.cold_style_retire || {};
-  const queue = skills.automation_queue || {};
   const shop = payload?.shop || merchantSession || {};
+  const dbProfile = workbench?.profile || {};
+  const totals = workbench?.totals || {};
+  const todayOps = workbench?.today_advice || {};
 
   $('#sessionTitle').textContent = `${shop.name || merchantSession?.shop_name || '当前门店'} 经营总览`;
   $('#sessionSub').textContent = '';
 
   heroShopTitle.textContent = shop.name || merchantSession?.shop_name || '当前门店';
-  heroSummary.textContent = profile.style_summary
-    || report.trend_summary
-    || '已根据当前周期数据整理一版经营总览。';
+  heroSummary.textContent = '';
+  todayAdvice.innerHTML = buildTodayAdvicePanel(todayOps, workbench);
   heroChips.innerHTML = [
-    profile.primary_category_name ? `主风格 ${profile.primary_category_name}` : '',
-    report.metrics ? `本期成交 ${formatMetricValue(report.metrics.shop_books ?? report.metrics.group_buy_orders ?? report.metrics.books ?? 0)}` : '',
-    Array.isArray(queue.items) ? `${queue.items.length} 条本周动作` : '',
-    Array.isArray(competitors.peer_group) ? `${competitors.peer_group.length} 家同风格对比` : '',
+    dbProfile.style_persona_name ? `主风格 ${dbProfile.style_persona_name}` : '',
+    totals.group_buy_orders_30d != null ? `本期成交 ${formatMetricValue(totals.group_buy_orders_30d || 0)}` : '',
+    Array.isArray(workbench?.hot_styles) ? `${workbench.hot_styles.length} 款爆款候选` : '',
+    Array.isArray(workbench?.public_competitors) ? `${workbench.public_competitors.length} 家公开竞店` : '',
   ].filter(Boolean).map(item => `<span class="tag">${escapeHtml(item)}</span>`).join('');
 
-  dashboardKpis.innerHTML = buildDashboardKpis(report, hot, cold, queue, workbench);
+  dashboardKpis.innerHTML = buildDashboardKpis(report, {}, {}, {}, workbench);
   trafficTrend.innerHTML = buildTrafficTrendChart(overview, report);
   revenueTrend.innerHTML = buildRevenueTrendChart(overview, report);
-  funnelSummary.innerHTML = buildFunnelSummary(report, workbench);
-  categoryMix.innerHTML = buildCategoryMix(report);
-  profileHighlights.innerHTML = buildProfileHighlights(profile, report);
-  styleHighlights.innerHTML = buildStyleHighlights(hot, cold);
+  profileHighlights.innerHTML = buildDatabaseProfileHighlights(dbProfile, totals);
   hotStyleBoard.innerHTML = renderStyleListBoard('卖得好的爆款清单', workbench?.hot_styles || [], 'hot');
   coldStyleBoard.innerHTML = renderStyleListBoard('需要处理的冷门款', workbench?.cold_styles || [], 'cold');
-  competitorSummary.innerHTML = buildCompetitorHighlights(competitors);
+  competitorSummary.innerHTML = buildCompetitorHighlights(workbench?.public_competitors || [], dbProfile);
   competitorPublicBoard.innerHTML = renderPublicCompetitorBoard(workbench?.public_competitors || []);
-  actionSummary.innerHTML = buildActionHighlights(queue, hot, cold);
   renderStyleManager();
   renderHistoryPreview();
 }
@@ -3343,7 +3541,7 @@ function renderStyleListBoard(title, items, mode) {
     <div class="list-card">
       <h4>${escapeHtml(title)}</h4>
       <div class="mini-list">
-        ${items.slice(0, 6).map(item => {
+        ${items.slice(0, mode === 'hot' ? 7 : 3).map(item => {
           const conversion = item.conversion_rate != null ? `${Math.round(Number(item.conversion_rate || 0) * 100)}%` : '未提供';
           const score = mode === 'hot'
             ? `成交 ${formatCount(item.group_buy_orders_30d || 0)}`
@@ -3353,18 +3551,25 @@ function renderStyleListBoard(title, items, mode) {
             : `搜索 ${formatCount(item.search_volume_30d || 0)} · 点击 ${formatCount(item.click_volume_30d || 0)} · 退款 ${formatCount(item.refund_orders_30d || 0)}`;
           return `
             <div class="mini-style-item">
-              <div class="mini-style-head">
-                <div>
-                  <div class="mini-style-title">${escapeHtml(item.style_name || item.style_id || '未命名款式')}</div>
-                  <div class="mini-style-meta">${escapeHtml(note)}</div>
+              <div class="mini-style-visual">
+                <div class="mini-style-thumb">
+                  ${renderStyleThumb(item, '当前款式图待生成')}
                 </div>
-                <span class="visual-badge">${escapeHtml(score)}</span>
-              </div>
-              <div class="mini-style-note">${escapeHtml(buildWorkbenchStyleSummary(item, mode))}</div>
-              <div class="mini-style-actions">
-                <button class="tiny-btn" type="button" data-open-style-manager="${escapeAttr(item.style_id || '')}">查看详情</button>
-                <button class="tiny-btn promote" type="button" data-style-action="promote_traffic" data-style-id="${escapeAttr(item.style_id || '')}">投流</button>
-                <button class="tiny-btn ai" type="button" data-open-style-manager="${escapeAttr(item.style_id || '')}">AI 修改</button>
+                <div>
+                  <div class="mini-style-head">
+                    <div>
+                      <div class="mini-style-title">${escapeHtml(item.style_name || item.style_id || '未命名款式')}</div>
+                      <div class="mini-style-meta">${escapeHtml(note)}</div>
+                    </div>
+                    <span class="visual-badge">${escapeHtml(score)}</span>
+                  </div>
+                  <div class="mini-style-note">${escapeHtml(buildWorkbenchStyleSummary(item, mode))}</div>
+                  <div class="mini-style-actions">
+                    <button class="tiny-btn" type="button" data-open-style-manager="${escapeAttr(item.style_id || '')}">查看详情</button>
+                    <button class="tiny-btn promote" type="button" data-style-action="promote_traffic" data-style-id="${escapeAttr(item.style_id || '')}">投流</button>
+                    <button class="tiny-btn ai" type="button" data-open-style-manager="${escapeAttr(item.style_id || '')}">AI 修改</button>
+                  </div>
+                </div>
               </div>
             </div>
           `;
@@ -3379,13 +3584,13 @@ function renderPublicCompetitorBoard(items) {
     return '<div class="empty-chart">当前还没有同风格门店的公开信息样本。</div>';
   }
   return items.slice(0, 5).map(item => `
-    <div class="peer-public-card">
+    <button class="peer-public-card" type="button" data-vip-lock="true">
       <div class="peer-public-head">
         <div class="peer-public-name">${escapeHtml(`${item.rank}. ${item.shop_name || '同风格门店'}`)}</div>
         <span class="visual-badge">${escapeHtml(`公开热度 ${item.public_score}`)}</span>
       </div>
       <div class="peer-public-meta">${escapeHtml(`${item.city || ''}${item.district ? ` / ${item.district}` : ''} · ${item.style_name || '未标注风格'} · 评分 ${item.rating ?? '未提供'} · 团购均价 ¥${formatCount(item.avg_ticket || 0)}`)}</div>
-    </div>
+    </button>
   `).join('');
 }
 
@@ -3547,6 +3752,61 @@ function buildStyleAiInsight(style) {
 async function boostTopHotStyle() {
   const target = workbenchSnapshot?.hot_styles?.[0] || workbenchSnapshot?.styles?.[0];
   navigateToStylesPage(target?.style_id || '', 'promote');
+}
+
+async function runTodayAutoExecute() {
+  if (!merchantSession || busy) return;
+  const todayOps = workbenchSnapshot?.today_advice || {};
+  const hotTargets = Array.isArray(workbenchSnapshot?.hot_styles) ? workbenchSnapshot.hot_styles.slice(0, Math.max(1, Number(todayOps.promote_count || 2))) : [];
+  const coldTargets = Array.isArray(workbenchSnapshot?.cold_styles) ? workbenchSnapshot.cold_styles : [];
+  const reviseTargets = coldTargets.slice(0, Math.max(1, Number(todayOps.revise_count || 1)));
+  const offlineTargets = coldTargets.slice(reviseTargets.length, reviseTargets.length + Math.max(0, Number(todayOps.offline_count || 0)));
+  const executed = [];
+  try {
+    busy = true;
+    heroSummary.textContent = '正在执行今日运营建议，请稍等…';
+    for (const item of hotTargets) {
+      await postJson('/api/merchant/style-actions', {
+        style_id: item.style_id,
+        action: 'promote_traffic',
+        payload: { traffic_units: 2, budget: 240 },
+      });
+      executed.push(`投流 ${item.style_id}`);
+    }
+    for (const item of reviseTargets) {
+      await postJson('/api/merchant/style-actions', {
+        style_id: item.style_id,
+        action: 'apply_ai_update',
+        payload: { confirm_apply: true },
+      });
+      executed.push(`改款 ${item.style_id}`);
+    }
+    for (const item of offlineTargets) {
+      await postJson('/api/merchant/style-actions', {
+        style_id: item.style_id,
+        action: 'set_inventory_status',
+        payload: { status: 'offline' },
+      });
+      executed.push(`下架 ${item.style_id}`);
+    }
+    heroSummary.textContent = `今日运营建议已自动执行：${executed.length} 项动作已落地。`;
+    await persistHistoryRecord({
+      type: 'today_ops_auto',
+      title: '一键自动执行',
+      userMessage: '执行今日运营建议',
+      skillId: '',
+      payload: {
+        type: 'today_ops_auto',
+        summary: heroSummary.textContent,
+        executed,
+      },
+    });
+    await Promise.all([loadHistory(), loadDashboard()]);
+  } catch (error) {
+    heroSummary.textContent = `自动执行失败：${error.message || String(error)}`;
+  } finally {
+    busy = false;
+  }
 }
 
 async function handleStyleAction(action, styleId, status = '') {
@@ -5275,6 +5535,8 @@ function formatStageRate(value, base) {
 function buildDashboardKpis(report, hot, cold, queue, workbench = null) {
   const metrics = report?.metrics || {};
   const tryonSample = Number(workbench?.funnels?.tryon_click_group_buy?.tryon_volume || metrics.tryons || metrics.click_volume || 0);
+  const todayOps = workbench?.today_advice || {};
+  const pendingOps = Number(todayOps.promote_count || 0) + Number(todayOps.revise_count || 0) + Number(todayOps.offline_count || 0);
   const kpis = [
     {
       label: metrics.search_volume != null ? '搜索量' : '本期试戴',
@@ -5292,13 +5554,9 @@ function buildDashboardKpis(report, hot, cold, queue, workbench = null) {
       note: metrics.group_buy_orders != null ? '当前周期真实成交的团购订单量' : '本店当前周期真实转化量',
     },
     {
-      label: Array.isArray(queue?.items) ? '本周动作' : '低效款',
-      value: Array.isArray(queue?.items)
-        ? String(queue.items.length)
-        : String((cold?.cold_candidates || []).length),
-      note: Array.isArray(queue?.items)
-        ? '系统已经整理好的优先动作数'
-        : '当前需要重点处理的低表现款式数',
+      label: '今日建议',
+      value: String(pendingOps || (cold?.cold_candidates || []).length || 0),
+      note: '今天待加码、待改款和待下架的动作合计',
     },
     {
       label: '试戴样本',
@@ -5315,25 +5573,51 @@ function buildDashboardKpis(report, hot, cold, queue, workbench = null) {
   `).join('');
 }
 
-function buildProfileHighlights(profile, report) {
-  const strength = Array.isArray(profile?.strengths) && profile.strengths.length
-    ? formatDisplayText(profile.strengths[0])
-    : '当前没有明显优势摘要，建议点击“深度画像”查看完整分析。';
-  const risk = Array.isArray(profile?.risks) && profile.risks.length
-    ? formatDisplayText(profile.risks[0])
-    : '当前没有显著高风险项，可以继续放大主风格。';
-  const direction = Array.isArray(profile?.recommended_direction) && profile.recommended_direction.length
-    ? formatDisplayText(profile.recommended_direction[0])
-    : '先围绕当前主风格做系列化扩展。';
-  const metrics = report?.metrics || {};
-  const conversionValue = metrics.booking_rate != null
-    ? `${Math.round(Number(metrics.booking_rate || 0) * 100)}%`
-    : (metrics.conversion_rate != null ? `${Math.round(Number(metrics.conversion_rate || 0) * 100)}%` : '未提供');
+function buildTodayAdvicePanel(todayAdvice, workbench = null) {
+  const advice = todayAdvice && typeof todayAdvice === 'object' ? todayAdvice : {};
+  const actions = Array.isArray(advice.actions) ? advice.actions : [];
+  const suggestions = Array.isArray(advice.suggestions) ? advice.suggestions : [];
+  const extras = Array.isArray(advice.extra_suggestions) ? advice.extra_suggestions : [];
+  if (!actions.length && !suggestions.length && !extras.length) {
+    return `
+      <div class="today-advice-head">
+        <div>
+          <h4>今日运营建议</h4>
+          <div class="today-advice-summary">登录后系统会根据当前门店数据，整理今天更适合优先执行的动作。</div>
+        </div>
+      </div>
+    `;
+  }
+  return `
+    <div class="today-advice-head">
+      <div>
+        <h4>今日运营建议</h4>
+        <div class="today-advice-summary">${escapeHtml(advice.headline || advice.summary || '已为你整理今天的经营建议。')}</div>
+      </div>
+    </div>
+    <div class="today-chip-row">
+      ${actions.map(item => `<span class="today-chip">${escapeHtml(item.label || '今日建议')}</span>`).join('')}
+      ${Array.isArray(workbench?.style_image_targets) && workbench.style_image_targets.length ? `<span class="today-chip">${escapeHtml(`待展示款式图 ${workbench.style_image_targets.length} 张`)}</span>` : ''}
+    </div>
+    <div class="today-list">
+      ${suggestions.concat(extras).slice(0, 5).map(item => `<div class="today-item">${escapeHtml(item)}</div>`).join('')}
+    </div>
+    <div class="today-action-row">
+      ${actions.map(item => `<button class="ghost-btn action-trigger" type="button" data-dashboard-jump="${escapeAttr(item.target || 'stylesSection')}">${escapeHtml(item.label || '去处理')}</button>`).join('')}
+      <button class="ghost-btn action-trigger" type="button" data-today-auto="true">一键自动执行</button>
+      <button class="ghost-btn action-trigger" type="button" data-open-style-manager="">查看全部款式</button>
+    </div>
+  `;
+}
+
+function buildDatabaseProfileHighlights(profile, totals) {
+  const keywords = Array.isArray(profile?.style_keywords) ? profile.style_keywords.slice(0, 4).join(' / ') : '未标注';
+  const audiences = Array.isArray(profile?.target_audiences) ? profile.target_audiences.slice(0, 3).join(' / ') : '未标注';
   return [
-    { title: '当前主风格', body: profile.primary_category_name || '未识别', tone: '' },
-    { title: '最值得保留的优势', body: strength, tone: 'tone-positive' },
-    { title: '最该先处理的风险', body: risk, tone: 'tone-warning' },
-    { title: '当前转化表现', body: `本期关键转化约 ${conversionValue}，${direction}`, tone: '' },
+    { title: '当前主风格', body: profile.style_persona_name || profile.style_name || '未识别', tone: '' },
+    { title: '主推人群', body: audiences, tone: 'tone-positive' },
+    { title: '风格关键词', body: keywords, tone: '' },
+    { title: '门店状态', body: `评分 ${profile.rating ?? '未提供'} · 团购均价 ¥${formatCount(profile.avg_ticket || 0)} · 在营款式 ${formatCount(totals?.style_count || 0)}`, tone: '' },
   ].map(item => `
     <div class="focus-card ${item.tone}">
       <strong>${escapeHtml(item.title)}</strong>
@@ -5375,31 +5659,39 @@ function buildStyleHighlights(hot, cold) {
   `).join('');
 }
 
-function buildCompetitorHighlights(competitors) {
-  const peerGroup = Array.isArray(competitors?.peer_group) ? competitors.peer_group.slice(0, 3) : [];
-  const gaps = Array.isArray(competitors?.gaps) ? competitors.gaps : [];
-  const opportunities = Array.isArray(competitors?.opportunities) ? competitors.opportunities : [];
-  const blocks = [];
-  if (peerGroup.length) {
-    peerGroup.forEach(item => {
-      blocks.push(`
-        <div class="stack-item">
-          <div class="stack-title">
-            <span>${escapeHtml(item.shop?.name || item.shop?.id || '同风格门店')}</span>
-            <span class="visual-badge">${escapeHtml(item.style_match != null ? `匹配度 ${Math.round(Number(item.style_match || 0) * 100)}%` : '同风格')}</span>
-          </div>
-          <div class="stack-meta">${escapeHtml(`评分 ${item.shop?.rating ?? '未提供'} · 团购均价 ¥${item.shop?.price_avg ?? '未提供'}`)}</div>
+function buildCompetitorHighlights(competitors, profile = {}) {
+  const items = Array.isArray(competitors) ? competitors.slice(0, 3) : [];
+  const title = profile?.style_persona_name || profile?.style_name || '当前门店风格';
+  const blocks = [
+    `
+      <button class="stack-item" type="button" data-vip-lock="true">
+        <div class="stack-title">
+          <span>同风格公开竞店</span>
+          <span class="visual-badge">${escapeHtml(`${items.length} 家可参考`)}</span>
         </div>
-      `);
-    });
-  }
-  blocks.push(`
-    <div class="stack-item ${gaps.length ? 'tone-warning' : 'tone-positive'}">
-      <div class="stack-title"><span>${escapeHtml(gaps.length ? '当前差距' : '当前优势')}</span></div>
-      <div class="stack-meta">${escapeHtml(formatDisplayText((gaps[0] || opportunities[0] || competitors?.competitive_position || '当前暂无更明显的差距提示。')))}</div>
-    </div>
-  `);
+        <div class="stack-meta">${escapeHtml(`已按 ${title} 赛道筛出公开竞品信息，完整竞品分析与排名变化需要 VIP 解锁。`)}</div>
+      </button>
+    `,
+  ];
+  items.forEach(item => {
+    blocks.push(`
+      <button class="stack-item" type="button" data-vip-lock="true">
+        <div class="stack-title">
+          <span>${escapeHtml(item.shop_name || '同风格门店')}</span>
+          <span class="visual-badge">${escapeHtml(`公开热度 ${item.public_score}`)}</span>
+        </div>
+        <div class="stack-meta">${escapeHtml(`评分 ${item.rating ?? '未提供'} · 团购均价 ¥${formatCount(item.avg_ticket || 0)} · ${item.style_name || '未标注风格'}`)}</div>
+      </button>
+    `);
+  });
   return blocks.join('');
+}
+
+function renderStyleThumb(item, emptyText = '当前还没有款式图') {
+  if (item?.style_image_url) {
+    return `<img src="${escapeAttr(item.style_image_url)}" alt="${escapeAttr(item.style_name || item.style_id || '款式图')}">`;
+  }
+  return `<div class="thumb-placeholder">${escapeHtml(emptyText)}</div>`;
 }
 
 function buildActionHighlights(queue, hot, cold) {
