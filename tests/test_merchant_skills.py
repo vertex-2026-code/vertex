@@ -129,8 +129,84 @@ class MerchantSkillsTest(unittest.TestCase):
 
         self.assertEqual(payload["shop"]["id"], merchant["shop_id"])
         self.assertIn("city", payload["shop"])
+        self.assertTrue(payload["overview"]["has_chart_data"])
+        self.assertGreater(len(payload["overview"]["daily_series"]), 0)
         self.assertGreater(len(payload["skills"]["hot_style_launch"]["hot_candidates"]), 0)
         self.assertIn("group_buy_orders", payload["skills"]["periodic_ops_report"]["metrics"])
+
+    def test_generated_style_catalog_contains_structured_fields_and_prompts(self):
+        generate_merchant_dataset_skill(
+            self.base_dir,
+            merchant_count=1,
+            min_styles_per_shop=8,
+            max_styles_per_shop=8,
+            days=14,
+            seed=7,
+            style_generation_mode="safe",
+        )
+
+        conn = sqlite3.connect(os.path.join(self.base_dir, "data", "jiaqu.db"))
+        conn.row_factory = sqlite3.Row
+        profile = conn.execute(
+            """
+            SELECT style_persona_id, style_persona_name, style_keywords, target_audiences
+            FROM merchant_profiles
+            LIMIT 1
+            """
+        ).fetchone()
+        row = conn.execute(
+            """
+            SELECT style_persona_id, style_persona_name, primary_style, secondary_style, nail_shape, nail_length, primary_color, accent_colors,
+                   transparency, texture_finish, base_coat, core_techniques, support_techniques,
+                   element_tags, occasion_tags, complexity_tier, merchant_generation_mode, design_prompt,
+                   style_image_status
+            FROM merchant_style_catalog
+            ORDER BY id ASC
+            LIMIT 1
+            """
+        ).fetchone()
+        conn.close()
+
+        self.assertIsNotNone(profile)
+        self.assertIsNotNone(row)
+        self.assertTrue(profile["style_persona_id"])
+        self.assertTrue(profile["style_persona_name"])
+        self.assertIsInstance(json.loads(profile["style_keywords"]), list)
+        self.assertIsInstance(json.loads(profile["target_audiences"]), list)
+        self.assertEqual(row["style_persona_id"], profile["style_persona_id"])
+        self.assertTrue(row["primary_style"])
+        self.assertTrue(row["nail_shape"])
+        self.assertTrue(row["primary_color"])
+        self.assertIn("真实美甲店作品图", row["design_prompt"])
+        self.assertIn("主推人群", row["design_prompt"])
+        self.assertEqual(row["merchant_generation_mode"], "safe")
+        self.assertEqual(row["style_image_status"], "not_requested")
+        self.assertIsInstance(json.loads(row["accent_colors"]), list)
+        self.assertIsInstance(json.loads(row["core_techniques"]), list)
+
+    @patch("services.merchant_data_skill._generate_style_image_asset")
+    def test_style_image_generation_is_limited_and_optional(self, mock_generate_image):
+        mock_generate_image.return_value = {
+            "style_image_url": "/static/generated_styles/mock.png",
+            "style_image_prompt": "mock prompt",
+            "style_image_status": "generated",
+            "style_image_error": "",
+        }
+
+        summary = generate_merchant_dataset_skill(
+            self.base_dir,
+            merchant_count=3,
+            min_styles_per_shop=8,
+            max_styles_per_shop=8,
+            days=14,
+            seed=11,
+            generate_style_images=True,
+            style_image_limit=2,
+            style_images_per_shop=1,
+        )
+
+        self.assertEqual(summary["generated_style_images"], 2)
+        self.assertEqual(mock_generate_image.call_count, 2)
 
     def test_custom_skill_can_be_created_and_listed_without_openclaw(self):
         payload = create_custom_skill(

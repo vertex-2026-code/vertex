@@ -16,6 +16,10 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=20260606, help="Random seed for reproducible data.")
     parser.add_argument("--disable-portal-accounts", action="store_true", help="Do not enable generated merchants as login accounts for the merchant portal.")
     parser.add_argument("--keep-existing", action="store_true", help="Append over existing generated tables instead of replacing them.")
+    parser.add_argument("--style-mode", choices=["safe", "innovate", "trend", "mixed"], default="mixed", help="How aggressively style fields should deviate within each merchant archetype.")
+    parser.add_argument("--generate-style-images", action="store_true", help="Use Ark/即梦 to generate a limited number of style sample images during dataset generation.")
+    parser.add_argument("--image-limit", type=int, default=0, help="Maximum number of style images to generate across the whole run.")
+    parser.add_argument("--images-per-shop", type=int, default=1, help="Maximum number of style images to generate per merchant.")
     args = parser.parse_args()
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -28,6 +32,10 @@ def main() -> None:
         seed=args.seed,
         replace_existing=not args.keep_existing,
         enable_portal_accounts=not bool(args.disable_portal_accounts),
+        style_generation_mode=args.style_mode,
+        generate_style_images=bool(args.generate_style_images),
+        style_image_limit=args.image_limit,
+        style_images_per_shop=args.images_per_shop,
     )
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 

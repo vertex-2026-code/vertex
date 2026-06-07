@@ -282,6 +282,12 @@ def build_merchant_skills(base_dir: str, shop_id: str | None = None, period_days
         "shop": _shop_public_for_id(base_dir, shop_id),
         "period_days": period_days,
         "generated_at": datetime.now(BJT).isoformat(),
+        "overview": {
+            "has_chart_data": False,
+            "period_days": period_days,
+            "daily_series": [],
+            "totals": {},
+        },
         "skills": {
             "merchant_style_profile": profile,
             "periodic_ops_report": report,
@@ -1025,6 +1031,7 @@ def _build_generated_merchant_skills(
         "shop": snapshot["shop"],
         "period_days": period_days,
         "generated_at": datetime.now(BJT).isoformat(),
+        "overview": _generated_dashboard_overview(snapshot, period_days),
         "skills": {
             "merchant_style_profile": profile,
             "periodic_ops_report": report,
@@ -1659,7 +1666,11 @@ def _load_generated_shop_snapshot(base_dir: str, shop_id: str, period_days: int)
             SELECT shop_id, style_id, style_name, category, price, cost, duration_minutes, search_volume_30d,
                    click_volume_30d, cart_volume_30d, group_buy_orders_30d, ctr, conversion_rate,
                    refund_orders_30d, favorite_count_30d, share_count_30d, impression_volume_30d,
-                   cpc, gmv_30d, inventory_status, launch_stage, trend_signal, title_tags
+                   cpc, gmv_30d, inventory_status, launch_stage, trend_signal, title_tags,
+                   primary_style, secondary_style, nail_shape, nail_length, primary_color, accent_colors,
+                   transparency, texture_finish, base_coat, core_techniques, support_techniques,
+                   element_tags, occasion_tags, complexity_tier, merchant_generation_mode,
+                   design_prompt, style_image_url, style_image_prompt, style_image_status
             FROM merchant_style_catalog
             WHERE shop_id = ?
             ORDER BY group_buy_orders_30d DESC, click_volume_30d DESC, search_volume_30d DESC
@@ -1684,12 +1695,13 @@ def _load_generated_shop_snapshot(base_dir: str, shop_id: str, period_days: int)
     catalog = []
     for row in catalog_rows:
         item = dict(row)
-        tags = item.get("title_tags")
-        try:
-            parsed_tags = json.loads(tags) if isinstance(tags, str) and tags.strip() else []
-        except json.JSONDecodeError:
-            parsed_tags = []
-        item["title_tags"] = parsed_tags if isinstance(parsed_tags, list) else []
+        for key in ("title_tags", "accent_colors", "core_techniques", "support_techniques", "element_tags", "occasion_tags"):
+            raw = item.get(key)
+            try:
+                parsed = json.loads(raw) if isinstance(raw, str) and raw.strip() else []
+            except json.JSONDecodeError:
+                parsed = []
+            item[key] = parsed if isinstance(parsed, list) else []
         catalog.append(item)
 
     daily = [dict(row) for row in daily_rows]
@@ -1710,7 +1722,7 @@ def _load_generated_shop_profile(base_dir: str, shop_id: str) -> dict[str, Any] 
         conn.row_factory = sqlite3.Row
         row = conn.execute(
             """
-            SELECT shop_id, shop_name, city, district, style, style_name, rating, review_count, avg_ticket,
+            SELECT shop_id, shop_name, city, district, style, style_name, style_persona_name, style_keywords, target_audiences, rating, review_count, avg_ticket,
                    monthly_revenue, repeat_customer_rate, refund_rate, complaint_rate, store_status,
                    hero_sku_id, hero_sku_name, owner_name
             FROM merchant_profiles
@@ -1731,6 +1743,7 @@ def _generated_shop_public(profile: dict[str, Any]) -> dict[str, Any]:
         "name": profile["shop_name"],
         "style": style_code,
         "style_name": profile.get("style_name") or CATEGORY_NAMES.get(style_code, style_code),
+        "style_persona_name": profile.get("style_persona_name") or profile.get("style_name") or CATEGORY_NAMES.get(style_code, style_code),
         "rating": profile.get("rating", 0),
         "price_avg": profile.get("avg_ticket", 0),
         "city": profile.get("city", ""),
@@ -1836,15 +1849,41 @@ def _generated_periodic_ops_report(snapshot: dict[str, Any], period_days: int) -
     }
 
 
+def _generated_dashboard_overview(snapshot: dict[str, Any], period_days: int) -> dict[str, Any]:
+    current_rows_desc = snapshot["daily"][:period_days]
+    current_rows = list(reversed(current_rows_desc))
+    totals = _aggregate_generated_period(current_rows_desc)
+    return {
+        "has_chart_data": bool(current_rows),
+        "period_days": period_days,
+        "daily_series": [
+            {
+                "date": item.get("date"),
+                "search_volume": int(item.get("search_volume") or 0),
+                "click_volume": int(item.get("click_volume") or 0),
+                "consultation_volume": int(item.get("consultation_volume") or 0),
+                "group_buy_orders": int(item.get("group_buy_orders") or 0),
+                "revenue": int(item.get("revenue") or 0),
+                "ad_spend": int(item.get("ad_spend") or 0),
+                "repeat_orders": int(item.get("repeat_orders") or 0),
+                "refund_orders": int(item.get("refund_orders") or 0),
+                "favorites_added": int(item.get("favorites_added") or 0),
+            }
+            for item in current_rows
+        ],
+        "totals": totals,
+    }
+
+
 def _generated_competitor_analysis(base_dir: str, snapshot: dict[str, Any], period_days: int, limit: int = 3) -> dict[str, Any]:
     profile = snapshot["profile"]
     current = _aggregate_generated_period(snapshot["daily"][:period_days])
     peers = _load_generated_peer_group(base_dir, profile["style"], profile["shop_id"], period_days, limit=max(limit, 6))
     peer_group = peers[:limit]
     peer_booking_rates = [item["booking_rate"] for item in peer_group]
-    peer_revenues = [item["revenue"] for item in peer_group]
     own_booking = current["booking_rate"]
-    own_revenue = current["revenue"]
+    peer_tryons = [item["tryons"] for item in peer_group]
+    own_tryons = current["tryons"]
     advantages = []
     if float(profile.get("rating") or 0) >= _avg([float(item["shop"].get("rating") or 0) for item in peer_group if item.get("shop")]):
         advantages.append("门店评分高于同风格均值，口碑更容易支撑高客单成交。")
@@ -1852,9 +1891,9 @@ def _generated_competitor_analysis(base_dir: str, snapshot: dict[str, Any], peri
         advantages.append("本店点击转团购效率不低于同风格门店。")
     gaps = []
     if peer_booking_rates and own_booking < _avg(peer_booking_rates):
-        gaps.append("预约转化率低于同风格门店均值。")
-    if peer_revenues and own_revenue < _avg(peer_revenues):
-        gaps.append("周期营收低于同风格门店均值，仍有放量空间。")
+        gaps.append("当前成交转化率低于同风格门店均值。")
+    if peer_tryons and own_tryons < _avg(peer_tryons):
+        gaps.append("门店当前流量样本低于同风格门店均值，仍有放量空间。")
     opportunities = []
     if gaps:
         opportunities.append("可参考同风格高转化门店的套餐包装、首页卖点和爆款排序。")

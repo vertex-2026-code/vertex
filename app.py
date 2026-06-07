@@ -326,6 +326,13 @@ def merchant_dataset():
     return resp
 
 
+@app.route("/merchant/styles")
+def merchant_styles_page():
+    resp = send_from_directory(STATIC_DIR, "merchant_styles.html")
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    return resp
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "ts": now_iso()})
@@ -1288,6 +1295,51 @@ def merchant_skills():
     period_days = int(request.args.get("period_days", "14"))
     try:
         return jsonify(build_merchant_skills(BASE_DIR, shop_id=shop_id, period_days=period_days))
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/api/merchant/workbench")
+def merchant_workbench():
+    from services.merchant_data_skill import get_merchant_workbench
+    merchant = get_current_merchant(optional=True)
+    if not merchant:
+        return jsonify({"error": "请先登录商家账号"}), 401
+    period_days = int(request.args.get("period_days", "14"))
+    style_limit = int(request.args.get("style_limit", "80"))
+    try:
+        payload = get_merchant_workbench(BASE_DIR, shop_id=merchant["shop_id"], period_days=period_days, style_limit=style_limit)
+        if not payload:
+            return jsonify({"error": "merchant workbench not found"}), 404
+        return jsonify(payload)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/api/merchant/style-actions", methods=["POST"])
+def merchant_style_actions():
+    from services.merchant_data_skill import apply_merchant_style_action
+    merchant = get_current_merchant(optional=True)
+    if not merchant:
+        return jsonify({"error": "请先登录商家账号"}), 401
+    data = request.get_json(force=True)
+    style_id = str(data.get("style_id") or "").strip()
+    action = str(data.get("action") or "").strip()
+    if not style_id or not action:
+        return jsonify({"error": "style_id 和 action 不能为空"}), 400
+    try:
+        result = apply_merchant_style_action(
+            BASE_DIR,
+            shop_id=merchant["shop_id"],
+            style_id=style_id,
+            action=action,
+            payload=data.get("payload") if isinstance(data.get("payload"), dict) else {},
+        )
+        return jsonify(result)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:
