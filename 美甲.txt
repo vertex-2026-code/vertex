@@ -1,0 +1,45 @@
+vertex
+
+服务器 SSH 信息：
+Host vertex
+    HostName 124.221.15.86
+    User ubuntu
+    Port 22
+密码：
+Vertex2026
+
+
+腾讯云 openclaw 页面地址 / 登录 key：
+http://124.221.15.86:25688/vjglhx
+8e7cac5957cd86ac08744c356a26fc411ceac59ccb4d7acd
+
+换 root 用户：
+sudo -i
+
+美甲试戴：
+http://124.221.15.86:5000
+
+后台运营看板：
+http://124.221.15.86:5000/admin
+
+更新代码后，重启 5000 服务：
+cd /opt/jiaqu && git pull
+kill $(lsof -t -i:5000) 2>/dev/null; source venv/bin/activate && source .env && nohup python3 app.py &
+
+
+volcano 即梦文图生图 key：
+文档：https://console.volcengine.com/ark/region:ark+cn-beijing/model/detail?Id=doubao-seedream-4-5
+ark-2d2aae5a-5900-48b7-aedd-63943c8fe7a3-26688
+
+龙虾用的是 deepseek-chat：
+文档：https://api-docs.deepseek.com/zh-cn/
+key：
+sk-5d1c05dde5114b5e8ca29af54be27a8b
+
+GitHub 地址：
+https://github.com/vertex-2026-code/vertex
+
+vertex-2026-code 的 github PAT:
+（不要提交到 git，线下同步）
+
+openclaw 的路径信息在 README.md 里有标注

@@ -1513,11 +1513,6 @@ def events_push():
 
 # ============ GMV 运营看板 ============
 
-@app.route('/admin/kpi')
-def admin_kpi():
-    return send_from_directory(STATIC_DIR, 'admin_kpi.html')
-
-
 @app.route('/api/admin/gmv_overview')
 def gmv_overview():
     from services.gmv_data import get_gmv_overview
