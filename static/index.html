@@ -1319,19 +1319,34 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    flex-shrink: 0;
     font-family: var(--font-mono);
     font-size: 11px;
-    color: var(--accent);
+    color: #ff6b8a;
     cursor: pointer;
     line-height: 1;
     transition: background 0.18s, border-color 0.18s, transform 0.18s;
   }
   .plaza-like-btn:hover {
     background: rgba(0, 0, 0, 0.62);
-    border-color: var(--accent);
+    border-color: #ff6b8a;
   }
   .plaza-like-btn:active { transform: scale(0.94); }
-  .plaza-like-btn i { font-size: 13px; }
+  .plaza-like-btn .plaza-heart {
+    width: 14px;
+    height: 14px;
+    display: block;
+    filter: drop-shadow(0 0 4px rgba(255, 107, 138, 0.55));
+  }
+  @keyframes plaza-heart-pop {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.45); }
+    65%  { transform: scale(0.92); }
+    100% { transform: scale(1); }
+  }
+  .plaza-like-btn.popping .plaza-heart {
+    animation: plaza-heart-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
   .plaza-caption {
     font-size: 11px;
     color: var(--t-secondary);
@@ -2357,7 +2372,10 @@
             <div class="plaza-head">
               <span class="plaza-user">${item.user_id}</span>
               <button class="plaza-like-btn" data-id="${item.id}" aria-label="点赞">
-                ${icon('heart-filled')}<span>${item.likes || 0}</span>
+                <svg class="plaza-heart" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 21s-7-4.5-9.5-9C0.5 8 3 4 6.5 4c2 0 3.5 1 5.5 3.5C14 5 15.5 4 17.5 4 21 4 23.5 8 21.5 12 19 16.5 12 21 12 21z"/>
+                </svg>
+                <span>${item.likes || 0}</span>
               </button>
             </div>
             ${item.caption ? `<p class="plaza-caption">${item.caption}</p>` : ''}
