@@ -1243,17 +1243,6 @@ async function loadMerchantList(){
       list.appendChild(div);
     });}catch(e){console.log(e)}}
 
-/* ===== AI 对话 ===== */
-var chatMessages=document.getElementById('chat-messages');
-var chatInput=document.getElementById('chat-input');
-var chatSend=document.getElementById('chat-send');
-function renderMarkdown(text){marked.setOptions({breaks:true,gfm:true});var tmp=document.createElement('div');tmp.innerHTML=marked.parse(text||'');return tmp.innerHTML}
-function addMsg(role,text){var div=document.createElement('div');div.className=role==='user'?'msg-user':'msg-ai';if(role==='user')div.textContent=text;else div.innerHTML=renderMarkdown(text);chatMessages.appendChild(div);chatMessages.scrollTop=chatMessages.scrollHeight;return div}
-async function sendChat(){var msg=chatInput.value.trim();if(!msg)return;chatInput.value='';addMsg('user',msg);chatSend.disabled=true;var loading=addMsg('ai','');loading.innerHTML='<span class=\"spinner-sm\"></span>AI 分析中…';
-  try{var r=await fetch('/api/admin/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});var d=await r.json();if(d.error)throw new Error(d.error);loading.innerHTML=renderMarkdown(typeof d.reply==='string'?d.reply:(d.reply||d).toString()))}catch(e){loading.innerHTML=renderMarkdown('**错误**: '+e.message)}chatSend.disabled=false;chatInput.focus()}
-chatSend.addEventListener('click',sendChat);
-chatInput.addEventListener('keydown',function(e){if(e.key==='Enter')sendChat()});
-
 /* ===== 10 Skill 按钮 ===== */
 var COPY_VARIANTS=[{channel:'banner',tone:'playful',cssClass:'card-banner',label:'Banner 横幅'},{channel:'push',tone:'playful',cssClass:'card-push',label:'App Push'},{channel:'detail_page',tone:'premium',cssClass:'card-detail',label:'详情页'},{channel:'merchant_invite',tone:'premium',cssClass:'card-merchant',label:'商家邀请'}];
 
