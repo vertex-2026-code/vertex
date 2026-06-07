@@ -1203,7 +1203,8 @@ def admin_chat():
         return jsonify({"error": "message cannot be empty"}), 400
     try:
         # 意图检测 → 预调 skill 注入数据到 prompt
-        augmented_msg = _inject_skill_context(get_db(), user_msg)
+        from services.skills.data_context import build_analysis_prompt
+        augmented_msg = build_analysis_prompt(get_db(), user_msg)
 
         result = subprocess.run(
             ["openclaw", "agent", "--message", augmented_msg, "--json",
