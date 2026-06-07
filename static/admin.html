@@ -1072,13 +1072,49 @@ async function loadGmvDashboard() {
   if (style) params.set('style', style);
   const qs = params.toString();
   try {
-    await fetch('/api/admin/gmv_dashboard' + (qs ? '?' + qs : ''));
-  } catch (e) {}
+    const r = await fetch('/api/admin/gmv_dashboard' + (qs ? '?' + qs : ''));
+    const d = await r.json();
+    $('#dk-gmv').innerHTML = '¥' + F(d.total_gmv);
+    $('#dk-gmv-chg').innerHTML = (d.gmv_chg||0) >= 0 ? '+' + (d.gmv_chg||0) + '%' : (d.gmv_chg||0) + '%';
+    $('#dk-gmv-chg').className = 'kpi-chg-dash ' + ((d.gmv_chg||0) >= 0 ? 'up' : 'down');
+    $('#dk-orders').innerHTML = F(d.total_orders);
+    $('#dk-aov').innerHTML = '¥' + F(Math.round(d.avg_aov));
+    $('#dk-views').innerHTML = F(d.total_views);
+    $('#dk-cvr').innerHTML = d.avg_cvr.toFixed(2) + '%';
+    if (d.daily?.length) {
+      const dates = d.daily.map(x => x.date.slice(5));
+      const ctx = document.getElementById('gmvDashChart')?.getContext('2d');
+      if (ctx) {
+        if (gmvDashChart) gmvDashChart.destroy();
+        const gMax = Math.max(...d.daily.map(x => x.gmv), 1);
+        const oMax = Math.max(...d.daily.map(x => x.orders), 1);
+        const vMax = Math.max(...d.daily.map(x => x.views), 1);
+        const aMax = Math.max(...d.daily.map(x => x.aov), 1);
+        const cMax = Math.max(...d.daily.map(x => x.cvr), 1);
+        gmvDashChart = new Chart(ctx, { type: 'line', data: { labels: dates, datasets: [
+          { label: 'GMV', data: d.daily.map(x => +(x.gmv/gMax*100).toFixed(1)), borderColor: '#d4ab7c', backgroundColor: 'rgba(212,171,124,0.06)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2.2 },
+          { label: '订单数', data: d.daily.map(x => +(x.orders/oMax*100).toFixed(1)), borderColor: '#c0808f', tension: 0.3, pointRadius: 0, borderWidth: 1.8 },
+          { label: 'AOV', data: d.daily.map(x => +(x.aov/aMax*100).toFixed(1)), borderColor: '#e0a07e', tension: 0.3, pointRadius: 0, borderWidth: 1.5, borderDash: [5,3] },
+          { label: '浏览量', data: d.daily.map(x => +(x.views/vMax*100).toFixed(1)), borderColor: 'rgba(241,220,207,0.5)', tension: 0.3, pointRadius: 0, borderWidth: 1.2, borderDash: [3,4] },
+          { label: 'CVR', data: d.daily.map(x => +(x.cvr/cMax*100).toFixed(1)), borderColor: '#88c8a0', tension: 0.3, pointRadius: 0, borderWidth: 1.8 }
+        ]}, options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' },
+          plugins: { legend: { labels: { color: 'color-mix(in srgb, #f1dccf 60%, transparent)', font: {size:10}, usePointStyle: true, boxWidth: 8 } } },
+          scales: { x: { ticks: { color: 'color-mix(in srgb, #f1dccf 35%, transparent)', font: {size:9}, maxTicksLimit: 12 }, grid: { color: 'rgba(241,220,207,0.03)' } },
+            y: { min: 0, max: 100, ticks: { color: 'color-mix(in srgb, #f1dccf 35%, transparent)', callback: v => v+'%', font: {size:9} }, grid: { color: 'rgba(241,220,207,0.04)' } } } } });
+      }
+    }
+  } catch(e) { console.log('GMV:', e); }
 }
+loadGmvDashboard();
 
-/* ===== AI 运营助手 — 带 @jiaqu-* skill 标签的 OpenClaw 对话 ===== */
-const chatInput = $('#chat-input');
-const chatSend = $('#chat-send');
+// 默认30天日期
+(function(){var t=new Date(),d=new Date(t);d.setDate(d.getDate()-29);var f=function(x){return x.toISOString().slice(0,10)};var ef=document.getElementById('gmv-from');var et=document.getElementById('gmv-to');if(ef&&!ef.value)ef.value=f(d);if(et&&!et.value)et.value=f(t);loadGmvDashboard()})();
+
+// 城市/风格下拉填充
+(async function(){try{var r=await fetch('/api/admin/merchant_list');var d=await r.json();if(d.cities?.length){var s=document.getElementById('gmv-city');d.cities.forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;s.appendChild(o)})}if(d.styles?.length){var sl=document.getElementById('gmv-style');d.styles.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p;sl.appendChild(o)})}}catch(e){}})();
+
+/* ===== 商家列表 ===== */
+function toggleMerchantPanel(){var p=document.getElementById('merchant-panel');if(p){p.style.display=p.style.display==='none'?'block':'none';if(p.style.display==='block')loadMerchantList()}}
 const chatMessages = $('#chat-messages');
 
 function addMsg(role, text) {
@@ -1145,6 +1181,136 @@ if (chatInput) {
 document.querySelectorAll('.skill-chip').forEach(chip => {
   chip.addEventListener('click', () => attachSkill(chip));
 });
+</script>
+</body>
+</html>
+    const d = await r.json();
+    $('#dk-gmv').innerHTML = '¥' + F(d.total_gmv);
+    $('#dk-gmv-chg').innerHTML = (d.gmv_chg||0) >= 0 ? '+' + (d.gmv_chg||0) + '%' : (d.gmv_chg||0) + '%';
+    $('#dk-gmv-chg').className = 'kpi-chg-dash ' + ((d.gmv_chg||0) >= 0 ? 'up' : 'down');
+    $('#dk-orders').innerHTML = F(d.total_orders);
+    $('#dk-aov').innerHTML = '¥' + F(Math.round(d.avg_aov));
+    $('#dk-views').innerHTML = F(d.total_views);
+    $('#dk-cvr').innerHTML = d.avg_cvr.toFixed(2) + '%';
+    if (d.daily?.length) {
+      const dates = d.daily.map(x => x.date.slice(5));
+      const ctx = document.getElementById('gmvDashChart')?.getContext('2d');
+      if (!ctx) return;
+      if (gmvDashChart) gmvDashChart.destroy();
+      const gMax = Math.max(...d.daily.map(x => x.gmv), 1);
+      const oMax = Math.max(...d.daily.map(x => x.orders), 1);
+      const vMax = Math.max(...d.daily.map(x => x.views), 1);
+      const aMax = Math.max(...d.daily.map(x => x.aov), 1);
+      const cMax = Math.max(...d.daily.map(x => x.cvr), 1);
+      gmvDashChart = new Chart(ctx, { type: 'line', data: { labels: dates, datasets: [
+        { label: 'GMV', data: d.daily.map(x => +(x.gmv/gMax*100).toFixed(1)), borderColor: '#d4ab7c', backgroundColor: 'rgba(212,171,124,0.06)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2.2 },
+        { label: '订单数', data: d.daily.map(x => +(x.orders/oMax*100).toFixed(1)), borderColor: '#c0808f', tension: 0.3, pointRadius: 0, borderWidth: 1.8 },
+        { label: 'AOV', data: d.daily.map(x => +(x.aov/aMax*100).toFixed(1)), borderColor: '#e0a07e', tension: 0.3, pointRadius: 0, borderWidth: 1.5, borderDash: [5,3] },
+        { label: '浏览量', data: d.daily.map(x => +(x.views/vMax*100).toFixed(1)), borderColor: 'rgba(241,220,207,0.5)', tension: 0.3, pointRadius: 0, borderWidth: 1.2, borderDash: [3,4] },
+        { label: 'CVR', data: d.daily.map(x => +(x.cvr/cMax*100).toFixed(1)), borderColor: '#88c8a0', tension: 0.3, pointRadius: 0, borderWidth: 1.8 }
+      ]}, options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' },
+        plugins: { legend: { labels: { color: 'color-mix(in srgb, #f1dccf 60%, transparent)', font: {size:10}, usePointStyle: true, boxWidth: 8 } },
+          tooltip: { callbacks: { label: ctx => { const i = ctx.dataIndex; const row = d.daily[i];
+            const map = { GMV: '¥'+F(row.gmv), '订单数': F(row.orders), AOV: '¥'+F(Math.round(row.aov)), '浏览量': F(row.views), CVR: row.cvr.toFixed(2)+'%' };
+            return ctx.dataset.label + ': ' + (map[ctx.dataset.label] || ctx.raw+'%'); } } } },
+        scales: { x: { ticks: { color: 'color-mix(in srgb, #f1dccf 35%, transparent)', font: {size:9}, maxTicksLimit: 12 }, grid: { color: 'rgba(241,220,207,0.03)' } },
+          y: { min: 0, max: 100, ticks: { color: 'color-mix(in srgb, #f1dccf 35%, transparent)', callback: v => v+'%', font: {size:9} }, grid: { color: 'rgba(241,220,207,0.04)' } } } } });
+    }
+  } catch(e) { console.log('GMV:', e); }
+}
+loadGmvDashboard();
+
+// 默认30天日期
+(function(){var t=new Date(),d=new Date(t);d.setDate(d.getDate()-29);var f=function(x){return x.toISOString().slice(0,10)};var ef=document.getElementById('gmv-from');var et=document.getElementById('gmv-to');if(ef&&!ef.value)ef.value=f(d);if(et&&!et.value)et.value=f(t);loadGmvDashboard()})();
+
+// 城市/风格下拉填充
+(async function(){try{var r=await fetch('/api/admin/merchant_list');var d=await r.json();if(d.cities?.length){var s=document.getElementById('gmv-city');d.cities.forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;s.appendChild(o)})}if(d.styles?.length){var sl=document.getElementById('gmv-style');d.styles.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p;sl.appendChild(o)})}}catch(e){}})();
+
+/* ===== 商家列表 ===== */
+function toggleMerchantPanel(){var p=document.getElementById('merchant-panel');if(p){p.style.display=p.style.display==='none'?'block':'none';if(p.style.display==='block')loadMerchantList()}}
+async function loadMerchantList(){
+  var p=new URLSearchParams();var s=(document.getElementById('merchant-search')?.value||'').trim();var city=document.getElementById('gmv-city')?.value||'';var style=document.getElementById('gmv-style')?.value||'';
+  if(s)p.set('search',s);if(city)p.set('city',city);if(style)p.set('style',style);
+  try{var r=await fetch('/api/admin/merchant_list'+(p.toString()?'?'+p.toString():''));var d=await r.json();var el=document.getElementById('merchant-count');if(el&&d.total!=null)el.textContent='共 '+d.total+' 家';
+    var list=document.getElementById('merchant-list');if(!list)return;
+    if(!d.merchants?.length){list.innerHTML='<div style=\"text-align:center;padding:20px;color:var(--t-tertiary)\">无匹配商家</div>';return}
+    list.innerHTML=d.merchants.map(function(m){return '<div style=\"display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--hairline);cursor:pointer\" onmouseenter=\"this.style.background=\\'var(--hover)\\'\" onmouseleave=\"this.style.background=\\'\\'\" onclick=\"document.getElementById(\\'chat-input\\').value=\\'分析门店 '+m.shop_id+' '+m.shop_name+' 的GMV和运营数据\\';sendChat()\"><div style=\"flex:1;min-width:0\"><div style=\"font-size:13px;font-weight:500;color:var(--t-primary)\">'+m.shop_name+'</div><div style=\"font-size:10px;color:var(--t-tertiary);margin-top:2px\">'+m.city+'·'+m.district+' | '+m.style_name+' | 单价¥'+m.avg_ticket+'</div></div><div style=\"text-align:right;flex-shrink:0\"><div style=\"font-size:13px;font-family:var(--font-mono);color:var(--accent)\">¥'+F(m.period_gmv)+'</div><div style=\"font-size:10px;color:var(--t-tertiary)\">★★★ '+m.rating+' · '+(m.review_count||0)+'评</div></div></div>'}).join('')}catch(e){console.log(e)}}
+
+/* ===== AI 对话 ===== */
+var chatMessages=document.getElementById('chat-messages');
+var chatInput=document.getElementById('chat-input');
+var chatSend=document.getElementById('chat-send');
+function renderMarkdown(text){marked.setOptions({breaks:true,gfm:true});var tmp=document.createElement('div');tmp.innerHTML=marked.parse(text||'');return tmp.innerHTML}
+function addMsg(role,text){var div=document.createElement('div');div.className=role==='user'?'msg-user':'msg-ai';if(role==='user')div.textContent=text;else div.innerHTML=renderMarkdown(text);chatMessages.appendChild(div);chatMessages.scrollTop=chatMessages.scrollHeight;return div}
+async function sendChat(){var msg=chatInput.value.trim();if(!msg)return;chatInput.value='';addMsg('user',msg);chatSend.disabled=true;var loading=addMsg('ai','');loading.innerHTML='<span class=\"spinner-sm\"></span>AI 分析中…';
+  try{var r=await fetch('/api/admin/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});var d=await r.json();if(d.error)throw new Error(d.error);loading.innerHTML=renderMarkdown(typeof d.reply==='string'?d.reply:(d.reply||d).toString()))}catch(e){loading.innerHTML=renderMarkdown('**错误**: '+e.message)}chatSend.disabled=false;chatInput.focus()}
+chatSend.addEventListener('click',sendChat);
+chatInput.addEventListener('keydown',function(e){if(e.key==='Enter')sendChat()});
+
+/* ===== 10 Skill 按钮 ===== */
+var COPY_VARIANTS=[{channel:'banner',tone:'playful',cssClass:'card-banner',label:'Banner 横幅'},{channel:'push',tone:'playful',cssClass:'card-push',label:'App Push'},{channel:'detail_page',tone:'premium',cssClass:'card-detail',label:'详情页'},{channel:'merchant_invite',tone:'premium',cssClass:'card-merchant',label:'商家邀请'}];
+
+function formatSkillResult(skill,data){
+  switch(skill){
+    case 'get_gmv_status':
+      return '<h3>GMV 现状</h3><p><strong>本月 GMV:</strong> ¥'+F(data.month_gmv)+' / 目标 ¥'+F(data.target)+' ('+data.completion_pct+'%)</p><p><strong>缺口:</strong> ¥'+F(data.gap)+' · <strong>预测月末:</strong> ¥'+F(data.forecast_end_of_month)+' · <strong>状态:</strong> '+data.status+'</p>';
+    case 'breakdown_gmv':
+      var bars=(data.factors||[]).map(function(f){var w=Math.round(Math.abs(f.contribution)/Math.max.apply(null,(data.factors||[]).map(function(x){return Math.abs(x.contribution)}).concat([1]))*100);var cls=f.contribution>=0?'fill-gold':'fill-warn';return '<div class=\"viz-bar-row\"><span class=\"bar-label\">'+f.name+'</span><div class=\"viz-track\"><div class=\"viz-fill '+cls+'\" style=\"width:'+w+'%\"></div></div><span class=\"bar-val\">¥'+F(f.current)+'</span><span class=\"bar-contrib\" style=\"color:'+(f.contribution>=0?'var(--accent)':'#e0a07e')+'\">'+(f.contribution>=0?'+':'')+'¥'+F(f.contribution)+'</span></div>'}).join('');
+      return '<h3>GMV 归因拆解</h3><p>GMV 变化: <strong>'+(data.gmv_change>=0?'+':'')+'¥'+F(data.gmv_change)+' ('+data.gmv_change_pct+'%)</strong></p><div class=\"viz-card\">'+bars+'</div><p style=\"font-size:13px;color:var(--accent);margin-top:6px\">'+data.narrative+'</p>';
+    case 'rank_styles':
+      var rows=(data.styles||[]).slice(0,8).map(function(s,i){return '<tr><td>'+(i+1)+'</td><td>'+s.style_code+'</td><td>'+s.style_name+'</td><td>'+s.style_tag+'</td><td>¥'+F(s.gmv)+'</td><td>'+s.gmv_share_pct+'%</td></tr>'}).join('');
+      return '<h3>款式 GMV 排行</h3><div class=\"table-wrap\"><table><thead><tr><th>#</th><th>款式</th><th>名称</th><th>标签</th><th>GMV</th><th>占比</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    case 'detect_risk':
+      if(!data.risks||!data.risks.length)return '<h3>风险预警</h3><p>✓ 近期未检测到显著风险</p>';
+      return '<h3>风险预警 · '+data.risk_count+' 项</h3>'+data.risks.map(function(r){return '<div class=\"viz-card warn-card\"><div class=\"card-head\"><span class=\"card-title\">'+r.type+': '+r.target+'</span></div><p style=\"font-size:12px;color:var(--t-secondary)\">'+r.issue+'</p><p style=\"font-size:12px;color:var(--accent)\">→ '+r.suggestion+'</p></div>'}).join('');
+    case 'recommend_actions':
+      return '<h3>GMV 增长建议</h3><p>缺口 ¥'+F(data.gap)+'</p>'+((data.recommendations||[]).map(function(a,i){return '<div class=\"viz-card highlight\"><div class=\"card-head\"><span style=\"font-size:11px;color:var(--t-tertiary)\">#'+(i+1)+'</span><span class=\"card-title\">'+a.action+'</span><span class=\"card-badge badge-'+(a.roi==='high'?'high':a.roi==='medium'?'mid':'low')+'\">'+(a.roi==='high'?'高':a.roi==='medium'?'中':'低')+' ROI</span></div><p style=\"font-size:11px;color:var(--t-secondary)\">'+a.reasoning+'</p></div>'}).join(''))+'<p style=\"font-size:13px;margin-top:8px\"><strong>全部采纳预测: ¥'+F(data.forecast_if_all)+'</strong> '+(data.would_hit_target?'✓ 达标':'✗ 仍有缺口')+'</p>';
+    case 'generate_promo_copy':
+      return Array.isArray(data)?formatCopyGallery(data):formatCopyGallery([data]);
+    case 'validate_prediction':
+      var det=(data.details||[]).map(function(d){return '<tr><td>'+d.action+'</td><td>+¥'+F(d.expected_gmv_lift)+'</td><td>'+(d.actual_gmv_lift!=null?'+¥'+F(d.actual_gmv_lift):'—')+'</td><td>'+d.verdict+'</td></tr>'}).join('');
+      return '<h3>预测验证</h3><p>准确率: '+(data.accuracy!=null?data.accuracy+'%':'—')+' · '+data.predictions_hit+'/'+data.predictions_total+'</p><div class=\"table-wrap\"><table><thead><tr><th>动作</th><th>预期</th><th>实际</th><th>判定</th></tr></thead><tbody>'+det+'</tbody></table></div><p>'+data.narrative+'</p>';
+    case 'whatif':
+      var imp=data.impact||{};
+      return '<h3>What-If 沙盘</h3><div class=\"viz-card highlight\"><div class=\"card-head\"><span class=\"card-title\">'+imp.action+'</span><span class=\"card-badge '+((imp.delta_pct||0)>=0?'badge-up':'badge-down')+'\">'+((imp.delta_pct||0)>=0?'+':'')+(imp.delta_pct||0)+'%</span></div><div class=\"viz-meta\"><div class=\"viz-meta-item\"><div class=\"v\">¥'+F(data.baseline_gmv)+'</div><div class=\"l\">基线</div></div><div class=\"viz-meta-item\"><div class=\"v\" style=\"color:'+((imp.delta||0)>=0?'var(--accent)':'#e0a07e')+'\">'+((imp.delta||0)>=0?'+':'')+'¥'+F(imp.delta)+'</div><div class=\"l\">变化</div></div></div>'+(imp.risk?'<p style=\"font-size:12px;color:#e0a07e\">⚠ '+imp.risk+'</p>':'')+'</div>';
+    case 'trend_mapper':
+      return '<h3>趋势雷达</h3>'+(data.trends||[]).map(function(t){return '<div class=\"viz-card highlight\"><div class=\"card-head\"><span class=\"card-title\">'+t.tag+'</span><span class=\"card-badge badge-up\">+'+t.growth_pct+'%</span></div><p style=\"font-size:12px;color:var(--t-secondary)\">'+t.suggestion+'</p></div>'}).join('')+'<p>'+data.narrative+'</p>';
+    case 'vton_recovery':
+      return '<h3>试戴漏斗</h3><p>'+data.narrative+'</p>'+((data.suggestions||[]).map(function(s){return '<div class=\"viz-card '+(s.priority==='high'?'warn-card':'')+'\"><div class=\"card-head\"><span class=\"card-title\">'+s.action+'</span></div><p style=\"font-size:12px;color:var(--t-secondary)\">'+s.detail+'</p><p style=\"font-size:12px;color:var(--accent)\">'+s.impact+'</p></div>'}).join(''));
+    default: return '<pre><code>'+JSON.stringify(data,null,2)+'</code></pre>';
+  }
+}
+
+function formatCopyGallery(results){
+  return '<h3>文案生成</h3><div class=\"copy-gallery\">'+results.map(function(data,i){var v=COPY_VARIANTS[i]||COPY_VARIANTS[0];var inner='';switch(v.cssClass){
+    case'card-banner':inner='<div class=\"copy-label\">'+v.label+'</div><div class=\"copy-main\">'+data.main_copy+'</div><div class=\"copy-sub\">'+data.sub_copy+'</div><span class=\"copy-cta\">'+data.cta+'</span>';break;
+    case'card-push':inner='<div class=\"copy-bar\"><span class=\"copy-icon\"><svg width=\"36\" height=\"36\" viewBox=\"0 0 36 36\"><defs><linearGradient id=\"pg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#c0808f\"/><stop offset=\"100%\" stop-color=\"#d4ab7c\"/></linearGradient></defs><rect width=\"36\" height=\"36\" rx=\"9\" fill=\"url(#pg)\"/><text x=\"18\" y=\"24\" text-anchor=\"middle\" fill=\"#160b10\" font-size=\"18\" font-weight=\"600\" font-family=\"serif\">V</text></svg></span><span class=\"copy-app\">甲趣 · Vertex</span><span class=\"copy-time\">刚刚</span></div><div class=\"copy-main\">'+data.main_copy+'</div><div class=\"copy-sub\">'+data.sub_copy+'</div>';break;
+    case'card-detail':inner='<div class=\"copy-label\">'+v.label+'</div><div class=\"copy-main\">'+data.main_copy+'</div><div class=\"copy-features\"><span class=\"copy-feat\">AI 虚拟试戴</span><span class=\"copy-feat\">7天无忧</span></div><div class=\"copy-sub\">'+data.sub_copy+'</div><span class=\"copy-cta\">'+data.cta+' →</span>';break;
+    case'card-merchant':inner='<div class=\"copy-label\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\" style=\"display:inline-block;vertical-align:-2px;margin-right:4px\"><polygon points=\"7,0 9,4 13,5 10,8 11,13 7,11 3,13 4,8 1,5 5,4\" fill=\"#d4ab7c\"/></svg>'+v.label+'</div><div class=\"copy-main\">'+data.main_copy+'</div><div class=\"copy-sub\">'+data.sub_copy+'</div><span class=\"copy-cta\">'+data.cta+'</span>';break;
+  }return'<div class=\"copy-card '+v.cssClass+'\" onclick=\"selectCopy(this)\"><div class=\"copy-inner\">'+inner+'</div></div>'}).join('')+'</div><p style=\"font-size:10px;color:var(--t-tertiary);text-align:center;margin-top:8px\">点击卡片选择 · '+results.length+' 套方案</p>'}
+function selectCopy(el){document.querySelectorAll('.copy-card').forEach(function(c){c.classList.remove('selected')});el.classList.add('selected')}
+
+async function triggerSkill(chip){
+  var skill=chip.dataset.skill;var label=chip.dataset.label||skill;chip.classList.add('loading');
+  if(skill==='generate_promo_copy'){
+    chip.classList.add('loading');var loadingDiv=addMsg('ai','');loadingDiv.innerHTML='<span class=\"spinner-sm\"></span>获取热门款式…';
+    try{var rankRes=await fetch('/api/admin/skills/rank_styles?limit=1').then(function(r){return r.json()});var topStyle=(rankRes.styles&&rankRes.styles.length)?rankRes.styles[0].style_code:'nail_03';
+      loadingDiv.innerHTML='<span class=\"spinner-sm\"></span>为 <strong>'+topStyle+'</strong> 生成文案…';
+      var urls=COPY_VARIANTS.map(function(v){var p=new URLSearchParams();p.set('style_code',topStyle);p.set('channel',v.channel);p.set('tone',v.tone);return'/api/admin/skills/generate_promo_copy?'+p.toString()});
+      var responses=await Promise.all(urls.map(function(u){return fetch(u).then(function(r){return r.json()})}));var results=responses.filter(function(r){return!r.error});
+      loadingDiv.innerHTML=formatCopyGallery(results.length?results:responses)}catch(e){loadingDiv.innerHTML='<p style=\"color:#e0a07e\">生成失败: '+e.message+'</p>'}
+    chip.classList.remove('loading');return}
+  var url='/api/admin/skills/'+skill;var params=new URLSearchParams();
+  if(skill==='rank_styles'){params.set('period','this_month');params.set('rank_type','top');params.set('limit','8')}
+  else if(skill==='whatif'){params.set('action','discount');params.set('magnitude','10')}
+  else if(skill==='validate_prediction'){params.set('period','last_week')}
+  else{params.set('period','this_month')}
+  if(params.toString())url+='?'+params.toString();
+  var loadingDiv=addMsg('ai','');loadingDiv.innerHTML='<span class=\"spinner-sm\"></span>查询 <strong>'+label+'</strong>…';
+  try{var r=await fetch(url);var data=await r.json();if(data.error)throw new Error(data.error);loadingDiv.innerHTML=formatSkillResult(skill,data)}catch(e){loadingDiv.innerHTML='<p style=\"color:#e0a07e\">查询失败: '+e.message+'</p>'}
+  chip.classList.remove('loading')}
+
+document.querySelectorAll('.skill-chip').forEach(function(chip){chip.addEventListener('click',function(){triggerSkill(chip)})});
 </script>
 </body>
 </html>
