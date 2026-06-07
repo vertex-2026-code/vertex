@@ -936,45 +936,47 @@ function renderStats(d) {
   animateNum($('#s-styles'), d.db_styles_total || 0);
   animateNum($('#s-gmv'), (d.shop_gmv_total || 0), { unit: '¥', decimals: 0 });
 
-  // 风格分类热度
-  const maxCat = d.category_stats?.length ? d.category_stats[0][1] : 1;
-  $('#cat-stats').innerHTML = (d.category_stats || []).map(([cat, count]) => {
+  // 风格分类热度（优先DB商家款式分布）
+  const catDist = d.style_cat_dist?.length ? d.style_cat_dist : d.category_stats;
+  const maxCat = catDist?.length ? catDist[0][1] : 1;
+  $('#cat-stats').innerHTML = (catDist || []).map(([cat, count]) => {
     const w = Math.round(count / maxCat * 100);
     const name = (d.category_names && d.category_names[cat]) || cat;
     return `<div class="row">
       <span class="cat-dot" style="background:${CAT_COLORS[cat] || 'var(--accent)'}"></span>
       <span class="row-name fixed">${cat} · ${name}</span>
       <span class="bar-track"><span class="bar" data-w="${w}"></span></span>
-      <span class="row-val">${count}</span>
+      <span class="row-val">${Number(count).toLocaleString()}</span>
     </div>`;
   }).join('');
 
-  // 热门款式
-  const maxStyle = d.top_styles?.length ? d.top_styles[0][1] : 1;
-  $('#top-styles').innerHTML = (d.top_styles || []).map(([sid, count], i) => {
-    const rate = d.like_rates && d.like_rates[sid] != null ? d.like_rates[sid] + '%' : '–';
-    const w = Math.round(count / maxStyle * 100);
+  // 热门款式（优先DB款式GMV排行，其次C端日志）
+  const styleData = d.top_styles_by_gmv?.length ? d.top_styles_by_gmv : d.top_styles;
+  const maxStyle = styleData?.length ? styleData[0][1] : 1;
+  $('#top-styles').innerHTML = (styleData || []).map((item, i) => {
+    const sid = item[0], gmv = item[1], name = item[2] || '';
+    const w = Math.round(gmv / maxStyle * 100);
+    const displayName = name ? `${name} (${sid})` : sid;
     return `<div class="row">
       <span class="rank">${i + 1}</span>
-      <img class="thumb" src="/static/nails/${sid}.png" onerror="this.style.visibility='hidden'">
-      <span class="row-sid">${sid}</span>
+      <span class="row-sid" style="width:auto;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${displayName}</span>
       <span class="bar-track"><span class="bar" data-w="${w}"></span></span>
-      <span class="row-val">${count}</span>
-      <span class="row-rate">${rate}</span>
+      <span class="row-val" style="width:auto">¥${gmv.toLocaleString()}</span>
     </div>`;
   }).join('');
 
-  // 门店预约(异常高亮)
-  const maxShop = d.top_shops?.length ? d.top_shops[0][1] : 1;
-  const avgShop = d.top_shops?.length ? d.top_shops.reduce((s, x) => s + x[1], 0) / d.top_shops.length : 0;
-  $('#top-shops').innerHTML = (d.top_shops || []).map(([sid, count]) => {
-    const w = Math.round(count / maxShop * 100);
-    const isWarn = count > avgShop * 2;
+  // 门店（优先DB商家营收排行）
+  const shopData = d.top_shops_by_rev?.length ? d.top_shops_by_rev : d.top_shops;
+  const maxShop = shopData?.length ? (shopData[0][2] || shopData[0][1]) : 1;
+  const avgShop = shopData?.length ? shopData.reduce((s, x) => s + (x[2]||x[1]), 0) / shopData.length : 0;
+  $('#top-shops').innerHTML = (shopData || []).map((item) => {
+    const sid = item[0], name = item[1] || sid, val = item[2] || item[1];
+    const w = Math.round(val / maxShop * 100);
+    const isWarn = val > avgShop * 2;
     return `<div class="row">
-      <span class="row-name fixed" style="width:auto;flex:1">${SHOP_NAMES[sid] || sid}</span>
-      <span class="row-tag">${SHOP_STYLES[sid] || ''}</span>
+      <span class="row-name fixed" style="width:auto;flex:1">${name}</span>
       <span class="bar-track"><span class="bar solo" data-w="${w}"></span></span>
-      <span class="row-val ${isWarn ? 'warn' : ''}">${count}${isWarn ? ' <span class="warn-tag">⚠</span>' : ''}</span>
+      <span class="row-val ${isWarn ? 'warn' : ''}" style="width:auto">¥${val.toLocaleString()}${isWarn ? ' <span class="warn-tag">⚠</span>' : ''}</span>
     </div>`;
   }).join('');
 

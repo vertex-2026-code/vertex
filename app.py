@@ -1178,6 +1178,16 @@ def admin_stats():
             "SELECT category, COUNT(*) FROM merchant_style_catalog GROUP BY category ORDER BY 2 DESC"
         ).fetchall()]
     except: pass
+    # 热门款式（按GMV）
+    top_styles_by_gmv = []
+    try:
+        top_styles_by_gmv = [[r[0], int(r[1]), r[2]] for r in db.execute("""
+            SELECT d.style_id, SUM(d.group_buy_orders * c.price) AS gmv, c.style_name
+            FROM merchant_style_daily_metrics d
+            JOIN merchant_style_catalog c ON d.style_id = c.style_id
+            GROUP BY d.style_id ORDER BY gmv DESC LIMIT 10
+        """).fetchall()]
+    except: pass
 
     return jsonify({
         "total_tryons": len(starts),
@@ -1201,6 +1211,7 @@ def admin_stats():
         "shop_gmv_total": shop_gmv_total,
         "top_shops_by_rev": top_shops_by_rev,
         "style_cat_dist": style_cat_dist,
+        "top_styles_by_gmv": top_styles_by_gmv,
     })
 
 
