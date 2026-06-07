@@ -1147,12 +1147,9 @@ loadGmvDashboard();
 // 默认30天日期
 (function(){var t=new Date(),d=new Date(t);d.setDate(d.getDate()-29);var f=function(x){return x.toISOString().slice(0,10)};var ef=document.getElementById('gmv-from');var et=document.getElementById('gmv-to');if(ef&&!ef.value)ef.value=f(d);if(et&&!et.value)et.value=f(t);loadGmvDashboard()})();
 
-// 城市/风格下拉填充
-(async function(){try{var r=await fetch('/api/admin/merchant_list');var d=await r.json();if(d.cities?.length){var s=document.getElementById('gmv-city');d.cities.forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;s.appendChild(o)})}if(d.styles?.length){var sl=document.getElementById('gmv-style');d.styles.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p;sl.appendChild(o)})}}catch(e){}})();
-
-/* ===== 商家列表 ===== */
-function toggleMerchantPanel(){var p=document.getElementById('merchant-panel');if(p){p.style.display=p.style.display==='none'?'block':'none';if(p.style.display==='block')loadMerchantList()}}
 const chatMessages = $('#chat-messages');
+const chatInput = $('#chat-input');
+const chatSend = $('#chat-send');
 
 function addMsg(role, text) {
   const div = document.createElement('div');
