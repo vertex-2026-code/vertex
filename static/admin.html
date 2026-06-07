@@ -1339,10 +1339,7 @@ const chatSend = $('#chat-send');
 
 function addMsg(role, text) {
   const div = document.createElement('div');
-  div.className = role === 'user' ? 'user-msg' : 'ai-msg';
-  div.style.cssText = role === 'user'
-    ? 'background:var(--accent);color:var(--bg);padding:8px 12px;border-radius:12px;margin:6px 0;align-self:flex-end;max-width:80%;font-size:13px'
-    : 'background:var(--card);color:var(--t-primary);padding:8px 12px;border-radius:12px;margin:6px 0;align-self:flex-start;max-width:90%;font-size:13px;border:1px solid var(--border)';
+  div.className = role === 'user' ? 'msg-user' : 'msg-ai';
   if (typeof text === 'string') div.textContent = text;
   chatMessages.appendChild(div);
   chatMessages.scrollTop = chatMessages.scrollHeight;
