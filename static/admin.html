@@ -153,6 +153,8 @@
     transition: color 0.18s;
   }
   .back-link:hover { color: var(--accent); }
+  .nav-row { display: inline-flex; align-items: center; gap: 9px; }
+  .nav-sep { color: var(--t-tertiary); opacity: 0.4; font-size: 10px; user-select: none; }
 
   /* ===== Metrics ===== */
   .metrics {
@@ -440,7 +442,13 @@
     </div>
     <div class="topbar-right">
       <span class="live"><span class="live-dot"></span>Live · 15s</span>
-      <a href="/" class="back-link">← 返回 C 端</a>
+      <nav class="nav-row">
+        <a href="/" class="back-link">← C 端</a>
+        <span class="nav-sep">·</span>
+        <a href="/merchant" class="back-link">商家端</a>
+        <span class="nav-sep">·</span>
+        <a href="/merchant-dataset" class="back-link">商家数据库</a>
+      </nav>
     </div>
   </header>
 
