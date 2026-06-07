@@ -1059,11 +1059,13 @@ def admin_chat():
     if not user_msg:
         return jsonify({"error": "message cannot be empty"}), 400
     try:
+        # 意图检测 → 预调 skill 注入数据到 prompt
+        augmented_msg = _inject_skill_context(get_db(), user_msg)
+
         result = subprocess.run(
-            ["openclaw", "agent", "--message", user_msg, "--json", "--session-id", "vertex-admin", "--timeout", "120"],
-            capture_output=True,
-            text=True,
-            timeout=130,
+            ["openclaw", "agent", "--message", augmented_msg, "--json",
+             "--session-id", "vertex-admin", "--timeout", "120"],
+            capture_output=True, text=True, timeout=130,
         )
         if result.returncode != 0:
             return jsonify({"error": f"OpenClaw error: {result.stderr.strip()[-200:]}"}), 500
@@ -1079,6 +1081,57 @@ def admin_chat():
         return jsonify({"error": "AI response timeout"}), 504
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
+
+
+def _inject_skill_context(db, msg: str) -> str:
+    """检测用户意图，预调 skill，把数据注入 prompt"""
+    context = ""
+    m = msg.lower()
+
+    if any(w in m for w in ["gmv", "营收", "收入", "销售额", "月报", "日报", "完成率"]):
+        from services.gmv_data import get_gmv_overview
+        d = get_gmv_overview(db)
+        context = (f"\n\n[实时GMV数据]\n"
+                   f"本月GMV: ¥{d['month_gmv']:,}, 目标: ¥{d['target']:,}, "
+                   f"完成率: {d['completion_pct']}%, 缺口: ¥{d['gap']:,}, "
+                   f"30天曲线: {[(c['date'][-5:], int(c['gmv']/1000)) for c in d['curve'][-7:]]}")
+
+    if any(w in m for w in ["归因", "拆解", "为什么涨", "为什么跌", "原因"]):
+        from services.gmv_data import get_gmv_breakdown
+        d = get_gmv_breakdown(db)
+        factors = "; ".join(f"{f['name']}贡献¥{f['contribution']:,}" for f in d.get("factors", [])[:4])
+        context += (f"\n\n[GMV归因分析]\n{d['narrative']}\n因子: {factors}")
+
+    if any(w in m for w in ["排行", "款式", "哪个款", "最赚钱", "拖后腿", "热门"]):
+        from services.gmv_data import get_styles_ranking
+        d = get_styles_ranking(db, 8)
+        top = "; ".join(f"{s['style_code']}({s['style_tag']}) ¥{s['gmv']:,}" for s in d.get("styles", [])[:5])
+        context += f"\n\n[款式GMV排行]\nTop5: {top}"
+
+    if any(w in m for w in ["风险", "异常", "预警", "下滑"]):
+        from services.skills.detect_risk import detect_risks
+        d = detect_risks(db)
+        risks = "; ".join(f"{r['type']}:{r['target']}" for r in d.get("risks", [])[:3])
+        context += f"\n\n[风险预警]\n{d['risk_count']}项: {risks}" if risks else ""
+
+    if any(w in m for w in ["建议", "增长", "做什么", "接下来", "推荐", "策略"]):
+        from services.gmv_data import get_recommendations
+        d = get_recommendations(db)
+        recs = "; ".join(f"{r['rank']}.{r['action_type']} +¥{r['expected_lift']:,}" for r in d.get("recommendations", [])[:3])
+        context += f"\n\n[GMV增长建议]\n{recs}"
+
+    if any(w in m for w in ["文案", "copy", "banner", "push"]):
+        # 从消息中提取款式
+        import re
+        style_match = re.search(r'(shop_\d+_sku_\d+|nail_\d+)', msg)
+        sc = style_match.group(1) if style_match else "nail_03"
+        from services.skills.generate_promo_copy import generate_promo_copy
+        d = generate_promo_copy(db, sc, channel="banner", tone="playful")
+        context += (f"\n\n[文案参考]\n款式:{sc}\n主标题:{d['main_copy']}\n副标题:{d['sub_copy']}\nCTA:{d['cta']}")
+
+    if context:
+        return f"{msg}\n\n---\n以下为系统预置的实时运营数据，请基于这些数据回答用户问题，给出具体数字和可执行的建议：{context}"
+    return msg
 
 
 @app.route("/api/merchant/skills")

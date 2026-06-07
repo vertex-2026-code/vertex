@@ -1297,15 +1297,20 @@ async function triggerSkill(chip) {
   if (skill === 'rank_styles') {
     params.set('period', 'this_month'); params.set('rank_type', 'top'); params.set('limit', '8');
   } else if (skill === 'generate_promo_copy') {
-    // 批量：5 个 channel×tone 变体并行请求
+    // 批量生成：取 GMV Top 1 款式作为默认
     chip.classList.add('loading');
     const label = chip.dataset.label || skill;
     const loadingDiv = addMsg('ai', '');
-    loadingDiv.innerHTML = `<span class="spinner-sm"></span>正在生成 <strong>${label}</strong>…`;
+    loadingDiv.innerHTML = `<span class="spinner-sm"></span>正在获取热门款式…`;
     try {
+      // 先拿排行第一的款式
+      const rankRes = await fetch('/api/admin/skills/rank_styles?limit=1').then(r => r.json());
+      const topStyle = (rankRes.styles && rankRes.styles.length) ? rankRes.styles[0].style_code : 'nail_03';
+      loadingDiv.innerHTML = `<span class="spinner-sm"></span>正在为 <strong>${topStyle}</strong> 生成文案…`;
+
       const urls = COPY_VARIANTS.map(v => {
         const p = new URLSearchParams();
-        p.set('style_code', 'nail_03'); p.set('channel', v.channel); p.set('tone', v.tone);
+        p.set('style_code', topStyle); p.set('channel', v.channel); p.set('tone', v.tone);
         return `/api/admin/skills/generate_promo_copy?${p}`;
       });
       const responses = await Promise.all(urls.map(u => fetch(u).then(r => r.json())));
@@ -1316,7 +1321,7 @@ async function triggerSkill(chip) {
     }
     chip.classList.remove('loading');
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    return;  // 跳过下面的通用逻辑
+    return;
   } else if (skill === 'validate_prediction') {
     params.set('period', 'last_week');
   } else {
