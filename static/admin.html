@@ -369,10 +369,13 @@
   /* ===== Skill 快捷按钮条 ===== */
   .skill-bar {
     border-top: 1px solid var(--hairline);
-    padding: 10px clamp(14px, 2vw, 18px);
-    display: flex; gap: 7px; flex-wrap: wrap;
-    align-items: center;
+    padding: 8px clamp(10px, 2vw, 18px);
+    display: flex; gap: 6px; align-items: center;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* IE */
   }
+  .skill-bar::-webkit-scrollbar { display: none } /* Chrome */
   .skill-bar-label {
     font-family: var(--font-mono); font-size: 9px; font-weight: 500;
     text-transform: uppercase; letter-spacing: 0.18em;
@@ -382,9 +385,9 @@
     font-family: var(--font-body); font-size: 12px; font-weight: 400;
     letter-spacing: 0.02em; color: var(--t-secondary);
     background: var(--card); border: 1px solid var(--border);
-    border-radius: 7px; padding: 5px 11px; cursor: pointer;
+    border-radius: 7px; padding: 5px 10px; cursor: pointer;
     transition: all 0.18s; white-space: nowrap; user-select: none;
-    position: relative;
+    position: relative; flex-shrink: 0;
   }
   .skill-chip::before {
     content: ''; position: absolute; inset: 0 0 auto 0; height: 1px;
@@ -677,6 +680,9 @@
     .row-name.fixed { width: 96px; }
     .row-tag { display: none; }
     .topbar { align-items: flex-start; }
+    .skill-bar { gap: 5px; padding: 6px 8px; }
+    .skill-bar-label { display: none; }
+    .skill-chip { font-size: 10px; padding: 4px 8px; border-radius: 5px; }
   }
 </style>
 </head>
