@@ -1219,45 +1219,6 @@ document.querySelectorAll('.skill-chip').forEach(chip => {
   chip.addEventListener('click', () => attachSkill(chip));
 });
 
-/* ===== 旧 chip 渲染辅助（保留以备 fallback） ===== */
-    const d = await r.json();
-    $('#dk-gmv').innerHTML = '¥' + F(d.total_gmv);
-    $('#dk-gmv-chg').innerHTML = (d.gmv_chg||0) >= 0 ? '+' + (d.gmv_chg||0) + '%' : (d.gmv_chg||0) + '%';
-    $('#dk-gmv-chg').className = 'kpi-chg-dash ' + ((d.gmv_chg||0) >= 0 ? 'up' : 'down');
-    $('#dk-orders').innerHTML = F(d.total_orders);
-    $('#dk-aov').innerHTML = '¥' + F(Math.round(d.avg_aov));
-    $('#dk-views').innerHTML = F(d.total_views);
-    $('#dk-cvr').innerHTML = d.avg_cvr.toFixed(2) + '%';
-    if (d.daily?.length) {
-      const dates = d.daily.map(x => x.date.slice(5));
-      const ctx = document.getElementById('gmvDashChart')?.getContext('2d');
-      if (!ctx) return;
-      if (gmvDashChart) gmvDashChart.destroy();
-      const gMax = Math.max(...d.daily.map(x => x.gmv), 1);
-      const oMax = Math.max(...d.daily.map(x => x.orders), 1);
-      const vMax = Math.max(...d.daily.map(x => x.views), 1);
-      const aMax = Math.max(...d.daily.map(x => x.aov), 1);
-      const cMax = Math.max(...d.daily.map(x => x.cvr), 1);
-      gmvDashChart = new Chart(ctx, { type: 'line', data: { labels: dates, datasets: [
-        { label: 'GMV', data: d.daily.map(x => +(x.gmv/gMax*100).toFixed(1)), borderColor: '#d4ab7c', backgroundColor: 'rgba(212,171,124,0.06)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2.2 },
-        { label: '订单数', data: d.daily.map(x => +(x.orders/oMax*100).toFixed(1)), borderColor: '#c0808f', tension: 0.3, pointRadius: 0, borderWidth: 1.8 },
-        { label: 'AOV', data: d.daily.map(x => +(x.aov/aMax*100).toFixed(1)), borderColor: '#e0a07e', tension: 0.3, pointRadius: 0, borderWidth: 1.5, borderDash: [5,3] },
-        { label: '浏览量', data: d.daily.map(x => +(x.views/vMax*100).toFixed(1)), borderColor: 'rgba(241,220,207,0.5)', tension: 0.3, pointRadius: 0, borderWidth: 1.2, borderDash: [3,4] },
-        { label: 'CVR', data: d.daily.map(x => +(x.cvr/cMax*100).toFixed(1)), borderColor: '#88c8a0', tension: 0.3, pointRadius: 0, borderWidth: 1.8 }
-      ]}, options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' },
-        plugins: { legend: { labels: { color: 'color-mix(in srgb, #f1dccf 60%, transparent)', font: {size:10}, usePointStyle: true, boxWidth: 8 } },
-          tooltip: { callbacks: { label: ctx => { const i = ctx.dataIndex; const row = d.daily[i];
-            const map = { GMV: '¥'+F(row.gmv), '订单数': F(row.orders), AOV: '¥'+F(Math.round(row.aov)), '浏览量': F(row.views), CVR: row.cvr.toFixed(2)+'%' };
-            return ctx.dataset.label + ': ' + (map[ctx.dataset.label] || ctx.raw+'%'); } } } },
-        scales: { x: { ticks: { color: 'color-mix(in srgb, #f1dccf 35%, transparent)', font: {size:9}, maxTicksLimit: 12 }, grid: { color: 'rgba(241,220,207,0.03)' } },
-          y: { min: 0, max: 100, ticks: { color: 'color-mix(in srgb, #f1dccf 35%, transparent)', callback: v => v+'%', font: {size:9} }, grid: { color: 'rgba(241,220,207,0.04)' } } } } });
-    }
-  } catch(e) { console.log('GMV:', e); }
-}
-loadGmvDashboard();
-
-// 默认30天日期
-(function(){var t=new Date(),d=new Date(t);d.setDate(d.getDate()-29);var f=function(x){return x.toISOString().slice(0,10)};var ef=document.getElementById('gmv-from');var et=document.getElementById('gmv-to');if(ef&&!ef.value)ef.value=f(d);if(et&&!et.value)et.value=f(t);loadGmvDashboard()})();
 
 // 城市/风格下拉填充
 (async function(){try{var r=await fetch('/api/admin/merchant_list');var d=await r.json();if(d.cities?.length){var s=document.getElementById('gmv-city');d.cities.forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;s.appendChild(o)})}if(d.styles?.length){var sl=document.getElementById('gmv-style');d.styles.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p;sl.appendChild(o)})}}catch(e){}})();
