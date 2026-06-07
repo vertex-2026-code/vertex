@@ -11,7 +11,11 @@ BASE_DIR = "/opt/jiaqu" if os.path.isdir("/opt/jiaqu") else os.path.dirname(os.p
 DB_PATH = f"{BASE_DIR}/data/jiaqu.db"
 
 CAT_TO_TAGS = {
-    "A": "冰透", "B": "奶咖", "C": "碎钻", "D": "美拉德", "E": "多巴胺撞色",
+    "A": ["冰透", "奶油裸色"],
+    "B": ["奶咖", "草莓甜心"],
+    "C": ["碎钻", "镭射极光"],
+    "D": ["美拉德", "暗黑金属"],
+    "E": ["多巴胺撞色", "雪花"],
 }
 
 
@@ -73,7 +77,8 @@ def main():
     for d, sid, sv, cv2, gbo, fav in sty_rows:
         sv, cv2, gbo, fav = (x or 0 for x in (sv, cv2, gbo, fav))
         cat, sname, price = style_meta.get(sid, ("D", sid, 200))
-        tag = CAT_TO_TAGS.get(cat, "美拉德")
+        tags = CAT_TO_TAGS.get(cat, ["美拉德", "暗黑金属"])
+        tag = tags[hash(sid) % len(tags)]
         views = sv + cv2
         est_gmv = gbo * price
         daily_styles[d].append((sid, cat, tag, sname, price, views, gbo, fav, est_gmv))
