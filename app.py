@@ -1546,34 +1546,29 @@ def gmv_recommend():
 
 @app.route('/api/admin/gmv_dashboard')
 def gmv_dashboard():
-    """返回商家数据看台所需的多维聚合数据，支持城市/日期/款式筛选"""
+    """返回商家数据看台所需的多维聚合数据，支持城市/风格/日期筛选"""
     db = get_db()
     city = request.args.get("city", "")
+    style = request.args.get("style", "")       # A/B/C/D/E 风格分类
     date_from = request.args.get("from", "")
     date_to = request.args.get("to", "")
     style_id = request.args.get("style_id", "")
 
-    # WHERE 条件
     shop_where = ""
-    style_where = ""
     params_shop = []
-    params_style = []
 
     if city:
-        shop_where = "AND p.city = ?"
+        shop_where += " AND p.city = ?"
         params_shop.append(city)
-        params_style.append(city)
+    if style:
+        shop_where += " AND p.style = ?"
+        params_shop.append(style)
     if date_from:
         shop_where += " AND s.date >= ?"
         params_shop.append(date_from)
-        params_style.append(date_from)
     if date_to:
         shop_where += " AND s.date <= ?"
         params_shop.append(date_to)
-        params_style.append(date_to)
-    if style_id:
-        style_where += " AND d.style_id = ?"
-        params_style.append(style_id)
 
     # 城市列表
     cities = [r[0] for r in db.execute(
@@ -1593,31 +1588,29 @@ def gmv_dashboard():
 
     # 日聚合：GMV / 订单 / 浏览 / AOV / CVR
     daily = []
-    try:
-        sql = """
-            SELECT s.date,
-                   SUM(s.revenue) AS gmv,
-                   SUM(s.group_buy_orders) AS orders,
-                   SUM(s.search_volume + s.click_volume + s.consultation_volume) AS views
-            FROM merchant_shop_daily_metrics s
-            JOIN merchant_profiles p ON s.shop_id = p.shop_id
-            WHERE 1=1 {shop_where}
-            GROUP BY s.date ORDER BY s.date
-        """.format(shop_where=shop_where)
-        rows = db.execute(sql, params_shop).fetchall()
-        for r in rows:
-            g = r[1] or 0
-            o = r[2] or 0
-            v = r[3] or 1
-            daily.append({
-                "date": r[0],
-                "gmv": round(g),
-                "orders": round(o),
-                "aov": round(g / o, 2) if o else 0,
-                "views": round(v),
-                "cvr": round(o / v * 100, 2) if v else 0,
-            })
-    except: pass
+    sql = """
+        SELECT s.date,
+               SUM(s.revenue) AS gmv,
+               SUM(s.group_buy_orders) AS orders,
+               SUM(s.search_volume + s.click_volume + s.consultation_volume) AS views
+        FROM merchant_shop_daily_metrics s
+        JOIN merchant_profiles p ON s.shop_id = p.shop_id
+        WHERE 1=1 {shop_where}
+        GROUP BY s.date ORDER BY s.date
+    """.format(shop_where=shop_where)
+    rows = db.execute(sql, params_shop).fetchall()
+    for r in rows:
+        g = r[1] or 0
+        o = r[2] or 0
+        v = r[3] or 1
+        daily.append({
+            "date": r[0],
+            "gmv": round(g),
+            "orders": round(o),
+            "aov": round(g / o, 2) if o else 0,
+            "views": round(v),
+            "cvr": round(o / v * 100, 2) if v else 0,
+        })
 
     # 总额
     total_gmv = sum(d["gmv"] for d in daily)

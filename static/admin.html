@@ -1063,7 +1063,7 @@ async function loadGmvDashboard() {
   if (city) params.set('city', city);
   if (from) params.set('from', from);
   if (to) params.set('to', to);
-  if (style) params.set('style_id', style);
+  if (style) params.set('style', style);
   const qs = params.toString();
   const url = '/api/admin/gmv_dashboard' + (qs ? '?' + qs : '');
 
