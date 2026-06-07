@@ -370,40 +370,45 @@
   .ai-analyze-btn .ai-spark { font-size: 12px; animation: ai-spark-pulse 2.2s ease-in-out infinite; }
   @keyframes ai-spark-pulse { 0%,100% { opacity: 0.65; transform: scale(1);} 50% { opacity: 1; transform: scale(1.15);} }
 
-  /* AI 分析结果抽屉 */
-  .ai-drawer-mask {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
-    z-index: 1000; opacity: 0; pointer-events: none;
-    transition: opacity 0.24s ease;
-  }
-  .ai-drawer-mask.open { opacity: 1; pointer-events: auto; }
+  /* AI 分析结果 - 右下浮动小窗 */
+  .ai-drawer-mask { display: none; }  /* 不要遮罩，保持页面可交互 */
   .ai-drawer {
-    position: fixed; left: 0; right: 0; bottom: 0;
-    max-height: 88vh;
+    position: fixed;
+    right: 16px; bottom: 16px;
+    width: min(380px, calc(100vw - 32px));
+    max-height: min(560px, 80vh);
     background: var(--bg, #1a0f15);
-    border-top: 1px solid var(--border);
-    border-radius: 18px 18px 0 0;
-    box-shadow: 0 -12px 40px rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.55), 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
     z-index: 1001;
-    transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(.2,.8,.2,1);
+    transform: translateY(120%); opacity: 0;
+    transition: transform 0.32s cubic-bezier(.2,.8,.2,1), opacity 0.24s, max-height 0.28s ease;
     display: flex; flex-direction: column;
+    pointer-events: none;
+    overflow: hidden;
   }
-  .ai-drawer.open { transform: translateY(0); }
+  .ai-drawer.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+  .ai-drawer.minimized { max-height: 46px; }
+  .ai-drawer.minimized .ai-drawer-body { display: none; }
   .ai-drawer-head {
-    padding: 14px 18px 10px;
+    padding: 12px 14px;
     display: flex; align-items: center; gap: 10px;
     border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
+    flex-shrink: 0; cursor: pointer; user-select: none;
   }
-  .ai-drawer-head h3 { font-size: 15px; margin: 0; color: var(--t-primary); flex: 1; }
+  .ai-drawer.minimized .ai-drawer-head { border-bottom-color: transparent; }
+  .ai-drawer-head h3 { font-size: 13px; margin: 0; color: var(--t-primary); flex: 1; font-weight: 500; }
   .ai-drawer-eyebrow { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em; color: var(--accent); opacity: 0.75; }
+  .ai-drawer-min,
   .ai-drawer-close {
     background: none; border: none; color: var(--t-tertiary);
-    font-size: 22px; cursor: pointer; padding: 0 4px; line-height: 1;
+    cursor: pointer; padding: 0 4px; line-height: 1;
+    font-family: var(--font-mono); font-size: 14px;
+    transition: color 0.18s;
   }
-  .ai-drawer-close:hover { color: var(--accent); }
-  .ai-drawer-body { padding: 14px 18px 24px; overflow-y: auto; flex: 1; }
+  .ai-drawer-min:hover, .ai-drawer-close:hover { color: var(--accent); }
+  .ai-drawer-body { padding: 12px 14px 18px; overflow-y: auto; flex: 1; }
 
   .ai-loading { padding: 30px 0; text-align: center; }
   .ai-loading-dot {
@@ -1468,13 +1473,14 @@
 <!-- ============= Toast 容器 ============= -->
 <div id="toast-root"></div>
 
-<!-- ============= AI 深度分析抽屉 ============= -->
+<!-- ============= AI 深度分析浮窗 ============= -->
 <div id="ai-drawer-mask" class="ai-drawer-mask"></div>
 <aside id="ai-drawer" class="ai-drawer" aria-hidden="true">
-  <div class="ai-drawer-head">
-    <span class="ai-drawer-eyebrow">AI Analysis</span>
+  <div id="ai-drawer-head" class="ai-drawer-head">
+    <span class="ai-drawer-eyebrow">AI</span>
     <h3>✦ 深度风格画像</h3>
-    <button id="ai-drawer-close" class="ai-drawer-close" type="button" aria-label="关闭">×</button>
+    <button id="ai-drawer-min" class="ai-drawer-min" type="button" aria-label="折叠" title="折叠">—</button>
+    <button id="ai-drawer-close" class="ai-drawer-close" type="button" aria-label="关闭" title="关闭">×</button>
   </div>
   <div id="ai-drawer-body" class="ai-drawer-body"></div>
 </aside>
@@ -2179,17 +2185,22 @@
   const aiBody = $('#ai-drawer-body');
 
   function openAiDrawer() {
-    aiMask.classList.add('open');
+    aiDrawer.classList.remove('minimized');
     aiDrawer.classList.add('open');
-    document.body.style.overflow = 'hidden';
   }
   function closeAiDrawer() {
-    aiMask.classList.remove('open');
     aiDrawer.classList.remove('open');
-    document.body.style.overflow = '';
+    aiDrawer.classList.remove('minimized');
   }
-  aiMask.addEventListener('click', closeAiDrawer);
-  $('#ai-drawer-close').addEventListener('click', closeAiDrawer);
+  function toggleAiMin() {
+    aiDrawer.classList.toggle('minimized');
+  }
+  $('#ai-drawer-close').addEventListener('click', e => { e.stopPropagation(); closeAiDrawer(); });
+  $('#ai-drawer-min').addEventListener('click', e => { e.stopPropagation(); toggleAiMin(); });
+  // 点 header 也能展开（折叠状态下方便恢复）
+  $('#ai-drawer-head').addEventListener('click', () => {
+    if (aiDrawer.classList.contains('minimized')) aiDrawer.classList.remove('minimized');
+  });
 
   function aiLoadingHTML(stage) {
     return `
@@ -2269,18 +2280,19 @@
     openAiDrawer();
     aiBody.innerHTML = aiLoadingHTML('AI 正在加载 user-style-analyst skill…');
     aiBtn.disabled = true;
+    const stageTimers = [
+      setTimeout(() => { aiBody.innerHTML = aiLoadingHTML('正在查站内试戴 + 收藏记录…'); }, 8000),
+      setTimeout(() => { aiBody.innerHTML = aiLoadingHTML('拉外部社区趋势 (小红书 / 抖音)…'); }, 25000),
+      setTimeout(() => { aiBody.innerHTML = aiLoadingHTML('6 维打分中：分类 / 热度 / 爬升 / 广场 / 季节…'); }, 55000),
+      setTimeout(() => { aiBody.innerHTML = aiLoadingHTML('DeepSeek 生成结构化报告…（最长约 4 分钟）'); }, 95000),
+    ];
     try {
-      // 10-15s 后切换 loading 文案
-      const stageTimer = setTimeout(() => {
-        aiBody.innerHTML = aiLoadingHTML('正在拉外部社区趋势 + 6 维打分…');
-      }, 7000);
-
       const r = await fetch('/api/user/ai_recommend', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({user_id: uid}),
       });
-      clearTimeout(stageTimer);
+      stageTimers.forEach(clearTimeout);
       const d = await r.json();
       if (!r.ok) {
         aiBody.innerHTML = `<div class="ai-error">${d.error || 'AI 调用失败'}</div>`;

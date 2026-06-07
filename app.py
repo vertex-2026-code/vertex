@@ -912,23 +912,29 @@ def user_ai_recommend():
         return jsonify({"error": "user_id 不能为空"}), 400
 
     prompt = (
-        f"请先执行 `cat /workspace/skills/user-style-analyst/SKILL.md` 读取并"
-        f"完全遵守这个 skill 的工作流程。\n\n"
-        f"然后分析用户「{user_id}」：\n"
-        f"1. 用 sqlite3 查 /workspace/tryon-data/jiaqu.db 的 favorites / "
-        f"tryon_history 算 signal_count 和 tier\n"
-        f"2. 查 community_trends 最近 3 天找 top rising / declining tag\n"
-        f"3. 按 skill 的公式给所有 25 款打分，挑 top 7\n"
-        f"4. 严格按 skill 的 JSON schema 输出（含 user_profile / "
-        f"external_signal / recommendations 含 reason / business_insight）\n\n"
-        f"必须输出 JSON。不要 markdown 包装，不要解释性文字。"
+        f"你是甲趣用户风格分析师。请严格按 /workspace/skills/user-style-analyst/SKILL.md "
+        f"的工作流程，分析用户「{user_id}」并**只**输出一段 JSON（不要 markdown 包装、"
+        f"不要解释文字、不要前后缀）。\n\n"
+        f"必须步骤（不省略）：\n"
+        f"1. sqlite3 /workspace/tryon-data/jiaqu.db 查 favorites / tryon_history "
+        f"算 signal_count 和 tier (0=cold, 1=warm, >=2=hot)\n"
+        f"2. sqlite3 查 community_trends 近 3 天 group by style_tag，取 top 2 rising + top 2 declining\n"
+        f"3. 按 SKILL.md 6 维公式给 25 款 (nail_01..nail_25) 打分，挑 top 7\n"
+        f"4. 输出 JSON schema：\n"
+        f'{{"user_id":"...", "tier":"...", "signal_count":N, '
+        f'"user_profile":{{"summary":"..."}}, '
+        f'"external_signal":{{"top_rising":[{{"tag":"...","growth":"+X%"}}], "top_declining":[...]}}, '
+        f'"recommendations":[{{"rank":1, "style_id":"nail_XX", "category":"E", '
+        f'"category_name":"潮流前卫", "score":0.42, "reason":"..."}}], '
+        f'"business_insight":"..."}}\n\n'
+        f"不要省略 reason 字段。不要编造数据。"
     )
 
     try:
         result = subprocess.run(
             ["openclaw", "agent", "--message", prompt, "--json",
-             "--session-id", f"vertex-user-{user_id}", "--timeout", "120"],
-            capture_output=True, text=True, timeout=130,
+             "--session-id", f"vertex-user-{user_id}", "--timeout", "240"],
+            capture_output=True, text=True, timeout=260,
         )
         if result.returncode != 0:
             return jsonify({"error": f"OpenClaw 调用失败: {result.stderr.strip()[-200:]}"}), 500
@@ -967,7 +973,7 @@ def user_ai_recommend():
             "progress": normalized.get("progress", []),
         })
     except subprocess.TimeoutExpired:
-        return jsonify({"error": "AI 分析超时（>2 分钟）"}), 504
+        return jsonify({"error": "AI 分析超时（>4 分钟）"}), 504
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
 
