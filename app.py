@@ -1213,6 +1213,19 @@ def admin_stats():
             "SELECT category, COUNT(*) FROM merchant_style_catalog GROUP BY category ORDER BY 2 DESC"
         ).fetchall()]
     except: pass
+    # 细粒度风格热度：在 primary_style → style_persona_name 之间挑分布最丰富的列
+    style_heat = []
+    for col in ("primary_style", "style_persona_name"):
+        try:
+            rows = db.execute(
+                f"SELECT {col}, COUNT(*) FROM merchant_style_catalog "
+                f"WHERE {col} IS NOT NULL AND {col} != '' "
+                f"GROUP BY {col} ORDER BY 2 DESC LIMIT 12"
+            ).fetchall()
+            if len(rows) >= 5:
+                style_heat = [[r[0], r[1]] for r in rows]
+                break
+        except: pass
     top_styles_by_gmv = []
     try:
         top_styles_by_gmv = [[r[0], int(r[1]), r[2]] for r in db.execute("""
@@ -1239,6 +1252,7 @@ def admin_stats():
         # DB 增强数据
         "top_shops_by_rev": top_shops_by_rev,
         "style_cat_dist": style_cat_dist,
+        "style_heat": style_heat,
         "top_styles_by_gmv": top_styles_by_gmv,
     })
 

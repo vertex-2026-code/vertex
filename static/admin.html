@@ -173,15 +173,18 @@
   @media(max-width:440px){.kpi-row-dash{grid-template-columns:1fr 1fr}}
 
   /* ===== 分类热度 doughnut + legend ===== */
-  .cat-wrap{display:grid;grid-template-columns:200px 1fr;gap:18px;align-items:center;padding:8px 0 4px}
-  .cat-chart-box{position:relative;height:200px}
-  .cat-legend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-  .cat-legend li{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--t-secondary)}
+  .cat-wrap{display:grid;grid-template-columns:220px 1fr;gap:20px;align-items:start;padding:8px 0 4px}
+  .cat-chart-box{position:relative;height:240px}
+  .cat-legend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;
+    max-height:260px;overflow-y:auto;padding-right:4px}
+  .cat-legend::-webkit-scrollbar{width:4px}
+  .cat-legend::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--accent) 25%,transparent);border-radius:2px}
+  .cat-legend li{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--t-secondary);line-height:1.45}
   .cat-legend .lg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-  .cat-legend .lg-name{flex:1;color:var(--t-primary)}
-  .cat-legend .lg-val{font-family:var(--font-mono);color:var(--t-secondary);font-size:11px;font-feature-settings:"tnum"1}
-  .cat-legend .lg-pct{color:var(--accent);font-family:var(--font-mono);font-size:10.5px;margin-left:6px}
-  @media(max-width:560px){.cat-wrap{grid-template-columns:1fr;gap:12px}.cat-chart-box{height:180px}}
+  .cat-legend .lg-name{flex:1;color:var(--t-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cat-legend .lg-val{font-family:var(--font-mono);color:var(--t-secondary);font-size:10.5px;font-feature-settings:"tnum"1}
+  .cat-legend .lg-pct{color:var(--accent);font-family:var(--font-mono);font-size:10px;margin-left:4px;min-width:42px;text-align:right}
+  @media(max-width:560px){.cat-wrap{grid-template-columns:1fr;gap:12px}.cat-chart-box{height:200px}.cat-legend{max-height:none}}
 
   /* ===== 热门款式 horizontal bar ===== */
   .style-chart-box{position:relative;height:360px;padding:8px 0 4px}
@@ -1013,6 +1016,12 @@ const F = n => n == null ? '0' : Math.round(Number(n) || 0).toLocaleString('en-U
 const fmtNum = F;
 
 const CAT_COLORS = { A:'#e8cdb0', B:'#cf9aa6', C:'#d4ab7c', D:'#9a7d8c', E:'#c98f76' };
+// 风格热度大色板（12 色，Bordeaux + 香槟金衍生，兼容 doughnut 多扇区）
+const HEAT_PALETTE = [
+  '#e8cdb0', '#d4ab7c', '#cf9aa6', '#9a7d8c', '#c98f76',
+  '#b5826e', '#e0a07e', '#a796b8', '#d6b88f', '#c9aab1',
+  '#8fb3a8', '#bf9aa1'
+];
 const SHOP_NAMES = {
   shop_001:'Maison Pureté(三里屯)', shop_002:'Fleur Rosé(五道口)',
   shop_003:'Bijou Lumière(国贸)', shop_004:'Noir Atelier(望京)',
@@ -1087,11 +1096,17 @@ let catChartInst = null, styleChartInst = null;
 function renderCategoryChart(d) {
   const ctx = document.getElementById('catChart')?.getContext('2d');
   if (!ctx) return;
-  const catDist = d.style_cat_dist?.length ? d.style_cat_dist : d.category_stats;
-  if (!catDist?.length) return;
-  const labels = catDist.map(([cat]) => cat);
-  const values = catDist.map(([_, count]) => count);
-  const colors = catDist.map(([cat]) => CAT_COLORS[cat] || '#d4ab7c');
+  // 优先用细粒度风格热度（DB primary_style/style_persona_name 分布，可能 8-12 条）
+  // 退化到旧 5 大类（A-E category）
+  const useHeat = d.style_heat?.length >= 5;
+  const source = useHeat ? d.style_heat : (d.style_cat_dist?.length ? d.style_cat_dist : d.category_stats);
+  if (!source?.length) return;
+
+  const labels = source.map(r => r[0]);
+  const values = source.map(r => r[1]);
+  const colors = useHeat
+    ? source.map((_, i) => HEAT_PALETTE[i % HEAT_PALETTE.length])
+    : source.map(([cat]) => CAT_COLORS[cat] || '#d4ab7c');
   const total = values.reduce((s, v) => s + v, 0) || 1;
 
   if (catChartInst) catChartInst.destroy();
@@ -1111,9 +1126,10 @@ function renderCategoryChart(d) {
           bodyColor: '#f1dccf', borderColor: 'rgba(212,171,124,0.3)', borderWidth: 1,
           callbacks: {
             label: ctx => {
-              const cat = ctx.label, v = ctx.parsed, p = (v / total * 100).toFixed(1);
-              const name = (d.category_names && d.category_names[cat]) || cat;
-              return `${cat} · ${name}: ${v.toLocaleString()} (${p}%)`;
+              const k = ctx.label, v = ctx.parsed, p = (v / total * 100).toFixed(1);
+              if (useHeat) return `${k}: ${v.toLocaleString()} (${p}%)`;
+              const name = (d.category_names && d.category_names[k]) || k;
+              return `${k} · ${name}: ${v.toLocaleString()} (${p}%)`;
             }
           }
         }
@@ -1121,12 +1137,13 @@ function renderCategoryChart(d) {
     }
   });
 
-  const legend = catDist.map(([cat, count]) => {
-    const name = (d.category_names && d.category_names[cat]) || cat;
+  const legend = source.map(([k, count], i) => {
+    const color = useHeat ? HEAT_PALETTE[i % HEAT_PALETTE.length] : (CAT_COLORS[k] || 'var(--accent)');
+    const display = useHeat ? k : `${k} · ${(d.category_names && d.category_names[k]) || k}`;
     const pct = (count / total * 100).toFixed(1);
     return `<li>
-      <span class="lg-dot" style="background:${CAT_COLORS[cat] || 'var(--accent)'}"></span>
-      <span class="lg-name">${cat} · ${name}</span>
+      <span class="lg-dot" style="background:${color}"></span>
+      <span class="lg-name">${display}</span>
       <span class="lg-val">${Number(count).toLocaleString()}</span>
       <span class="lg-pct">${pct}%</span>
     </li>`;
