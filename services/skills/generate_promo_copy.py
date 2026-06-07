@@ -70,7 +70,7 @@ TEMPLATES = {
         "cta": "立即锁定",
     },
     ("merchant_invite", "premium"): {
-        "main": "{tag} 品类增长 {growth}%，邀您首批入驻",
+        "main": "{tag} 品类增长 {growth}，邀您首批入驻",
         "sub": "平台搜索量月增 230% · 您的风格精准匹配 · 享首月流量扶持",
         "cta": "立即报名",
     },
