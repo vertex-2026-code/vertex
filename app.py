@@ -18,6 +18,7 @@ from flask import Flask, request, jsonify, send_from_directory, g
 
 # ============ 配置 ============
 from openai import OpenAI
+from services.style_taxonomy import TAG_TO_CAT, CATEGORY_NAMES_MAP
 
 # ============ 配置 ============
 ARK_API_KEY = os.environ.get("ARK_API_KEY", "")
@@ -549,23 +550,31 @@ def user_history():
 @app.route('/api/user/recommend')
 def user_recommend():
     """
-    个性化推荐 4 个款式。
-    - 有正信号（收藏 / like / 试戴过）→ 偏好分类 TOP 1-2 × 全局排序
-    - 无信号 / 新访客 → 近 7 天热度 × 好评率（全局 trend）
-    - 候选不足 4 个 → 用全局 trend 补齐
-    自定义上传不参与推荐池。
+    个性化推荐 Skill —— 统一打分 + 三档切权重 + 强制可解释。
+
+    分档（按个人信号强度）：
+      signal = |favorites| + |history| + |likes|
+      cold:  signal == 0   —— 外部爆款 + 站内验证款主导
+      warm:  signal == 1   —— 个性 + trend 五五开
+      hot:   signal >= 2   —— 个性主导（基于真实用户分布: 14 人卡在 2 次）
+
+    打分维度（每维归一化到 [0, 1]）：
+      P 个人分类偏好  | F 个人细标签 (MVP=0)  | G 站内 7 天热度 × 好评率
+      E 外部社区爬升  | M 广场互动          | S 季节
+      减项 N 反感
     """
     user_id = (request.args.get('user_id') or '').strip()
     logs = load_logs()
-    week_ago = datetime.now(BJT) - timedelta(days=7)
+    now = datetime.now(BJT)
+    week_ago = now - timedelta(days=7)
 
-    # 一次循环搞定全局信号 + 用户信号
+    # ---------- 1. 全局信号（一次循环搞定 G 维度 + 当前用户 like/dislike）----------
     style_likes, style_fb_total, recent_counts = {}, {}, {}
     user_likes, user_dislikes = set(), set()
     for r in logs:
         sid = r.get('style_id')
         if not sid or sid not in STYLE_CATEGORIES:
-            continue  # custom 上传 / 历史脏数据直接跳过
+            continue  # 过滤 'custom' / '用户上传' / 脏数据
         evt = r.get('event')
         if evt == 'feedback':
             action = r.get('action')
@@ -582,57 +591,169 @@ def user_recommend():
             except (TypeError, ValueError):
                 pass
 
-    # 平滑好评率 + 全局综合分（避免冷启动 0 票就被永久压底）
     def like_rate(sid):
         return (style_likes.get(sid, 0) + 1) / (style_fb_total.get(sid, 0) + 2)
-    def global_score(sid):
-        return (recent_counts.get(sid, 0) + 0.5) * like_rate(sid)
 
     all_sids = list(STYLE_CATEGORIES.keys())
-    global_ranked = sorted(all_sids, key=lambda s: -global_score(s))
+    raw_g = {s: (recent_counts.get(s, 0) + 0.5) * like_rate(s) for s in all_sids}
+    max_g = max(raw_g.values()) or 1.0
+    G = {s: raw_g[s] / max_g for s in all_sids}
 
-    # 用户 DB 信号（收藏 + 试戴历史）
+    # ---------- 2. 用户 DB 信号（收藏 + 试戴历史）----------
     fav_sids, history_sids = set(), set()
     if user_id:
         db = get_db()
         fav_sids = {r['style_id'] for r in db.execute(
             "SELECT style_id FROM favorites WHERE user_id=?", (user_id,)
-        ).fetchall()}
+        ).fetchall() if r['style_id'] in STYLE_CATEGORIES}
         history_sids = {r['style_id'] for r in db.execute(
             "SELECT style_id FROM tryon_history WHERE user_id=?", (user_id,)
         ).fetchall() if r['style_id'] in STYLE_CATEGORIES}
 
-    # 用户加权（收藏 +3 / like +2 / 试戴 +1 / dislike -2）
-    user_weights = {}
-    for sid in fav_sids:     user_weights[sid] = user_weights.get(sid, 0) + 3
-    for sid in user_likes:   user_weights[sid] = user_weights.get(sid, 0) + 2
-    for sid in history_sids: user_weights[sid] = user_weights.get(sid, 0) + 1
-    for sid in user_dislikes:user_weights[sid] = user_weights.get(sid, 0) - 2
-    has_history = any(w > 0 for w in user_weights.values())
+    signal_count = len(fav_sids) + len(history_sids) + len(user_likes)
+    if signal_count == 0:
+        tier = "cold"
+        W = {"P": 0.0, "G": 0.25, "E": 0.35, "M": 0.20, "S": 0.15, "lam": 0.0}
+    elif signal_count == 1:
+        tier = "warm"
+        W = {"P": 0.20, "G": 0.20, "E": 0.30, "M": 0.15, "S": 0.10, "lam": 0.5}
+    else:
+        tier = "hot"
+        W = {"P": 0.45, "G": 0.15, "E": 0.15, "M": 0.10, "S": 0.05, "lam": 1.0}
 
-    picks = []
-    if has_history:
-        # 偏好分类聚合 → TOP 1-2
-        cat_pref = {}
-        for sid, w in user_weights.items():
-            cat = STYLE_CATEGORIES.get(sid)
-            if cat:
-                cat_pref[cat] = cat_pref.get(cat, 0) + w
-        top_cats = [c for c, v in sorted(cat_pref.items(), key=lambda x: -x[1])[:2] if v > 0]
-        # 偏好分类候选：排除已收藏（保留试戴过未收藏，给二次机会）
-        cands = [s for s in all_sids
-                 if STYLE_CATEGORIES.get(s) in top_cats and s not in fav_sids]
-        cands.sort(key=lambda s: -global_score(s))
-        picks.extend(cands)
+    # ---------- 3. P 维度：个人分类偏好（收藏 +3 / like +2 / 试戴 +1）----------
+    cat_w = {}
+    for sid in fav_sids:     cat_w[STYLE_CATEGORIES[sid]] = cat_w.get(STYLE_CATEGORIES[sid], 0) + 3
+    for sid in user_likes:   cat_w[STYLE_CATEGORIES[sid]] = cat_w.get(STYLE_CATEGORIES[sid], 0) + 2
+    for sid in history_sids: cat_w[STYLE_CATEGORIES[sid]] = cat_w.get(STYLE_CATEGORIES[sid], 0) + 1
+    sum_cat = sum(cat_w.values()) or 1
+    def P(sid):
+        return cat_w.get(STYLE_CATEGORIES[sid], 0) / sum_cat
 
-    # 全局 trend 补齐（新用户走这条 / 老用户候选不足走这条）
-    for sid in global_ranked:
-        if sid in picks or sid in fav_sids:
+    # ---------- 4. E 维度：外部社区（近 3 天 growth × mention 占比）----------
+    e_by_cat = {}   # cat -> score
+    e_top_tag = {}  # cat -> 该分类下涨得最猛的细标签（reason 用）
+    try:
+        rows = get_db().execute("""
+            SELECT style_tag,
+                   AVG(growth_rate) AS g,
+                   SUM(mention_count) AS m
+            FROM community_trends
+            WHERE date >= date('now','-3 day')
+            GROUP BY style_tag
+        """).fetchall()
+        max_m = max((r['m'] for r in rows), default=0) or 1
+        for r in rows:
+            tag = r['style_tag']
+            cat = TAG_TO_CAT.get(tag)
+            if not cat:
+                continue
+            # growth ∈ [-0.2, 0.22]，映射到 [0, 1]
+            g_norm = max(0, (r['g'] + 0.2) / 0.4)
+            m_norm = r['m'] / max_m
+            score = g_norm * m_norm
+            if score > e_by_cat.get(cat, 0):
+                e_by_cat[cat] = score
+                e_top_tag[cat] = tag
+    except Exception:
+        pass
+    def E(sid):
+        return e_by_cat.get(STYLE_CATEGORIES[sid], 0)
+
+    # ---------- 5. M 维度：广场互动（total_likes / 25 截断到 [0,1]）----------
+    plaza_likes = {}
+    try:
+        for r in get_db().execute(
+            "SELECT style_id, SUM(likes) AS s FROM plaza "
+            "WHERE style_id IS NOT NULL GROUP BY style_id"
+        ).fetchall():
+            sid = r['style_id']
+            if sid in STYLE_CATEGORIES:
+                plaza_likes[sid] = r['s'] or 0
+    except Exception:
+        pass
+    def M(sid):
+        return min(1.0, plaza_likes.get(sid, 0) / 25.0)
+
+    # ---------- 6. S 维度：季节（按当前月份选标签）----------
+    month = now.month
+    if month in (5, 6, 7, 8):
+        seasonal_tags = {"冰透", "多巴胺撞色", "奶油裸色"}
+        season_name = "夏季"
+    elif month in (12, 1, 2):
+        seasonal_tags = {"雪花", "暗黑金属", "奶咖"}
+        season_name = "冬季"
+    elif month in (9, 10, 11):
+        seasonal_tags = {"美拉德", "奶咖", "暗黑金属"}
+        season_name = "秋季"
+    else:
+        seasonal_tags = {"奶油裸色", "草莓甜心"}
+        season_name = "春季"
+    seasonal_cats = {TAG_TO_CAT[t] for t in seasonal_tags if t in TAG_TO_CAT}
+    def S(sid):
+        return 1.0 if STYLE_CATEGORIES[sid] in seasonal_cats else 0.0
+
+    # ---------- 7. 算总分（排除已收藏）----------
+    score = {}
+    for sid in all_sids:
+        if sid in fav_sids:
+            continue
+        n = 1.0 if sid in user_dislikes else 0.0
+        score[sid] = (
+            W["P"] * P(sid) +
+            W["G"] * G[sid] +
+            W["E"] * E(sid) +
+            W["M"] * M(sid) +
+            W["S"] * S(sid) -
+            W["lam"] * n
+        )
+
+    # ---------- 8. 排序 + 多样性（同分类最多 2 个）----------
+    ranked = sorted(score.keys(), key=lambda s: -score[s])
+    picks, cat_count = [], {}
+    for sid in ranked:
+        c = STYLE_CATEGORIES[sid]
+        if cat_count.get(c, 0) >= 2:
             continue
         picks.append(sid)
-    picks = picks[:7]
+        cat_count[c] = cat_count.get(c, 0) + 1
+        if len(picks) >= 7:
+            break
+    # 兜底补足 7 个（如果多样性卡得太严）
+    if len(picks) < 7:
+        for sid in ranked:
+            if sid not in picks:
+                picks.append(sid)
+            if len(picks) >= 7:
+                break
 
-    # 输出（复用 list_styles 的字段格式）
+    # ---------- 9. reason：选「实际贡献最大」的那个维度作为理由 ----------
+    def build_reason(sid):
+        c = STYLE_CATEGORIES[sid]
+        contribs = [
+            ("P", W["P"] * P(sid)),
+            ("E", W["E"] * E(sid)),
+            ("M", W["M"] * M(sid)),
+            ("S", W["S"] * S(sid)),
+            ("G", W["G"] * G[sid]),
+        ]
+        contribs.sort(key=lambda x: -x[1])
+        top_dim, top_val = contribs[0]
+        if top_val < 0.01:
+            return "平台口碑款"
+        if top_dim == "P":
+            return f"和你喜欢的「{CATEGORY_NAMES[c]}」同风格"
+        if top_dim == "E":
+            tag = e_top_tag.get(c)
+            return f"{tag} 正在小红书爆" if tag else f"外部社区「{CATEGORY_NAMES[c]}」爬升"
+        if top_dim == "M":
+            n = int(plaza_likes.get(sid, 0))
+            return f"广场已被赞 {n} 次"
+        if top_dim == "S":
+            return f"{season_name}应季款"
+        return "平台 7 天口碑榜"
+
+    # ---------- 10. 构造响应（保持数组形态，前端无需大改）----------
     files = {os.path.splitext(f)[0]: f for f in os.listdir(NAILS_DIR)
              if f.lower().endswith(('.png', '.jpg', '.jpeg'))}
     result = []
@@ -648,6 +769,8 @@ def user_recommend():
             "url": f"/static/nails/{f}",
             "category": cat,
             "category_name": CATEGORY_NAMES.get(cat, ''),
+            "reason": build_reason(sid),
+            "tier": tier,
         })
     return jsonify(result)
 
