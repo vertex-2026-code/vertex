@@ -56,11 +56,13 @@ UPLOADS_DIR = f"{BASE_DIR}/static/uploads"
 NAILS_DIR = f"{BASE_DIR}/static/nails"
 STATIC_DIR = f"{BASE_DIR}/static"
 HANDS_DIR = f"{BASE_DIR}/static/uploads/hands"
+INSPIRATIONS_DIR = f"{BASE_DIR}/static/uploads/inspirations"
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 os.makedirs(HANDS_DIR, exist_ok=True)
+os.makedirs(INSPIRATIONS_DIR, exist_ok=True)
 
 LOG_FILE = f"{DATA_DIR}/tryon.jsonl"
 DB_PATH = f"{DATA_DIR}/jiaqu.db"
@@ -155,6 +157,15 @@ def init_db():
             created_at TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_plaza_created ON plaza(created_at DESC);
+        CREATE TABLE IF NOT EXISTS inspirations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            orig_url TEXT NOT NULL,
+            thumb_url TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_insp_created ON inspirations(created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_insp_user ON inspirations(user_id);
         CREATE TABLE IF NOT EXISTS community_trends (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             date TEXT NOT NULL,
@@ -1890,6 +1901,63 @@ def plaza_like(post_id):
     if not row:
         return jsonify({"error": "post not found"}), 404
     return jsonify({"ok": True, "likes": row["likes"]})
+
+
+@app.route("/api/inspirations/upload", methods=["POST"])
+def inspirations_upload():
+    data = request.get_json(force=True, silent=True) or {}
+    user_id = (data.get("user_id") or "").strip()
+    image_data_url = data.get("image_data_url")
+    if not user_id or not image_data_url:
+        return jsonify({"error": "missing user_id or image_data_url"}), 400
+
+    request_id = uuid.uuid4().hex[:12]
+    orig_path = f"{INSPIRATIONS_DIR}/{request_id}.png"
+    thumb_path = f"{INSPIRATIONS_DIR}/{request_id}.jpg"
+    try:
+        save_data_url(image_data_url, orig_path)
+    except Exception as exc:
+        return jsonify({"error": f"save failed: {exc}"}), 400
+
+    try:
+        from PIL import Image
+        with Image.open(orig_path) as im:
+            im = im.convert("RGB")
+            im.thumbnail((600, 600), Image.LANCZOS)
+            im.save(thumb_path, "JPEG", quality=80, optimize=True, progressive=True)
+        thumb_url = f"/static/uploads/inspirations/{request_id}.jpg"
+    except Exception:
+        thumb_url = f"/static/uploads/inspirations/{request_id}.png"
+
+    orig_url = f"/static/uploads/inspirations/{request_id}.png"
+    db = get_db()
+    cur = db.execute(
+        "INSERT INTO inspirations(user_id, orig_url, thumb_url, created_at) VALUES(?, ?, ?, ?)",
+        (user_id, orig_url, thumb_url, now_iso()),
+    )
+    db.commit()
+    log_event("inspiration_upload", {"user_id": user_id, "id": cur.lastrowid})
+    return jsonify({
+        "ok": True,
+        "id": cur.lastrowid,
+        "orig_url": orig_url,
+        "thumb_url": thumb_url,
+    })
+
+
+@app.route("/api/inspirations/feed")
+def inspirations_feed():
+    try:
+        limit = max(1, min(120, int(request.args.get("limit", 60))))
+    except ValueError:
+        limit = 60
+    rows = get_db().execute(
+        "SELECT id, user_id, orig_url, thumb_url, created_at FROM inspirations "
+        "ORDER BY created_at DESC LIMIT ?",
+        (limit,),
+    ).fetchall()
+    items = [dict(r) for r in rows]
+    return jsonify({"items": items, "total": len(items)})
 
 
 if __name__ == "__main__":

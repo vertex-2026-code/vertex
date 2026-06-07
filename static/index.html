@@ -652,6 +652,24 @@
   }
   .style-card.selected:active { transform: scale(0.99); }
 
+  /* 灵感图卡 — 用户上传的展览，角标区分 */
+  .style-card.inspiration::after {
+    content: 'INSP';
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--accent) 86%, transparent);
+    color: #1a0e0a;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .style-card.inspiration.mine::after { content: 'MINE'; }
+
   .custom-tile {
     aspect-ratio: 1 / 1;
     background: color-mix(in srgb, var(--accent) 8%, var(--card));
@@ -993,6 +1011,14 @@
     letter-spacing: 0.14em;
     color: var(--t-tertiary);
     margin: 0;
+  }
+  .loading-note {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--t-tertiary);
+    margin: 6px 0 0;
+    opacity: 0.78;
+    line-height: 1.4;
   }
 
   /* ===== 结果弹层 ===== */
@@ -1556,7 +1582,8 @@
   <div class="modal-panel loading-panel">
     <div class="spinner"></div>
     <p class="loading-title">AI 正在为你试戴</p>
-    <p class="loading-meta"><span id="loading-elapsed">0</span> SEC · TYPICALLY 15–25</p>
+    <p class="loading-meta"><span id="loading-elapsed">0</span> SEC · TYPICALLY 30–60</p>
+    <p class="loading-note">取决于字节跳动 Seedream 模型响应速度</p>
   </div>
 </div>
 
@@ -1907,7 +1934,27 @@
     });
     loadUserFavs();
     loadRecommendations();
+    loadInspirations();
   });
+
+  // === 展览区：拉所有用户的灵感图，作为 style-card 插在 grid 最前 ===
+  async function loadInspirations() {
+    try {
+      const r = await fetch('/api/inspirations/feed?limit=60');
+      const data = await r.json();
+      if (!data.items || !data.items.length) return;
+      // created_at DESC 来，从旧到新 prepend → 最新的留在最前
+      data.items.slice().reverse().forEach(it => {
+        prependInspirationCard({
+          id: it.id,
+          orig_url: it.orig_url,
+          thumb_url: it.thumb_url,
+          user_id: it.user_id,
+          mine: it.user_id === userId,
+        });
+      });
+    } catch {}
+  }
 
   // === 风格筛选（5 大类 + 13 细分合并单选）===
   let currentFilter = {type: 'all', value: 'all'};
@@ -1998,6 +2045,31 @@
     if (!c) return;
     $$('.style-card').forEach(x => x.classList.remove('selected'));
     c.classList.add('selected');
+
+    // 灵感图卡 → 走自定义款流程
+    if (c.dataset.kind === 'inspiration') {
+      const origUrl = c.dataset.orig;
+      selectedStyle = '__custom__';
+      customStyleImage = null;
+      checkReady();
+      // 异步拉原图 png → dataURL，给 tryon 用
+      urlToDataURL(origUrl).then(durl => {
+        // 只有用户没切换到别的卡时才回填，避免赛跑
+        if (selectedStyle === '__custom__' && c.classList.contains('selected')) {
+          customStyleImage = durl;
+          checkReady();
+        }
+      }).catch(() => {
+        showToast('灵感图加载失败，请重试');
+        c.classList.remove('selected');
+        selectedStyle = null;
+        checkReady();
+      });
+      $('#custom-upload-rect').classList.remove('has-image');
+      $('#custom-upload-label').textContent = '上传一张你喜欢的灵感图';
+      return;
+    }
+
     selectedStyle = c.dataset.id;
     customStyleImage = null;
     // 选了预设款 → 把上传按钮也复位
@@ -2006,12 +2078,44 @@
     checkReady();
   });
 
-  // === 自定义款式上传（矩形按钮版）===
+  // 工具：远程图 URL → dataURL（灵感图试戴时复用 tryon 现有 custom_style_image 入参）
+  async function urlToDataURL(url) {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('fetch failed');
+    const blob = await resp.blob();
+    return await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(blob);
+    });
+  }
+
+  // 在 styles-grid 头部插入一张灵感图卡（thumb_url 是压缩 jpg，orig_url 是 png 原图）
+  function prependInspirationCard({ id, orig_url, thumb_url, user_id, mine }) {
+    const grid = $('#styles-grid');
+    if (!grid) return null;
+    if (grid.querySelector(`.style-card[data-insp-id="${id}"]`)) return null;
+    const card = document.createElement('div');
+    card.className = 'style-card inspiration' + (mine ? ' mine' : '');
+    card.dataset.kind = 'inspiration';
+    card.dataset.id = '__custom__';
+    card.dataset.cat = 'all';
+    card.dataset.tags = '';
+    card.dataset.orig = orig_url;
+    card.dataset.thumb = thumb_url;
+    card.dataset.inspId = id;
+    card.innerHTML = `<img src="${thumb_url}" loading="lazy" alt="灵感图">`;
+    grid.insertBefore(card, grid.firstChild);
+    return card;
+  }
+
+  // === 自定义款式上传（矩形按钮版 + 落库到展览区）===
   $('#custom-style-input').addEventListener('change', e => {
     const f = e.target.files[0];
     if (!f) return;
     const r = new FileReader();
-    r.onload = ev => {
+    r.onload = async ev => {
       customStyleImage = ev.target.result;
       const rect = $('#custom-upload-rect');
       rect.classList.add('has-image');
@@ -2019,6 +2123,33 @@
       $$('.style-card').forEach(x => x.classList.remove('selected'));
       selectedStyle = '__custom__';
       checkReady();
+
+      // 异步落库 + 在展览区头部插卡
+      try {
+        const resp = await fetch('/api/inspirations/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId || 'anon', image_data_url: customStyleImage }),
+        });
+        const data = await resp.json();
+        if (data.ok) {
+          const card = prependInspirationCard({
+            id: data.id,
+            orig_url: data.orig_url,
+            thumb_url: data.thumb_url,
+            user_id: userId,
+            mine: true,
+          });
+          if (card) {
+            $$('.style-card').forEach(x => x.classList.remove('selected'));
+            card.classList.add('selected');
+            // 切到「全部」分类，保证灵感图可见
+            const allChip = $('#filter-chips .chip[data-type="all"]');
+            if (allChip && !allChip.classList.contains('active')) allChip.click();
+            $('#styles-grid').scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }
+      } catch {}
     };
     r.readAsDataURL(f);
   });
