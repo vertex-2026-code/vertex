@@ -1238,9 +1238,9 @@ function formatSkillResult(skill, data) {
         <div class="viz-card highlight">
           <div class="card-head"><span class="card-title">${imp.action || ''}</span><span class="card-badge ${(imp.delta_pct||0)>=0?'badge-up':'badge-down'}">${(imp.delta_pct||0)>=0?'+':''}${imp.delta_pct||0}%</span></div>
           <div class="viz-meta">
-            <div class="viz-meta-item"><div class="v">¥${F(data.baseline_gmv)}</div><div class="l">基线 GMV</div></div>
-            <div class="viz-meta-item"><div class="v" style="color:${(imp.delta||0)>=0?'var(--accent)':'#e0a07e'}">${(imp.delta||0)>=0?'+':''}¥${F(imp.delta)}</div><div class="l">变化</div></div>
-            <div class="viz-meta-item"><div class="v">¥${F(imp.new_gmv)}</div><div class="l">模拟后 GMV</div></div>
+            <div class="viz-meta-item"><div class="v">¥${fmtNum(data.baseline_gmv)}</div><div class="l">基线 GMV</div></div>
+            <div class="viz-meta-item"><div class="v" style="color:${(imp.delta||0)>=0?'var(--accent)':'#e0a07e'}">${(imp.delta||0)>=0?'+':''}¥${fmtNum(imp.delta)}</div><div class="l">变化</div></div>
+            <div class="viz-meta-item"><div class="v">¥${fmtNum(imp.new_gmv)}</div><div class="l">模拟后 GMV</div></div>
           </div>
           ${imp.risk ? `<p style="font-size:12px;color:#e0a07e;margin-top:4px">⚠ ${imp.risk}</p>` : ''}
           ${imp.suggestion ? `<p style="font-size:12px;color:var(--accent);margin-top:4px">→ ${imp.suggestion}</p>` : ''}
@@ -1264,7 +1264,7 @@ function formatSkillResult(skill, data) {
     }
     case 'vton_recovery': {
       const funnelHTML = (data.funnel || []).map(f =>
-        `<div class="viz-meta-item"><div class="v">${F(f.count)}</div><div class="l">${f.stage}${f.rate ? ' ('+f.rate+')' : ''}</div></div>`
+        `<div class="viz-meta-item"><div class="v">${fmtNum(f.count)}</div><div class="l">${f.stage}${f.rate ? ' ('+f.rate+')' : ''}</div></div>`
       ).join('');
       const cards = (data.suggestions || []).map(s => `
         <div class="viz-card ${s.priority==='high'?'warn-card':'good-card'}">
