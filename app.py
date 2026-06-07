@@ -1187,10 +1187,25 @@ def admin_stats():
     db = get_db()
     top_shops_by_rev = []
     try:
-        top_shops_by_rev = [[r[0], r[1], r[2]] for r in db.execute(
-            "SELECT m.shop_id, m.shop_name, SUM(s.revenue) FROM merchant_shop_daily_metrics s "
-            "JOIN merchant_profiles m ON s.shop_id=m.shop_id GROUP BY s.shop_id ORDER BY 3 DESC LIMIT 5"
-        ).fetchall()]
+        top_shops_by_rev = [
+            {
+                "shop_id": r[0],
+                "shop_name": r[1],
+                "gmv": int(r[2] or 0),
+                "ad_spend": int(r[3] or 0),
+                "orders": int(r[4] or 0),
+                "consultation": int(r[5] or 0),
+                "click": int(r[6] or 0),
+            }
+            for r in db.execute(
+                "SELECT m.shop_id, m.shop_name, "
+                "SUM(s.revenue), SUM(s.ad_spend), SUM(s.group_buy_orders), "
+                "SUM(s.consultation_volume), SUM(s.click_volume) "
+                "FROM merchant_shop_daily_metrics s "
+                "JOIN merchant_profiles m ON s.shop_id=m.shop_id "
+                "GROUP BY s.shop_id ORDER BY 3 DESC LIMIT 5"
+            ).fetchall()
+        ]
     except: pass
     style_cat_dist = []
     try:

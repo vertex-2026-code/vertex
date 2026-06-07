@@ -172,6 +172,41 @@
   @media(max-width:680px){.kpi-row-dash{grid-template-columns:repeat(3,1fr)}}
   @media(max-width:440px){.kpi-row-dash{grid-template-columns:1fr 1fr}}
 
+  /* ===== 分类热度 doughnut + legend ===== */
+  .cat-wrap{display:grid;grid-template-columns:200px 1fr;gap:18px;align-items:center;padding:8px 0 4px}
+  .cat-chart-box{position:relative;height:200px}
+  .cat-legend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+  .cat-legend li{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--t-secondary)}
+  .cat-legend .lg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  .cat-legend .lg-name{flex:1;color:var(--t-primary)}
+  .cat-legend .lg-val{font-family:var(--font-mono);color:var(--t-secondary);font-size:11px;font-feature-settings:"tnum"1}
+  .cat-legend .lg-pct{color:var(--accent);font-family:var(--font-mono);font-size:10.5px;margin-left:6px}
+  @media(max-width:560px){.cat-wrap{grid-template-columns:1fr;gap:12px}.cat-chart-box{height:180px}}
+
+  /* ===== 热门款式 horizontal bar ===== */
+  .style-chart-box{position:relative;height:360px;padding:8px 0 4px}
+
+  /* ===== 门店预约 4 指标卡 ===== */
+  .shop-cards{display:flex;flex-direction:column;gap:10px;padding-top:6px}
+  .shop-card{background:color-mix(in srgb,var(--card) 60%,transparent);
+    border:1px solid var(--border);border-radius:10px;padding:12px 14px;position:relative;overflow:hidden}
+  .shop-card::before{content:'';position:absolute;inset:0 0 auto 0;height:1px;
+    background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 26%,transparent) 50%,transparent)}
+  .shop-card-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:9px}
+  .shop-name{font-family:var(--font-display);font-size:13.5px;font-weight:500;color:var(--t-primary);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  .shop-rank{font-family:var(--font-mono);font-size:10px;color:var(--t-tertiary);letter-spacing:0.1em}
+  .shop-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+  .shop-metric{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .shop-metric .sm-label{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;
+    letter-spacing:0.14em;color:var(--t-tertiary)}
+  .shop-metric .sm-cn{font-size:10px;color:var(--t-tertiary);margin-top:-1px}
+  .shop-metric .sm-val{font-family:var(--font-display);font-size:15px;font-weight:500;
+    color:var(--t-primary);line-height:1.15;font-feature-settings:"tnum"1;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .shop-metric.accent .sm-val{color:var(--accent)}
+  .shop-metric.rose .sm-val{color:var(--rose)}
+
   /* ===== Metrics ===== */
   .metrics {
     display: grid;
@@ -904,13 +939,16 @@
         <span class="panel-eyebrow">Category Heat</span>
         <h2 class="panel-title">风格分类热度</h2>
       </div>
-      <div id="cat-stats" class="rows"></div>
+      <div class="cat-wrap">
+        <div class="cat-chart-box"><canvas id="catChart"></canvas></div>
+        <ul class="cat-legend" id="cat-legend"></ul>
+      </div>
 
-      <div class="panel-head">
+      <div class="panel-head" style="margin-top:18px">
         <span class="panel-eyebrow">Top 10 Styles</span>
         <h2 class="panel-title">热门款式</h2>
       </div>
-      <div id="top-styles" class="rows"></div>
+      <div class="style-chart-box"><canvas id="styleChart"></canvas></div>
     </section>
 
     <section class="panel span-5 reveal" style="animation-delay:.30s">
@@ -918,13 +956,7 @@
         <span class="panel-eyebrow">Shop Bookings</span>
         <h2 class="panel-title">门店预约</h2>
       </div>
-      <div id="top-shops" class="rows"></div>
-
-      <div class="panel-head">
-        <span class="panel-eyebrow">Top 10 Users</span>
-        <h2 class="panel-title">活跃用户</h2>
-      </div>
-      <div id="top-users" class="rows"></div>
+      <div id="top-shops" class="shop-cards"></div>
     </section>
 
     <!-- AI Chat -->
@@ -1014,8 +1046,13 @@ function demoStats() {
     category_names: { A:"简约清透", B:"甜美可爱", C:"华丽璀璨", D:"暗黑酷飒", E:"潮流前卫" },
     top_styles: [["B_07",96],["C_03",88],["A_12",71],["B_15",64],["C_09",58],["E_02",47],["A_05",41],["D_08",33],["B_21",29],["E_11",22]],
     like_rates: { B_07:82, C_03:77, A_12:69, B_15:74, C_09:61, E_02:58, A_05:66, D_08:49, B_21:71, E_11:55 },
-    top_shops: [["shop_003",140],["shop_002",74],["shop_001",52],["shop_005",41],["shop_004",28]],
-    top_users: [["小桃",58],["Luna",44],["阿may",39],["甜筒",31],["Vivi",27],["小满",24],["Coco",21],["阿哲",18],["糖糖",15],["Mia",12]]
+    top_shops_by_rev: [
+      { shop_id:"shop_003", shop_name:"光屿武林设计所", gmv:1255215, ad_spend:128400, orders:842, consultation:2598, click:13720 },
+      { shop_id:"shop_002", shop_name:"朝露海岸城设计所", gmv:1130609, ad_spend:105800, orders:761, consultation:2310, click:12550 },
+      { shop_id:"shop_001", shop_name:"云釉琶洲美甲会所", gmv:1118585, ad_spend:97650,  orders:728, consultation:2240, click:11890 },
+      { shop_id:"shop_005", shop_name:"慢糖国贸美甲会所", gmv:1109127, ad_spend:88240,  orders:692, consultation:2155, click:11420 },
+      { shop_id:"shop_004", shop_name:"森屿三里屯设计所", gmv:1080069, ad_spend:73600,  orders:651, consultation:2010, click:10780 }
+    ]
   };
 }
 
@@ -1027,62 +1064,186 @@ function renderStats(d) {
   animateNum($('#s-books'), d.total_books || 0);
   animateNum($('#s-latency'), (d.avg_latency_ms || 0) / 1000, { decimals: 1, unit: 's' });
 
-  // 风格分类热度（优先DB商家款式分布）
-  const catDist = d.style_cat_dist?.length ? d.style_cat_dist : d.category_stats;
-  const maxCat = catDist?.length ? catDist[0][1] : 1;
-  $('#cat-stats').innerHTML = (catDist || []).map(([cat, count]) => {
-    const w = Math.round(count / maxCat * 100);
-    const name = (d.category_names && d.category_names[cat]) || cat;
-    return `<div class="row">
-      <span class="cat-dot" style="background:${CAT_COLORS[cat] || 'var(--accent)'}"></span>
-      <span class="row-name fixed">${cat} · ${name}</span>
-      <span class="bar-track"><span class="bar" data-w="${w}"></span></span>
-      <span class="row-val">${Number(count).toLocaleString()}</span>
-    </div>`;
-  }).join('');
+  // 风格分类热度 → doughnut + legend
+  renderCategoryChart(d);
 
-  // 热门款式（优先DB款式GMV排行，其次C端日志）
-  const styleData = d.top_styles_by_gmv?.length ? d.top_styles_by_gmv : d.top_styles;
-  const maxStyle = styleData?.length ? styleData[0][1] : 1;
-  $('#top-styles').innerHTML = (styleData || []).map((item, i) => {
-    const sid = item[0], gmv = item[1], name = item[2] || '';
-    const w = Math.round(gmv / maxStyle * 100);
-    const displayName = name ? `${name} (${sid})` : sid;
-    return `<div class="row">
-      <span class="rank">${i + 1}</span>
-      <span class="row-sid" style="width:auto;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${displayName}</span>
-      <span class="bar-track"><span class="bar" data-w="${w}"></span></span>
-      <span class="row-val" style="width:auto">¥${gmv.toLocaleString()}</span>
-    </div>`;
-  }).join('');
+  // 热门款式 → horizontal bar chart
+  renderStyleChart(d);
 
-  // 门店（优先DB商家营收排行）
-  const shopData = d.top_shops_by_rev?.length ? d.top_shops_by_rev : d.top_shops;
-  const maxShop = shopData?.length ? (shopData[0][2] || shopData[0][1]) : 1;
-  const avgShop = shopData?.length ? shopData.reduce((s, x) => s + (x[2]||x[1]), 0) / shopData.length : 0;
-  $('#top-shops').innerHTML = (shopData || []).map((item) => {
-    const sid = item[0], name = item[1] || sid, val = item[2] || item[1];
-    const w = Math.round(val / maxShop * 100);
-    const isWarn = val > avgShop * 2;
-    return `<div class="row">
-      <span class="row-name fixed" style="width:auto;flex:1">${name}</span>
-      <span class="bar-track"><span class="bar solo" data-w="${w}"></span></span>
-      <span class="row-val ${isWarn ? 'warn' : ''}" style="width:auto">¥${val.toLocaleString()}${isWarn ? ' <span class="warn-tag">⚠</span>' : ''}</span>
-    </div>`;
-  }).join('');
+  // 门店预约 → 4 指标卡（GMV / 投流 / 预约成交率 / 试戴预约率）
+  renderShopBookings(d);
 
-  // 活跃用户
-  $('#top-users').innerHTML = (d.top_users || []).map(([name, count], i) => `
-    <div class="row">
-      <span class="rank">${i + 1}</span>
-      <span class="row-name" style="flex:1">${name}</span>
-      <span class="row-sid" style="width:auto;color:var(--t-secondary)">${count} tryons</span>
-    </div>`).join('');
-
-  // 触发 bar 宽度动画
+  // 触发 bar 宽度动画（保留给可能残存的 .bar 用）
   requestAnimationFrame(() => {
     document.querySelectorAll('.bar[data-w]').forEach(b => { b.style.width = b.dataset.w + '%'; });
   });
+}
+
+let catChartInst = null, styleChartInst = null;
+
+function renderCategoryChart(d) {
+  const ctx = document.getElementById('catChart')?.getContext('2d');
+  if (!ctx) return;
+  const catDist = d.style_cat_dist?.length ? d.style_cat_dist : d.category_stats;
+  if (!catDist?.length) return;
+  const labels = catDist.map(([cat]) => cat);
+  const values = catDist.map(([_, count]) => count);
+  const colors = catDist.map(([cat]) => CAT_COLORS[cat] || '#d4ab7c');
+  const total = values.reduce((s, v) => s + v, 0) || 1;
+
+  if (catChartInst) catChartInst.destroy();
+  catChartInst = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{
+      data: values, backgroundColor: colors,
+      borderColor: 'rgba(28,16,22,0.85)', borderWidth: 2, hoverOffset: 6
+    }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(28,16,22,0.95)', titleColor: '#f1dccf',
+          bodyColor: '#f1dccf', borderColor: 'rgba(212,171,124,0.3)', borderWidth: 1,
+          callbacks: {
+            label: ctx => {
+              const cat = ctx.label, v = ctx.parsed, p = (v / total * 100).toFixed(1);
+              const name = (d.category_names && d.category_names[cat]) || cat;
+              return `${cat} · ${name}: ${v.toLocaleString()} (${p}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const legend = catDist.map(([cat, count]) => {
+    const name = (d.category_names && d.category_names[cat]) || cat;
+    const pct = (count / total * 100).toFixed(1);
+    return `<li>
+      <span class="lg-dot" style="background:${CAT_COLORS[cat] || 'var(--accent)'}"></span>
+      <span class="lg-name">${cat} · ${name}</span>
+      <span class="lg-val">${Number(count).toLocaleString()}</span>
+      <span class="lg-pct">${pct}%</span>
+    </li>`;
+  }).join('');
+  document.getElementById('cat-legend').innerHTML = legend;
+}
+
+function renderStyleChart(d) {
+  const ctx = document.getElementById('styleChart')?.getContext('2d');
+  if (!ctx) return;
+  const styleData = d.top_styles_by_gmv?.length ? d.top_styles_by_gmv : d.top_styles;
+  if (!styleData?.length) return;
+  const top = styleData.slice(0, 10);
+  // 显示用 GMV / 试戴数 兼容：top_styles_by_gmv => [sid,gmv,name]; top_styles => [sid,count]
+  const hasGmv = !!d.top_styles_by_gmv?.length;
+  const labels = top.map(it => {
+    const sid = it[0], name = it[2] || '';
+    const display = name ? name : sid;
+    return display.length > 14 ? display.slice(0, 13) + '…' : display;
+  });
+  const values = top.map(it => it[1]);
+  const colors = top.map(it => {
+    const sid = String(it[0]);
+    const cat = sid.split('_')[0];
+    return CAT_COLORS[cat] || '#d4ab7c';
+  });
+
+  if (styleChartInst) styleChartInst.destroy();
+  styleChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{
+      data: values, backgroundColor: colors.map(c => c + 'cc'),
+      borderColor: colors, borderWidth: 1, borderRadius: 3, barThickness: 16
+    }] },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(28,16,22,0.95)', titleColor: '#f1dccf',
+          bodyColor: '#f1dccf', borderColor: 'rgba(212,171,124,0.3)', borderWidth: 1,
+          callbacks: {
+            label: ctx => hasGmv ? `¥${ctx.parsed.x.toLocaleString()}` : `${ctx.parsed.x.toLocaleString()} 试戴`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: 'rgba(241,220,207,0.55)', font: { family: 'JetBrains Mono, monospace', size: 10 },
+            callback: v => hasGmv ? '¥' + (v >= 10000 ? (v/10000).toFixed(0) + 'w' : v) : v
+          },
+          grid: { color: 'rgba(241,220,207,0.05)', drawBorder: false }
+        },
+        y: {
+          ticks: { color: 'rgba(241,220,207,0.75)', font: { size: 11 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+function renderShopBookings(d) {
+  const shops = d.top_shops_by_rev;
+  const container = document.getElementById('top-shops');
+  if (!container) return;
+  // 新结构 (object 数组): [{shop_id, shop_name, gmv, ad_spend, orders, consultation, click}]
+  // 旧结构 (兼容 demoStats fallback / old API): [[sid, name, gmv]]
+  let rows = [];
+  if (Array.isArray(shops) && shops.length && typeof shops[0] === 'object' && !Array.isArray(shops[0])) {
+    rows = shops;
+  } else if (Array.isArray(shops) && shops.length) {
+    rows = shops.map(it => ({
+      shop_id: it[0], shop_name: it[1] || it[0], gmv: it[2] || 0,
+      ad_spend: 0, orders: 0, consultation: 0, click: 0
+    }));
+  }
+  if (!rows.length && d.top_shops?.length) {
+    // 最后兜底:只显示成交数
+    rows = d.top_shops.slice(0, 5).map(([sid, n]) => ({
+      shop_id: sid, shop_name: SHOP_NAMES[sid] || sid,
+      gmv: 0, ad_spend: 0, orders: n, consultation: 0, click: 0
+    }));
+  }
+  container.innerHTML = rows.map((s, i) => {
+    const closeRate = s.consultation > 0 ? (s.orders / s.consultation * 100) : 0;
+    const tryonRate = s.click > 0 ? (s.consultation / s.click * 100) : 0;
+    const fmtCur = v => '¥' + Number(v || 0).toLocaleString();
+    const fmtPct = v => v.toFixed(1) + '%';
+    return `<div class="shop-card">
+      <div class="shop-card-head">
+        <span class="shop-name">${s.shop_name}</span>
+        <span class="shop-rank">#${String(i+1).padStart(2,'0')}</span>
+      </div>
+      <div class="shop-metrics">
+        <div class="shop-metric accent">
+          <span class="sm-label">GMV</span>
+          <span class="sm-cn">商品交易总额</span>
+          <span class="sm-val">${fmtCur(s.gmv)}</span>
+        </div>
+        <div class="shop-metric">
+          <span class="sm-label">Ad Spend</span>
+          <span class="sm-cn">投流收入</span>
+          <span class="sm-val">${fmtCur(s.ad_spend)}</span>
+        </div>
+        <div class="shop-metric rose">
+          <span class="sm-label">Close Rate</span>
+          <span class="sm-cn">预约成交率</span>
+          <span class="sm-val">${fmtPct(closeRate)}</span>
+        </div>
+        <div class="shop-metric">
+          <span class="sm-label">Tryon → Book</span>
+          <span class="sm-cn">试戴预约率</span>
+          <span class="sm-val">${fmtPct(tryonRate)}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 async function loadStats() {
