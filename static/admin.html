@@ -422,6 +422,12 @@
     pointer-events: none; opacity: 0.55;
     color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, transparent);
   }
+  .skill-chip.active {
+    color: var(--bg); background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  .skill-chip.active::before { opacity: 0; }
   .skill-chip .chip-dot {
     display: inline-block; width: 5px; height: 5px; border-radius: 50%;
     background: var(--accent); margin-right: 5px; vertical-align: 1px;
@@ -906,16 +912,17 @@
         </div>
         <div class="skill-bar" id="skill-bar">
           <span class="skill-bar-label">Quick Skills</span>
-          <span class="skill-chip" data-skill="get_gmv_status" data-label="本月GMV"><span class="chip-dot"></span>本月 GMV</span>
-          <span class="skill-chip" data-skill="breakdown_gmv" data-label="归因分析">归因分析</span>
-          <span class="skill-chip" data-skill="rank_styles" data-label="款式排行">款式排行</span>
-          <span class="skill-chip" data-skill="detect_risk" data-label="风险预警">风险预警</span>
-          <span class="skill-chip" data-skill="recommend_actions" data-label="增长建议">增长建议</span>
-          <span class="skill-chip" data-skill="validate_prediction" data-label="预测验证">预测验证</span>
-          <span class="skill-chip" data-skill="generate_promo_copy" data-label="文案生成" data-extra='{"style_code":"nail_03","channel":"banner","tone":"premium"}'>文案生成</span>
-          <span class="skill-chip" data-skill="whatif" data-label="What-If">What-If 沙盘</span>
-          <span class="skill-chip" data-skill="trend_mapper" data-label="趋势雷达">趋势雷达</span>
-          <span class="skill-chip" data-skill="vton_recovery" data-label="试戴流失">试戴漏斗</span>
+          <span class="skill-chip" data-skill="jiaqu-gmv-status" data-label="本月GMV"><span class="chip-dot"></span>本月 GMV</span>
+          <span class="skill-chip" data-skill="jiaqu-gmv-breakdown" data-label="归因分析">归因分析</span>
+          <span class="skill-chip" data-skill="jiaqu-style-ranking" data-label="款式排行">款式排行</span>
+          <span class="skill-chip" data-skill="jiaqu-shop-ranking" data-label="商家排行">商家排行</span>
+          <span class="skill-chip" data-skill="jiaqu-persona-strategy" data-label="Persona 战略">Persona 战略</span>
+          <span class="skill-chip" data-skill="jiaqu-risk-alert" data-label="风险预警">风险预警</span>
+          <span class="skill-chip" data-skill="jiaqu-prediction-review" data-label="运营复盘">运营复盘</span>
+          <span class="skill-chip" data-skill="jiaqu-promo-copy" data-label="文案生成">文案生成</span>
+          <span class="skill-chip" data-skill="jiaqu-whatif-sandbox" data-label="What-If">What-If 沙盘</span>
+          <span class="skill-chip" data-skill="jiaqu-trend-radar" data-label="趋势雷达">趋势雷达</span>
+          <span class="skill-chip" data-skill="jiaqu-tryon-funnel" data-label="试戴漏斗">试戴漏斗</span>
         </div>
         <div class="chat-input-area">
           <input type="text" id="chat-input" placeholder="问 AI 任何运营问题…" autocomplete="off">
@@ -1059,3 +1066,85 @@ async function loadGmvDashboard() {
   const from = $('#gmv-from')?.value || '';
   const to = $('#gmv-to')?.value || '';
   const style = $('#gmv-style')?.value || '';
+  if (city) params.set('city', city);
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  if (style) params.set('style', style);
+  const qs = params.toString();
+  try {
+    await fetch('/api/admin/gmv_dashboard' + (qs ? '?' + qs : ''));
+  } catch (e) {}
+}
+
+/* ===== AI 运营助手 — 带 @jiaqu-* skill 标签的 OpenClaw 对话 ===== */
+const chatInput = $('#chat-input');
+const chatSend = $('#chat-send');
+const chatMessages = $('#chat-messages');
+
+function addMsg(role, text) {
+  const div = document.createElement('div');
+  div.className = role === 'user' ? 'user-msg' : 'ai-msg';
+  div.style.cssText = role === 'user'
+    ? 'background:var(--accent);color:var(--bg);padding:8px 12px;border-radius:12px;margin:6px 0;align-self:flex-end;max-width:80%;font-size:13px'
+    : 'background:var(--card);color:var(--t-primary);padding:8px 12px;border-radius:12px;margin:6px 0;align-self:flex-start;max-width:90%;font-size:13px;border:1px solid var(--border)';
+  if (typeof text === 'string') div.textContent = text;
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return div;
+}
+
+function attachSkill(chip) {
+  const skill = chip.dataset.skill;
+  const tag = '@' + skill + ' ';
+  const current = chatInput.value;
+  const tagMatch = current.match(/^@[\w-]+\s+/);
+  chatInput.value = tagMatch ? current.replace(/^@[\w-]+\s+/, tag) : tag + current;
+  document.querySelectorAll('.skill-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  chatInput.focus();
+  chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
+}
+
+async function sendChat() {
+  const msg = chatInput.value.trim();
+  if (!msg) return;
+  addMsg('user', msg);
+  chatInput.value = '';
+  document.querySelectorAll('.skill-chip.active').forEach(c => c.classList.remove('active'));
+  chatSend.disabled = true;
+  const loading = addMsg('ai', '');
+  loading.innerHTML = '<span style="opacity:0.6">AI 思考中…</span>';
+  try {
+    const r = await fetch('/api/admin/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg}),
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    const replyText = typeof data.reply === 'string' ? data.reply : JSON.stringify(data.reply, null, 2);
+    loading.innerHTML = window.marked ? window.marked.parse(replyText) : replyText.replace(/\n/g, '<br>');
+  } catch (e) {
+    loading.innerHTML = '<span style="color:#e0a07e">查询失败：' + (e.message || e) + '</span>';
+  } finally {
+    chatSend.disabled = false;
+    chatInput.focus();
+  }
+}
+
+if (chatSend) chatSend.addEventListener('click', sendChat);
+if (chatInput) {
+  chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+  chatInput.addEventListener('input', () => {
+    if (!chatInput.value.match(/^@[\w-]+\s/)) {
+      document.querySelectorAll('.skill-chip.active').forEach(c => c.classList.remove('active'));
+    }
+  });
+}
+
+document.querySelectorAll('.skill-chip').forEach(chip => {
+  chip.addEventListener('click', () => attachSkill(chip));
+});
+</script>
+</body>
+</html>

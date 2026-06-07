@@ -1220,6 +1220,20 @@ def admin_chat():
     if not user_msg:
         return jsonify({"error": "message cannot be empty"}), 400
     try:
+        # @jiaqu-xxx 前缀 → 提示 OpenClaw agent 优先加载该 skill
+        import re as _re
+        skill_match = _re.match(r"^@(jiaqu-[\w-]+)\s+(.*)", user_msg, _re.DOTALL)
+        if skill_match:
+            skill_name = skill_match.group(1)
+            actual_msg = (skill_match.group(2) or "").strip()
+            if not actual_msg:
+                actual_msg = "请用这个 skill 给我一份完整分析。"
+            user_msg = (
+                f"请优先使用「{skill_name}」skill。skill 文档在 /root/.openclaw/workspace/skills/{skill_name}/SKILL.md。"
+                f"按 skill 里的指示先 curl fast-path 接口拿数据，再按格式输出。\n\n"
+                f"用户问题：{actual_msg}"
+            )
+
         # 意图检测 → 预调 skill 注入数据到 prompt
         from services.skills.data_context import build_analysis_prompt
         augmented_msg = build_analysis_prompt(get_db(), user_msg)
