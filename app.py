@@ -252,7 +252,9 @@ def index():
 
 @app.route("/admin")
 def admin():
-    return send_from_directory(STATIC_DIR, "admin.html")
+    resp = send_from_directory(STATIC_DIR, "admin.html")
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    return resp
 
 
 @app.route("/merchant")
