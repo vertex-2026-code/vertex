@@ -1544,11 +1544,9 @@ def gmv_dashboard():
     """返回商家数据看台所需的多维聚合数据，支持城市/风格/日期筛选"""
     db = get_db()
     city = request.args.get("city", "")
-    style = request.args.get("style", "")       # A/B/C/D/E 风格分类
-    persona = request.args.get("persona", "")   # 风格人设: 韩系纯欲/甜美少女...
+    style = request.args.get("style", "")       # 风格人设: 韩系纯欲/甜美少女...
     date_from = request.args.get("from", "")
     date_to = request.args.get("to", "")
-    style_id = request.args.get("style_id", "")
 
     shop_where = ""
     params_shop = []
@@ -1557,11 +1555,8 @@ def gmv_dashboard():
         shop_where += " AND p.city = ?"
         params_shop.append(city)
     if style:
-        shop_where += " AND p.style = ?"
-        params_shop.append(style)
-    if persona:
         shop_where += " AND p.shop_id IN (SELECT DISTINCT shop_id FROM merchant_style_catalog WHERE style_persona_name = ?)"
-        params_shop.append(persona)
+        params_shop.append(style)
     if date_from:
         shop_where += " AND s.date >= ?"
         params_shop.append(date_from)
@@ -1696,11 +1691,9 @@ def merchant_list():
     cities = [r[0] for r in db.execute(
         "SELECT DISTINCT city FROM merchant_profiles ORDER BY city").fetchall()]
     styles = [r[0] for r in db.execute(
-        "SELECT DISTINCT style FROM merchant_profiles ORDER BY style").fetchall()]
-    personas = [r[0] for r in db.execute(
         "SELECT DISTINCT style_persona_name FROM merchant_style_catalog WHERE style_persona_name IS NOT NULL AND style_persona_name != '' ORDER BY style_persona_name LIMIT 30").fetchall()]
 
-    return jsonify({"merchants": merchants, "cities": cities, "styles": styles, "personas": personas, "total": len(merchants)})
+    return jsonify({"merchants": merchants, "cities": cities, "styles": styles, "total": len(merchants)})
 
 
 # ============ Skills API ============
