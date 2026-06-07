@@ -505,8 +505,9 @@
     inset: 0;
     z-index: 20;
     display: grid;
-    place-items: center;
+    place-items: start center;
     padding: 24px;
+    overflow-y: auto;
     background:
       radial-gradient(700px 360px at 100% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
       color-mix(in srgb, var(--bg) 78%, transparent);
@@ -2766,7 +2767,6 @@
         <button class="nav-link" type="button" data-target="overviewSection">经营总览</button>
         <button class="nav-link" type="button" data-target="stylesSection">款式经营</button>
         <button class="nav-link" type="button" data-target="competitorSection">竞品与趋势</button>
-        <button class="nav-link" type="button" data-target="historyBoard">最近记录</button>
         <button class="sidebar-logout" id="sidebarLogoutBtn" type="button" hidden>退出登录</button>
       </div>
     </div>
@@ -2933,7 +2933,7 @@
             <div class="locked-note">完整竞品分析、竞价排名变化和更细的投流建议属于进阶能力，点击上方按钮后可查看 VIP 解锁提示。</div>
           </article>
 
-          <article class="board span-12" id="historyBoard">
+          <article class="board span-12" id="historyBoard" style="display:none">
             <div class="board-head">
               <div>
                 <span class="panel-eyebrow">Recent Records</span>
