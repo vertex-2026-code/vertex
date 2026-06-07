@@ -902,22 +902,30 @@ def user_ai_recommend():
 
         from services.merchant_skills import _normalize_openclaw_result
         normalized = _normalize_openclaw_result(result.stdout.strip())
-        reply_text = normalized.get("reply") or result.stdout.strip() or ""
+        reply_val = normalized.get("reply") or result.stdout.strip() or ""
 
-        # DeepSeek 偶尔会用 markdown 包 JSON，尝试解出来
+        # OpenClaw 偶尔已经把 reply 解析成 dict，直接用；否则按 string 处理
         parsed = None
-        try:
-            parsed = json.loads(reply_text)
-        except (ValueError, TypeError):
-            m = re.search(r"```(?:json)?\s*(\{.*\})\s*```", reply_text, re.S)
-            if m:
-                try: parsed = json.loads(m.group(1))
-                except (ValueError, TypeError): pass
-            if parsed is None:
-                m = re.search(r"(\{[^{}]*\"recommendations\"[\s\S]*\})", reply_text, re.S)
+        if isinstance(reply_val, dict):
+            parsed = reply_val
+            reply_text = json.dumps(reply_val, ensure_ascii=False)
+        elif isinstance(reply_val, list):
+            parsed = {"items": reply_val}
+            reply_text = json.dumps(reply_val, ensure_ascii=False)
+        else:
+            reply_text = str(reply_val)
+            try:
+                parsed = json.loads(reply_text)
+            except (ValueError, TypeError):
+                m = re.search(r"```(?:json)?\s*(\{.*\})\s*```", reply_text, re.S)
                 if m:
                     try: parsed = json.loads(m.group(1))
                     except (ValueError, TypeError): pass
+                if parsed is None:
+                    m = re.search(r"(\{[^{}]*\"recommendations\"[\s\S]*\})", reply_text, re.S)
+                    if m:
+                        try: parsed = json.loads(m.group(1))
+                        except (ValueError, TypeError): pass
 
         return jsonify({
             "user_id": user_id,
