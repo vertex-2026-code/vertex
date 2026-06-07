@@ -463,11 +463,19 @@ def tryon():
             style_data_url = custom_style_image
             save_data_url(custom_style_image, f"{UPLOADS_DIR}/{request_id}_style.png")
         else:
+            # 优先用高清原图（nails_orig）给 AI 试戴，缩略图（nails）只给前端展示
+            orig_dir = f"{BASE_DIR}/static/nails_orig"
             for ext in ("png", "jpg", "jpeg"):
-                p = f"{NAILS_DIR}/{style_id}.{ext}"
+                p = f"{orig_dir}/{style_id}.{ext}"
                 if os.path.exists(p):
                     style_path = p
                     break
+            if not style_path:
+                for ext in ("png", "jpg", "jpeg"):
+                    p = f"{NAILS_DIR}/{style_id}.{ext}"
+                    if os.path.exists(p):
+                        style_path = p
+                        break
             if not style_path:
                 return jsonify({"error": f"style {style_id} not found"}), 404
             with open(style_path, "rb") as fp:

@@ -40,8 +40,12 @@ echo "==> [6/7] 启动新 Flask"
 # 优先用 gunicorn 4 worker：一个 AI 请求只阻塞 1/4 worker，其他 3 个继续服务
 # 没装 gunicorn 时回退到 python3 app.py（开发模式）
 if python3 -c "import gunicorn" 2>/dev/null; then
-  echo "    使用 gunicorn 4 worker (timeout 600s)"
-  nohup gunicorn -w 4 -b 0.0.0.0:5000 --timeout 600 --access-logfile - app:app > nohup.out 2>&1 &
+  # 4 worker × 8 thread = 32 并发请求（同时处理图片 + API + AI）
+  # 4G RAM 4 core，每 worker ~150-250MB → 总 ~1GB，给 AI/openclaw 留余地
+  echo "    使用 gunicorn 4 worker × 8 thread = 32 并发 (timeout 600s)"
+  nohup gunicorn -w 4 --threads 8 -k gthread \
+    -b 0.0.0.0:5000 --timeout 600 \
+    --access-logfile - app:app > nohup.out 2>&1 &
 else
   echo "    ⚠️  没装 gunicorn，回退到 python3 app.py 单进程（AI 请求会阻塞其他请求）"
   echo "    建议: pip install gunicorn 然后重跑 deploy.sh"
