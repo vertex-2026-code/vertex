@@ -8,9 +8,19 @@ set -e
 
 cd "$(dirname "$0")"
 
-echo "==> [1/6] 杀掉旧 Flask（先杀，否则它会持续写 nohup.out 卡住 rebase）"
+echo "==> [1/6] 杀掉旧 Flask / gunicorn（先杀，否则它会持续写 nohup.out 卡住 rebase）"
+# 必须三连杀：gunicorn master+worker、python3 app.py（dev 模式回退）、任何占着 5000 的兜底
+pkill -9 -f "gunicorn.*app:app" 2>/dev/null || true
 pkill -9 -f "python3 app.py" 2>/dev/null || true
-sleep 1
+fuser -k 5000/tcp 2>/dev/null || true
+sleep 2
+# 验证：端口必须为空，否则后面 gunicorn 还是会 Address already in use
+if ss -tln 2>/dev/null | grep -q ":5000 "; then
+  echo "    ❌ 端口 5000 仍被占用，强制退出。手动: lsof -i:5000 看是谁"
+  ss -tlnp 2>/dev/null | grep ":5000 "
+  exit 1
+fi
+echo "    端口 5000 已清空"
 
 echo "==> [2/6] 兜底 stash 任何 dirty 文件（nohup.out / VS Code 临时改的 wiki 等）"
 if [ -n "$(git status --porcelain)" ]; then
