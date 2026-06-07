@@ -2348,6 +2348,9 @@
     gap: 12px;
     align-items: stretch;
   }
+  .mini-style-visual.no-thumb {
+    grid-template-columns: 1fr;
+  }
 
   .mini-style-thumb {
     width: 104px;
@@ -3903,10 +3906,8 @@ function renderStyleListBoard(title, items, mode) {
             : `搜索 ${formatCount(item.search_volume_30d || 0)} · 点击 ${formatCount(item.click_volume_30d || 0)} · 退款 ${formatCount(item.refund_orders_30d || 0)}`;
           return `
             <div class="mini-style-item">
-              <div class="mini-style-visual">
-                <div class="mini-style-thumb">
-                  ${renderStyleThumb(item, '当前款式图待生成')}
-                </div>
+              <div class="mini-style-visual${item.style_image_url ? '' : ' no-thumb'}">
+                ${item.style_image_url ? `<div class="mini-style-thumb">${renderStyleThumb(item, '')}</div>` : ''}
                 <div>
                   <div class="mini-style-head">
                     <div>
