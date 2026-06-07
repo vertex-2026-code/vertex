@@ -1,12 +1,8 @@
-"""
-为 OpenClaw/DeepSeek 构建分析 prompt
-取代原来 app.py 里的 _inject_skill_context
-"""
+"""为 OpenClaw/DeepSeek 构建分析 prompt — 数据驾驶舱 + 趋势雷达 + 试戴漏斗"""
 from services.gmv_data import get_gmv_overview, get_gmv_breakdown, get_styles_ranking
 
 
 def build_analysis_prompt(db, user_msg: str) -> str:
-    """基于实时数据构建送给 DeepSeek 的分析 prompt"""
     try:
         ov = get_gmv_overview(db)
         bd = get_gmv_breakdown(db)
@@ -27,31 +23,49 @@ def build_analysis_prompt(db, user_msg: str) -> str:
     for c in ov.get("curve", [])[-10:]:
         curve_text += f"\n  {c['date']}  ¥{int(c['gmv']/1000)}k"
 
-    return f"""你是 Vertex 甲趣平台的首席运营分析师。基于实时运营数据给出精准、可执行的分析建议。
+    trend_text = ""
+    try:
+        from services.skills.trend_mapper import map_trends_to_inventory
+        tm = map_trends_to_inventory(db)
+        for t in tm.get("trends", [])[:3]:
+            n = len(t.get("matched_styles", []))
+            trend_text += f"\n  {t['tag']} +{t['growth_pct']}% → {n}款可组专题页"
+    except:
+        pass
+
+    vton_text = ""
+    try:
+        from services.skills.vton_recovery import analyze_vton_funnel
+        vf = analyze_vton_funnel(db)
+        vton_text = f"\n  试戴 {vf['tryon_total']}次 → 收藏率 {vf['fav_rate']}% → 分享率 {vf['plaza_rate']}%"
+        if vf['leaking_styles'] > 0:
+            vton_text += f"\n  ⚠ {vf['leaking_styles']}款试戴流失严重，需视觉摩擦力诊断"
+    except:
+        pass
+
+    return f"""你是 Vertex 甲趣平台首席运营分析师 + 策略顾问。基于实时数据给出精准可执行的分析。
 
 【数据驾驶舱 — 实时快照】
 
-▸ GMV 总览
-  本月 GMV: ¥{ov['month_gmv']:,}
-  月目标: ¥{ov['target']:,}
-  完成率: {ov['completion_pct']}%
-  缺口: ¥{ov['gap']:,}
-  月末预测: ¥{ov['forecast_end_of_month']:,}
+▸ GMV: ¥{ov['month_gmv']:,} / 目标 ¥{ov['target']:,} ({ov['completion_pct']}%)  缺口 ¥{ov['gap']:,}  预测 ¥{ov['forecast_end_of_month']:,}
 
-▸ GMV 归因拆解 (vs 上期)
-  GMV 变化: {bd['gmv_change_pct']}%
-  {bd['narrative']}
-  因子贡献: 订单数{'+' if bd['orders_change_pct']>=0 else ''}{bd['orders_change_pct']}% (¥{bd['order_contrib']:,}), AOV{'+' if bd['aov_change_pct']>=0 else ''}{bd['aov_change_pct']}% (¥{bd['aov_contrib']:,}), 浏览{'+' if bd['views_change_pct']>=0 else ''}{bd['views_change_pct']}% (¥{bd['view_contrib']:,}), CVR{'+' if bd['cvr_change_pct']>=0 else ''}{bd['cvr_change_pct']}% (¥{bd['cvr_contrib']:,})
+▸ 归因: {bd['narrative']}
+  订单{'+' if bd['orders_change_pct']>=0 else ''}{bd['orders_change_pct']}%(¥{bd['order_contrib']:,}) AOV{'+' if bd['aov_change_pct']>=0 else ''}{bd['aov_change_pct']}%(¥{bd['aov_contrib']:,}) 浏览{'+' if bd['views_change_pct']>=0 else ''}{bd['views_change_pct']}%(¥{bd['view_contrib']:,}) CVR{'+' if bd['cvr_change_pct']>=0 else ''}{bd['cvr_change_pct']}%(¥{bd['cvr_contrib']:,})
 
-▸ 款式 GMV 排行 Top 5 (风格覆盖: {tags}){top_text}
+▸ 款式 Top 5 ({tags}):{top_text}
 
-▸ 最近 10 天 GMV 日曲线{curve_text}
+▸ 10天曲线:{curve_text}
+
+▸ 趋势雷达:{trend_text}
+
+▸ 试戴漏斗:{vton_text}
 
 ---
-【分析要求】
-1. 一句话总结当前 GMV 状况
-2. 指出最大增长动力和最大拖累因素（具体数字）
-3. 给出 2-3 条最值得关注的发现或建议，用数据说话
-4. 简洁有力，不要重复数据驾驶舱的所有数字
+你是数据分析师 + 策略顾问，需:
+1. 一句话总结 GMV 现状，指出最大增长动力和拖累因素
+2. 如果问 What-If (打折/缺货/加预算)，给出具体预测数字
+3. 如果问趋势，推荐匹配库存款组成专题页
+4. 如果问试戴流失，分析视觉摩擦力 + 给出挽回策略
+5. 回答简洁，每条结论跟数字依据
 
 用户问题: {user_msg}"""

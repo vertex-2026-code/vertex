@@ -855,6 +855,9 @@
           <span class="skill-chip" data-skill="recommend_actions" data-label="增长建议">增长建议</span>
           <span class="skill-chip" data-skill="validate_prediction" data-label="预测验证">预测验证</span>
           <span class="skill-chip" data-skill="generate_promo_copy" data-label="文案生成" data-extra='{"style_code":"nail_03","channel":"banner","tone":"premium"}'>文案生成</span>
+          <span class="skill-chip" data-skill="whatif" data-label="What-If">What-If 沙盘</span>
+          <span class="skill-chip" data-skill="trend_mapper" data-label="趋势雷达">趋势雷达</span>
+          <span class="skill-chip" data-skill="vton_recovery" data-label="试戴流失">试戴漏斗</span>
         </div>
         <div class="chat-input-area">
           <input type="text" id="chat-input" placeholder="问 AI 任何运营问题…" autocomplete="off">
@@ -1226,6 +1229,54 @@ function formatSkillResult(skill, data) {
         ${cardsHTML}
         <div class="viz-card good-card"><p style="margin:0;font-size:13px">${data.narrative}</p></div>`;
     }
+    case 'whatif': {
+      const imp = data.impact || {};
+      const beforeVals = (data.before_curve || []).map(c => c.gmv);
+      const afterVals = (data.after_curve || []).map(c => c.gmv);
+      const dates = (data.before_curve || []).map(c => c.date.slice(5));
+      return `<h3>What-If 沙盘模拟</h3>
+        <div class="viz-card highlight">
+          <div class="card-head"><span class="card-title">${imp.action || ''}</span><span class="card-badge ${(imp.delta_pct||0)>=0?'badge-up':'badge-down'}">${(imp.delta_pct||0)>=0?'+':''}${imp.delta_pct||0}%</span></div>
+          <div class="viz-meta">
+            <div class="viz-meta-item"><div class="v">¥${F(data.baseline_gmv)}</div><div class="l">基线 GMV</div></div>
+            <div class="viz-meta-item"><div class="v" style="color:${(imp.delta||0)>=0?'var(--accent)':'#e0a07e'}">${(imp.delta||0)>=0?'+':''}¥${F(imp.delta)}</div><div class="l">变化</div></div>
+            <div class="viz-meta-item"><div class="v">¥${F(imp.new_gmv)}</div><div class="l">模拟后 GMV</div></div>
+          </div>
+          ${imp.risk ? `<p style="font-size:12px;color:#e0a07e;margin-top:4px">⚠ ${imp.risk}</p>` : ''}
+          ${imp.suggestion ? `<p style="font-size:12px;color:var(--accent);margin-top:4px">→ ${imp.suggestion}</p>` : ''}
+        </div>
+        <p style="font-size:12px;color:var(--t-secondary);margin-top:4px">${data.summary || ''}</p>`;
+    }
+    case 'trend_mapper': {
+      const cards = (data.trends || []).map(t => `
+        <div class="viz-card highlight">
+          <div class="card-head">
+            <span class="card-title">${t.tag}</span>
+            <span class="card-badge badge-up">+${t.growth_pct}%</span>
+          </div>
+          <p style="font-size:12px;color:var(--t-secondary);margin:4px 0">${t.suggestion}</p>
+          <div style="font-size:11px;color:var(--t-tertiary)">
+            匹配款式: ${(t.matched_styles||[]).map(s => `<span style="color:var(--accent)">${s.style_code}(${s.style_name})</span>`).join(', ') || '无匹配'}
+          </div>
+        </div>`).join('');
+      return `<h3>趋势雷达 · 全网热搜 → 库存匹配</h3>${cards}
+        <p style="font-size:12px;color:var(--t-secondary);margin-top:4px">${data.narrative || ''}</p>`;
+    }
+    case 'vton_recovery': {
+      const funnelHTML = (data.funnel || []).map(f =>
+        `<div class="viz-meta-item"><div class="v">${F(f.count)}</div><div class="l">${f.stage}${f.rate ? ' ('+f.rate+')' : ''}</div></div>`
+      ).join('');
+      const cards = (data.suggestions || []).map(s => `
+        <div class="viz-card ${s.priority==='high'?'warn-card':'good-card'}">
+          <div class="card-head"><span class="card-title">${s.action}</span><span class="card-badge ${s.priority==='high'?'badge-down':'badge-mid'}">${s.priority}</span></div>
+          <p style="font-size:12px;color:var(--t-secondary)">${s.detail}</p>
+          <p style="font-size:12px;color:var(--accent)">${s.impact}</p>
+        </div>`).join('');
+      return `<h3>试戴漏斗分析</h3>
+        <div class="viz-meta" style="margin:8px 0">${funnelHTML}</div>
+        <p style="font-size:12px;color:var(--t-secondary);margin-bottom:8px">${data.narrative || ''}</p>
+        ${cards}`;
+    }
     default:
       return `<pre><code>${JSON.stringify(data, null, 2)}</code></pre>`;
   }
@@ -1324,6 +1375,9 @@ async function triggerSkill(chip) {
     chip.classList.remove('loading');
     chatMessages.scrollTop = chatMessages.scrollHeight;
     return;
+  } else if (skill === 'whatif') {
+    params.set('action', 'discount'); params.set('magnitude', '10');
+    params.set('target', '');
   } else if (skill === 'validate_prediction') {
     params.set('period', 'last_week');
   } else {
