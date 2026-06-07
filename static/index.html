@@ -1663,6 +1663,7 @@
         <span class="panel-eyebrow">Result</span>
         <h2 class="modal-title">试戴完成</h2>
       </div>
+      <button id="close-result-x" class="btn-ghost btn-icon-only" aria-label="关闭"><i class="ti ti-x" aria-hidden="true"></i></button>
     </div>
     <div class="stage result-stage">
       <img id="result-img" alt="试戴结果">
@@ -2410,6 +2411,9 @@
   });
 
   $('#close-result').addEventListener('click', () => {
+    $('#result-overlay').classList.add('hidden');
+  });
+  $('#close-result-x').addEventListener('click', () => {
     $('#result-overlay').classList.add('hidden');
   });
 
