@@ -1548,7 +1548,21 @@
   }
 
   .hero-label {
-    display: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--t-tertiary);
+  }
+  .hero-label::before {
+    content: '';
+    width: 18px;
+    height: 1px;
+    background: color-mix(in srgb, var(--accent) 55%, transparent);
   }
 
   .hero-heading {
@@ -1674,17 +1688,17 @@
 
   .today-list {
     display: grid;
-    gap: 8px;
+    gap: 12px;
   }
 
   .today-item {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--card);
-    padding: 12px 14px;
-    color: var(--t-secondary);
-    font-size: 13px;
-    line-height: 1.72;
+    border: 0;
+    background: transparent;
+    padding: 4px 0 4px 14px;
+    border-left: 2px solid color-mix(in srgb, var(--accent) 36%, transparent);
+    color: var(--t-primary);
+    font-size: 14px;
+    line-height: 1.85;
   }
 
   .today-action-row {
@@ -2833,7 +2847,7 @@
         <section class="hero-surface" id="overviewSection">
           <div class="hero-copy-block">
             <span class="panel-eyebrow">Operations Overview</span>
-            <span class="hero-label">门店经营总览</span>
+            <span class="hero-label">Current Shop · 当前店铺</span>
             <h3 class="hero-heading" id="heroShopTitle">登录后查看你的门店经营状态</h3>
             <p class="hero-paragraph" id="heroSummary"></p>
             <div class="today-advice-shell" id="todayAdvice"></div>
