@@ -865,6 +865,72 @@ def user_recommend():
     return jsonify(result)
 
 
+@app.route("/api/user/ai_recommend", methods=["POST"])
+def user_ai_recommend():
+    """
+    AI 深度分析 —— 让 OpenClaw 加载 user-style-analyst skill，
+    对单个用户出结构化分析报告。
+    成本：每次调用约 10-15s + tokens，所以走用户主动触发。
+    """
+    import re
+    data = request.get_json(force=True) or {}
+    user_id = (data.get("user_id") or "").strip()
+    if not user_id:
+        return jsonify({"error": "user_id 不能为空"}), 400
+
+    prompt = (
+        f"请先执行 `cat /workspace/skills/user-style-analyst/SKILL.md` 读取并"
+        f"完全遵守这个 skill 的工作流程。\n\n"
+        f"然后分析用户「{user_id}」：\n"
+        f"1. 用 sqlite3 查 /workspace/tryon-data/jiaqu.db 的 favorites / "
+        f"tryon_history 算 signal_count 和 tier\n"
+        f"2. 查 community_trends 最近 3 天找 top rising / declining tag\n"
+        f"3. 按 skill 的公式给所有 25 款打分，挑 top 7\n"
+        f"4. 严格按 skill 的 JSON schema 输出（含 user_profile / "
+        f"external_signal / recommendations 含 reason / business_insight）\n\n"
+        f"必须输出 JSON。不要 markdown 包装，不要解释性文字。"
+    )
+
+    try:
+        result = subprocess.run(
+            ["openclaw", "agent", "--message", prompt, "--json",
+             "--session-id", f"vertex-user-{user_id}", "--timeout", "120"],
+            capture_output=True, text=True, timeout=130,
+        )
+        if result.returncode != 0:
+            return jsonify({"error": f"OpenClaw 调用失败: {result.stderr.strip()[-200:]}"}), 500
+
+        from services.merchant_skills import _normalize_openclaw_result
+        normalized = _normalize_openclaw_result(result.stdout.strip())
+        reply_text = normalized.get("reply") or result.stdout.strip() or ""
+
+        # DeepSeek 偶尔会用 markdown 包 JSON，尝试解出来
+        parsed = None
+        try:
+            parsed = json.loads(reply_text)
+        except (ValueError, TypeError):
+            m = re.search(r"```(?:json)?\s*(\{.*\})\s*```", reply_text, re.S)
+            if m:
+                try: parsed = json.loads(m.group(1))
+                except (ValueError, TypeError): pass
+            if parsed is None:
+                m = re.search(r"(\{[^{}]*\"recommendations\"[\s\S]*\})", reply_text, re.S)
+                if m:
+                    try: parsed = json.loads(m.group(1))
+                    except (ValueError, TypeError): pass
+
+        return jsonify({
+            "user_id": user_id,
+            "reply": reply_text,
+            "parsed": parsed,
+            "progress": normalized.get("progress", []),
+        })
+    except subprocess.TimeoutExpired:
+        return jsonify({"error": "AI 分析超时（>2 分钟）"}), 504
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
 
 @app.route("/api/admin/stats")
 def admin_stats():

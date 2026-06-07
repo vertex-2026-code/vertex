@@ -351,6 +351,119 @@
     -webkit-box-orient: vertical;
     pointer-events: none;
   }
+  .recommend-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .ai-analyze-btn {
+    margin-left: auto;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: linear-gradient(135deg, rgba(212,165,116,0.10), rgba(212,165,116,0.02));
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    padding: 6px 11px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 6px;
+    cursor: pointer; user-select: none;
+    transition: all 0.18s ease;
+  }
+  .ai-analyze-btn:hover { background: linear-gradient(135deg, rgba(212,165,116,0.22), rgba(212,165,116,0.08)); border-color: var(--accent); transform: translateY(-1px); }
+  .ai-analyze-btn:active { transform: scale(0.97); }
+  .ai-analyze-btn:disabled { opacity: 0.5; cursor: wait; }
+  .ai-analyze-btn .ai-spark { font-size: 12px; animation: ai-spark-pulse 2.2s ease-in-out infinite; }
+  @keyframes ai-spark-pulse { 0%,100% { opacity: 0.65; transform: scale(1);} 50% { opacity: 1; transform: scale(1.15);} }
+
+  /* AI 分析结果抽屉 */
+  .ai-drawer-mask {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    z-index: 1000; opacity: 0; pointer-events: none;
+    transition: opacity 0.24s ease;
+  }
+  .ai-drawer-mask.open { opacity: 1; pointer-events: auto; }
+  .ai-drawer {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    max-height: 88vh;
+    background: var(--bg, #1a0f15);
+    border-top: 1px solid var(--border);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -12px 40px rgba(0,0,0,0.5);
+    z-index: 1001;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(.2,.8,.2,1);
+    display: flex; flex-direction: column;
+  }
+  .ai-drawer.open { transform: translateY(0); }
+  .ai-drawer-head {
+    padding: 14px 18px 10px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .ai-drawer-head h3 { font-size: 15px; margin: 0; color: var(--t-primary); flex: 1; }
+  .ai-drawer-eyebrow { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em; color: var(--accent); opacity: 0.75; }
+  .ai-drawer-close {
+    background: none; border: none; color: var(--t-tertiary);
+    font-size: 22px; cursor: pointer; padding: 0 4px; line-height: 1;
+  }
+  .ai-drawer-close:hover { color: var(--accent); }
+  .ai-drawer-body { padding: 14px 18px 24px; overflow-y: auto; flex: 1; }
+
+  .ai-loading { padding: 30px 0; text-align: center; }
+  .ai-loading-dot {
+    display: inline-block; width: 8px; height: 8px; margin: 0 3px;
+    border-radius: 50%; background: var(--accent);
+    animation: ai-dot 1.4s ease-in-out infinite;
+  }
+  .ai-loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .ai-loading-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes ai-dot { 0%,80%,100% { opacity: 0.3; transform: scale(0.7);} 40% { opacity: 1; transform: scale(1);} }
+  .ai-loading-text { display: block; margin-top: 12px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; color: var(--t-secondary); text-transform: uppercase; }
+
+  .ai-section { margin-bottom: 14px; }
+  .ai-section-title {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em;
+    color: var(--accent); text-transform: uppercase; margin-bottom: 6px;
+  }
+  .ai-tier-badge {
+    display: inline-block; padding: 3px 9px; border-radius: 999px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.15em;
+    text-transform: uppercase; margin-right: 6px;
+  }
+  .ai-tier-cold { background: rgba(120, 160, 200, 0.18); color: #aac6e0; border: 1px solid rgba(120,160,200,0.35); }
+  .ai-tier-warm { background: rgba(220, 165, 100, 0.18); color: #e0c08c; border: 1px solid rgba(220,165,100,0.35); }
+  .ai-tier-hot  { background: rgba(220, 100, 100, 0.20); color: #e8a8a8; border: 1px solid rgba(220,100,100,0.40); }
+  .ai-profile-summary { font-size: 13px; color: var(--t-primary); line-height: 1.5; }
+  .ai-trend-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ai-trend-chip {
+    font-size: 11px; padding: 4px 9px; border-radius: 999px;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  }
+  .ai-trend-chip.rising { color: #b8e0a0; border-color: rgba(120,180,100,0.4); }
+  .ai-trend-chip.declining { color: #d8a8a8; border-color: rgba(180,120,120,0.4); }
+  .ai-rec-item {
+    display: flex; gap: 10px; padding: 8px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .ai-rec-item:last-child { border-bottom: none; }
+  .ai-rec-rank {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+    background: var(--accent); color: var(--bg);
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ai-rec-body { flex: 1; min-width: 0; }
+  .ai-rec-title { font-size: 13px; color: var(--t-primary); margin-bottom: 2px; }
+  .ai-rec-reason { font-size: 11px; color: var(--t-secondary); line-height: 1.45; }
+  .ai-rec-score { font-family: var(--font-mono); font-size: 10px; color: var(--accent); opacity: 0.8; }
+  .ai-insight-box {
+    padding: 11px 13px; background: rgba(212,165,116,0.08);
+    border-left: 2px solid var(--accent); border-radius: 4px;
+    font-size: 13px; color: var(--t-primary); line-height: 1.55;
+  }
+  .ai-raw-fallback {
+    font-family: var(--font-mono); font-size: 11px; line-height: 1.55;
+    color: var(--t-secondary); white-space: pre-wrap; word-break: break-word;
+    padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px;
+    max-height: 50vh; overflow-y: auto;
+  }
+  .ai-error { color: #e8a8a8; padding: 14px; text-align: center; font-size: 13px; }
 
   .cat-tabs {
     display: flex;
@@ -1208,6 +1321,10 @@
         <div class="recommend-head">
           <span class="recommend-eyebrow">For You</span>
           <h3 class="recommend-title">为你推荐</h3>
+          <button id="ai-analyze-btn" class="ai-analyze-btn" type="button" title="让 AI 深度分析你的偏好">
+            <span class="ai-spark">✦</span>
+            <span class="ai-text">让 AI 看看我</span>
+          </button>
         </div>
         <div id="recommend-track" class="recommend-track"></div>
       </div>
@@ -1350,6 +1467,17 @@
 
 <!-- ============= Toast 容器 ============= -->
 <div id="toast-root"></div>
+
+<!-- ============= AI 深度分析抽屉 ============= -->
+<div id="ai-drawer-mask" class="ai-drawer-mask"></div>
+<aside id="ai-drawer" class="ai-drawer" aria-hidden="true">
+  <div class="ai-drawer-head">
+    <span class="ai-drawer-eyebrow">AI Analysis</span>
+    <h3>✦ 深度风格画像</h3>
+    <button id="ai-drawer-close" class="ai-drawer-close" type="button" aria-label="关闭">×</button>
+  </div>
+  <div id="ai-drawer-body" class="ai-drawer-body"></div>
+</aside>
 
 <script>
   const $  = q => document.querySelector(q);
@@ -2041,6 +2169,139 @@
     } catch {
       btn.innerHTML = `${icon('refresh')}<span>分享失败，点击重试</span>`;
       btn.disabled = false;
+    }
+  });
+
+  // === AI 深度分析按钮 + 抽屉 ===
+  const aiBtn  = $('#ai-analyze-btn');
+  const aiMask = $('#ai-drawer-mask');
+  const aiDrawer = $('#ai-drawer');
+  const aiBody = $('#ai-drawer-body');
+
+  function openAiDrawer() {
+    aiMask.classList.add('open');
+    aiDrawer.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeAiDrawer() {
+    aiMask.classList.remove('open');
+    aiDrawer.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  aiMask.addEventListener('click', closeAiDrawer);
+  $('#ai-drawer-close').addEventListener('click', closeAiDrawer);
+
+  function aiLoadingHTML(stage) {
+    return `
+      <div class="ai-loading">
+        <span class="ai-loading-dot"></span>
+        <span class="ai-loading-dot"></span>
+        <span class="ai-loading-dot"></span>
+        <span class="ai-loading-text">${stage || 'AI 正在分析你的偏好…'}</span>
+      </div>`;
+  }
+
+  function renderTier(tier) {
+    const m = {cold:'Cold · 新用户', warm:'Warm · 半新', hot:'Hot · 资深'}[tier] || tier;
+    return `<span class="ai-tier-badge ai-tier-${tier||'cold'}">${m}</span>`;
+  }
+
+  function renderParsed(p) {
+    if (!p || !p.recommendations) return null;
+    const tier = p.tier || 'cold';
+    const sigC = p.signal_count != null ? p.signal_count : '?';
+    const prof = p.user_profile || {};
+    const ext = p.external_signal || {};
+    const recs = p.recommendations || [];
+    const insight = p.business_insight || '';
+
+    const rising = (ext.top_rising || []).map(t =>
+      `<span class="ai-trend-chip rising">↑ ${t.tag||''} ${t.growth||''}</span>`
+    ).join('');
+    const declining = (ext.top_declining || []).map(t =>
+      `<span class="ai-trend-chip declining">↓ ${t.tag||''} ${t.growth||''}</span>`
+    ).join('');
+
+    const recHTML = recs.map((r,i) => `
+      <div class="ai-rec-item">
+        <div class="ai-rec-rank">${r.rank || (i+1)}</div>
+        <div class="ai-rec-body">
+          <div class="ai-rec-title">${r.style_id || ''} · ${r.category_name || ''}</div>
+          <div class="ai-rec-reason">${r.reason || ''}</div>
+          ${r.score != null ? `<div class="ai-rec-score">score ${(+r.score).toFixed(2)}</div>` : ''}
+        </div>
+      </div>`).join('');
+
+    return `
+      <div class="ai-section">
+        <div class="ai-section-title">用户档位</div>
+        ${renderTier(tier)} <span style="color:var(--t-secondary);font-size:12px;">signal_count = ${sigC}</span>
+      </div>
+      ${prof.summary ? `
+      <div class="ai-section">
+        <div class="ai-section-title">偏好画像</div>
+        <div class="ai-profile-summary">${prof.summary}</div>
+      </div>` : ''}
+      ${(rising || declining) ? `
+      <div class="ai-section">
+        <div class="ai-section-title">外部社区信号</div>
+        <div class="ai-trend-row">${rising}${declining}</div>
+      </div>` : ''}
+      <div class="ai-section">
+        <div class="ai-section-title">深度推荐 · ${recs.length} 款</div>
+        ${recHTML}
+      </div>
+      ${insight ? `
+      <div class="ai-section">
+        <div class="ai-section-title">给运营 / 商家的建议</div>
+        <div class="ai-insight-box">${insight}</div>
+      </div>` : ''}
+    `;
+  }
+
+  aiBtn.addEventListener('click', async () => {
+    const uid = (userId || '').trim();
+    if (!uid) {
+      aiBody.innerHTML = `<div class="ai-error">请先在登录页输入名字，再让 AI 分析。</div>`;
+      openAiDrawer();
+      return;
+    }
+    openAiDrawer();
+    aiBody.innerHTML = aiLoadingHTML('AI 正在加载 user-style-analyst skill…');
+    aiBtn.disabled = true;
+    try {
+      // 10-15s 后切换 loading 文案
+      const stageTimer = setTimeout(() => {
+        aiBody.innerHTML = aiLoadingHTML('正在拉外部社区趋势 + 6 维打分…');
+      }, 7000);
+
+      const r = await fetch('/api/user/ai_recommend', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({user_id: uid}),
+      });
+      clearTimeout(stageTimer);
+      const d = await r.json();
+      if (!r.ok) {
+        aiBody.innerHTML = `<div class="ai-error">${d.error || 'AI 调用失败'}</div>`;
+        return;
+      }
+      const structured = renderParsed(d.parsed);
+      if (structured) {
+        aiBody.innerHTML = structured;
+      } else if (d.reply) {
+        aiBody.innerHTML = `
+          <div class="ai-section">
+            <div class="ai-section-title">AI 原始输出</div>
+            <div class="ai-raw-fallback">${d.reply.replace(/</g,'&lt;')}</div>
+          </div>`;
+      } else {
+        aiBody.innerHTML = `<div class="ai-error">AI 没有返回内容</div>`;
+      }
+    } catch (e) {
+      aiBody.innerHTML = `<div class="ai-error">网络错误：${e.message || e}</div>`;
+    } finally {
+      aiBtn.disabled = false;
     }
   });
 </script>
