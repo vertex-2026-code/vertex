@@ -1951,11 +1951,20 @@ def inspirations_feed():
         limit = max(1, min(120, int(request.args.get("limit", 60))))
     except ValueError:
         limit = 60
-    rows = get_db().execute(
-        "SELECT id, user_id, orig_url, thumb_url, created_at FROM inspirations "
-        "ORDER BY created_at DESC LIMIT ?",
-        (limit,),
-    ).fetchall()
+    user_id = (request.args.get("user_id") or "").strip()
+    db = get_db()
+    if user_id:
+        rows = db.execute(
+            "SELECT id, user_id, orig_url, thumb_url, created_at FROM inspirations "
+            "WHERE user_id=? ORDER BY created_at DESC LIMIT ?",
+            (user_id, limit),
+        ).fetchall()
+    else:
+        rows = db.execute(
+            "SELECT id, user_id, orig_url, thumb_url, created_at FROM inspirations "
+            "ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
     items = [dict(r) for r in rows]
     return jsonify({"items": items, "total": len(items)})
 

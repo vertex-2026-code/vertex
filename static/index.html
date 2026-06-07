@@ -652,9 +652,9 @@
   }
   .style-card.selected:active { transform: scale(0.99); }
 
-  /* 灵感图卡 — 用户上传的展览，角标区分 */
-  .style-card.inspiration::after {
-    content: 'INSP';
+  /* 灵感图卡 — 只标自己上传的（MINE 角标），别人的不显示也拉不到 */
+  .style-card.inspiration.mine::after {
+    content: 'MINE';
     position: absolute;
     top: 6px;
     left: 6px;
@@ -668,7 +668,6 @@
     z-index: 2;
     pointer-events: none;
   }
-  .style-card.inspiration.mine::after { content: 'MINE'; }
 
   .custom-tile {
     aspect-ratio: 1 / 1;
@@ -1823,6 +1822,7 @@
     $('#user-badge').classList.remove('hidden');
     loadUserFavs();
     loadRecommendations();
+    loadInspirations();
     checkReady();
   }
 
@@ -1937,10 +1937,11 @@
     loadInspirations();
   });
 
-  // === 展览区：拉所有用户的灵感图，作为 style-card 插在 grid 最前 ===
+  // === 展览区：只拉当前用户自己的灵感图（别人的不可见），作为 style-card 插在 grid 最前 ===
   async function loadInspirations() {
+    if (!userId) return;
     try {
-      const r = await fetch('/api/inspirations/feed?limit=60');
+      const r = await fetch(`/api/inspirations/feed?limit=60&user_id=${encodeURIComponent(userId)}`);
       const data = await r.json();
       if (!data.items || !data.items.length) return;
       // created_at DESC 来，从旧到新 prepend → 最新的留在最前
@@ -1950,7 +1951,7 @@
           orig_url: it.orig_url,
           thumb_url: it.thumb_url,
           user_id: it.user_id,
-          mine: it.user_id === userId,
+          mine: true,
         });
       });
     } catch {}
