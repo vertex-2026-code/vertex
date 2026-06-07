@@ -62,9 +62,8 @@ def main():
             im.thumbnail((MAX_DIM, MAX_DIM), Image.LANCZOS)
             im.save(out_path, "JPEG", quality=JPEG_QUALITY, optimize=True, progressive=True)
 
-        # 原文件是 PNG → 现在生成的 JPG 路径不同 → 删原 PNG（已备份到 nails_orig）
-        if src != out_path and os.path.exists(src):
-            os.remove(src)
+        # 原 PNG 是 git 追踪的源文件，保留不动（否则每次部署 git status 会出现 25 个 deleted）
+        # jpg 是编译产物，由 .gitignore 排除
 
         after = os.path.getsize(out_path)
         total_after += after

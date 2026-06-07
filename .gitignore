@@ -3,6 +3,12 @@ data/
 static/results/
 *.log
 *.bak
+nohup.out
+*.out
+
+# 编译产物（compress_nails.py 生成的 jpg + 原图备份）
+static/nails/*.jpg
+static/nails_orig/
 
 # 敏感配置
 .env
