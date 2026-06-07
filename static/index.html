@@ -669,12 +669,6 @@
     pointer-events: none;
   }
   .style-card.inspiration.mine::after { content: 'MINE'; }
-  /* 灵感卡的"选中"视觉去掉——MINE 角标已经表达了归属，不再用 .selected 的发光边框 + scale */
-  .style-card.inspiration.selected {
-    border-color: var(--stage-line);
-    box-shadow: none;
-    transform: none;
-  }
 
   .custom-tile {
     aspect-ratio: 1 / 1;
@@ -1588,7 +1582,7 @@
   <div class="modal-panel loading-panel">
     <div class="spinner"></div>
     <p class="loading-title">AI 正在为你试戴</p>
-    <p class="loading-meta"><span id="loading-elapsed">0</span> SEC · TYPICALLY 30–60</p>
+    <p class="loading-meta"><span id="loading-elapsed">0</span> SEC · TYPICALLY 30–60s</p>
     <p class="loading-note">取决于字节跳动 Seedream 模型响应速度</p>
   </div>
 </div>
