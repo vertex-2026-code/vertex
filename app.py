@@ -1145,25 +1145,8 @@ def admin_stats():
     latencies = [r.get("latency_ms", 0) for r in successes if r.get("latency_ms")]
     cat_counts = Counter(STYLE_CATEGORIES.get(r.get("style_id", ""), "?") for r in starts)
 
-    # ── DB 数据：用户 + 款式目录 + 商家汇总 ──
+    # ── DB 增强：商家 + 款式数据 ──
     db = get_db()
-    # 用户总量
-    db_users = db.execute("SELECT COUNT(DISTINCT user_id) FROM tryon_history").fetchone()[0] or 0
-    db_favs = db.execute("SELECT COUNT(*) FROM favorites").fetchone()[0] or 0
-    db_plaza = db.execute("SELECT COUNT(*) FROM plaza").fetchone()[0] or 0
-    # 款式总量
-    db_styles_total = 0
-    try:
-        db_styles_total = db.execute("SELECT COUNT(*) FROM merchant_style_catalog").fetchone()[0] or 0
-    except: pass
-    # 商家总量 + 月GMV
-    db_shops = 0; shop_gmv_total = 0
-    try:
-        db_shops = db.execute("SELECT COUNT(DISTINCT shop_id) FROM merchant_profiles").fetchone()[0] or 0
-        gmv_r = db.execute("SELECT SUM(revenue) FROM merchant_shop_daily_metrics").fetchone()
-        shop_gmv_total = int(gmv_r[0]) if gmv_r and gmv_r[0] else 0
-    except: pass
-    # Top 商家（按营收）
     top_shops_by_rev = []
     try:
         top_shops_by_rev = [[r[0], r[1], r[2]] for r in db.execute(
@@ -1171,14 +1154,12 @@ def admin_stats():
             "JOIN merchant_profiles m ON s.shop_id=m.shop_id GROUP BY s.shop_id ORDER BY 3 DESC LIMIT 5"
         ).fetchall()]
     except: pass
-    # 款式风格分布
     style_cat_dist = []
     try:
         style_cat_dist = [[r[0], r[1]] for r in db.execute(
             "SELECT category, COUNT(*) FROM merchant_style_catalog GROUP BY category ORDER BY 2 DESC"
         ).fetchall()]
     except: pass
-    # 热门款式（按GMV）
     top_styles_by_gmv = []
     try:
         top_styles_by_gmv = [[r[0], int(r[1]), r[2]] for r in db.execute("""
@@ -1203,12 +1184,6 @@ def admin_stats():
         "category_stats": cat_counts.most_common(),
         "category_names": CATEGORY_NAMES,
         # DB 增强数据
-        "db_users": db_users,
-        "db_favs": db_favs,
-        "db_plaza": db_plaza,
-        "db_styles_total": db_styles_total,
-        "db_shops": db_shops,
-        "shop_gmv_total": shop_gmv_total,
         "top_shops_by_rev": top_shops_by_rev,
         "style_cat_dist": style_cat_dist,
         "top_styles_by_gmv": top_styles_by_gmv,
