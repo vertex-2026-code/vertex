@@ -1282,7 +1282,8 @@ JIAQU_CHIP_DISPATCH = {
 
 
 def _build_daily_report_prompt(db, user_msg):
-    """日报：并发拉 5 路 fast-path，把数据拍平塞 prompt，agent 只负责出 6 段 markdown。"""
+    """日报：并发拉 5 路 fast-path，把数据 + 模板要点全塞 prompt，agent 只输出 markdown。
+    注意：禁止引用任何 SKILL.md 文件路径——agent 会去找文件找不到然后吐槽"""
     from services.skills import SKILL_MAP
     snapshots = {}
     for k in ("gmv_status", "risk_alert", "trend_radar", "style_ranking", "shop_ranking"):
@@ -1294,12 +1295,17 @@ def _build_daily_report_prompt(db, user_msg):
     from datetime import date as _date
     return (
         f"你是甲趣运营 COO 的早会助手。下面是今天 ({_date.today().isoformat()}) "
-        f"5 路真实 fast-path 数据快照，**所有数字必须以此为准，禁止脑补字段**：\n\n"
+        f"5 路真实 fast-path 数据快照——**所有数字必须以此为准，禁止脑补字段、禁止解释找不到文件**：\n\n"
         f"```json\n{_json.dumps(snapshots, ensure_ascii=False, default=str)[:8000]}\n```\n\n"
-        f"严格按 /root/.openclaw/workspace/skills/jiaqu-daily-report/SKILL.md 里的 6 段模板输出 markdown 报告："
-        f"今日体温 / 异动焦点 / 风险预警 Top2 / 趋势机会 Top2 / 榜单速读 / 今日动作清单 3 条。"
-        f"**输出必须是 markdown 文本，禁止包 JSON、禁止 fenced code block**。\n\n"
-        f"用户问题：{user_msg or '给我一份今日运营日报'}"
+        f"按下面 6 段固定模板输出 markdown 报告（每段标题用 `## `，段内用纯文本/列表，**禁止再包 JSON / fenced code block / 元说明**）：\n\n"
+        f"## 1. 今日体温\n  一行 GMV / 完成率 / 月末预测 + 一句话定性（完成率 <60% 告急 / 60-80% 偏离 / 80-95% 在轨 / >95% 达标）\n\n"
+        f"## 2. 异动焦点\n  近 3 天曲线 vs 前 7 天均值 升/降 几 pp + 关联 promo_events 拐点\n\n"
+        f"## 3. 风险预警 Top2\n  按 projected_loss 倒序，每条：🔴/🟡 + 类型 · 目标 + 损失 + 动作\n\n"
+        f"## 4. 趋势机会 Top2\n  按 growth_pct 倒序，每条：🔥 tag + 涨幅 + 匹配款数 + 建议\n\n"
+        f"## 5. 榜单速读\n  款式 Top3 一行、门店 Top3 一行\n\n"
+        f"## 6. 今日动作清单（3 条）\n  按 ROI 倒序，每条引用一个 @jiaqu-xxx skill (promo-copy/trend-radar/risk-alert/whatif-sandbox/shop-ranking/persona-strategy)\n\n"
+        f"---\n用户追问：{user_msg or '给我一份今日运营日报'}\n\n"
+        f"直接从「## 1. 今日体温」开始输出，**禁止任何前言/说明/找文件吐槽**。"
     )
 
 
