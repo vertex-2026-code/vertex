@@ -34,8 +34,17 @@ echo "==> [5/6] 启动新 Flask"
 source venv/bin/activate
 # shellcheck disable=SC1091
 source .env
-nohup python3 app.py > nohup.out 2>&1 &
-sleep 2
+# 优先用 gunicorn 4 worker：一个 AI 请求只阻塞 1/4 worker，其他 3 个继续服务
+# 没装 gunicorn 时回退到 python3 app.py（开发模式）
+if python3 -c "import gunicorn" 2>/dev/null; then
+  echo "    使用 gunicorn 4 worker (timeout 600s)"
+  nohup gunicorn -w 4 -b 0.0.0.0:5000 --timeout 600 --access-logfile - app:app > nohup.out 2>&1 &
+else
+  echo "    ⚠️  没装 gunicorn，回退到 python3 app.py 单进程（AI 请求会阻塞其他请求）"
+  echo "    建议: pip install gunicorn 然后重跑 deploy.sh"
+  nohup python3 app.py > nohup.out 2>&1 &
+fi
+sleep 3
 
 echo "==> [6/6] 健康检查"
 HEALTH=$(curl -s --max-time 3 http://localhost:5000/health || echo FAIL)
