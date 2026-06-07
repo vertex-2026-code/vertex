@@ -8,30 +8,89 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Noto+Serif+SC:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  /* ============================================================
+     Vertex 甲趣经营台 — Rosé Lens（与 admin.html / index.html 同源）
+     色板移植自 hermes-agent Rose；语义 token 用 color-mix
+     从 midground 按比例混回 background。AI 助手保留粉调点缀。
+     ============================================================ */
   :root {
-    --bg: #151012;
-    --panel: #21191c;
-    --panel-2: #2a2023;
-    --line: rgba(241, 220, 207, 0.13);
-    --text: #f1dccf;
-    --muted: rgba(241, 220, 207, 0.68);
-    --faint: rgba(241, 220, 207, 0.42);
-    --accent: #d4ab7c;
-    --rose: #c0808f;
-    --ai-accent: #c7939f;
-    --ai-accent-deep: #aa6f7d;
-    --ai-text: #f6d9df;
-    --ai-border: rgba(199, 147, 159, 0.34);
-    --ai-surface: rgba(199, 147, 159, 0.12);
-    --ai-surface-strong: rgba(199, 147, 159, 0.2);
+    /* —— LENS: Bordeaux & Champagne —— */
+    --bg:        #160b10;
+    --mid:       #f1dccf;
+    --warm-glow: rgba(212, 171, 124, 0.26);
+    --accent:    #d4ab7c;
+    --rose:      #c0808f;
+    --gold:      #d4ab7c;
+
+    /* —— 衍生表面（midground 按 % 混回 bg / transparent）—— */
+    --card:     color-mix(in srgb, var(--mid) 4%,  var(--bg));
+    --elevated: color-mix(in srgb, var(--mid) 7%,  var(--bg));
+    --hover:    color-mix(in srgb, var(--mid) 6%,  transparent);
+    --border:   color-mix(in srgb, var(--mid) 12%, transparent);
+    --hairline: color-mix(in srgb, var(--mid) 7%,  transparent);
+    --input:    color-mix(in srgb, var(--mid) 6%,  var(--bg));
+    --code-bg:  color-mix(in srgb, var(--mid) 10%, transparent);
+
+    /* —— 语义文字 —— */
+    --t-primary:   var(--mid);
+    --t-secondary: color-mix(in srgb, var(--mid) 66%, transparent);
+    --t-tertiary:  color-mix(in srgb, var(--mid) 42%, transparent);
+
+    /* —— 旧命名别名（向后兼容，整页颜色随上面自动重排）—— */
+    --panel:   var(--card);
+    --panel-2: var(--elevated);
+    --line:    var(--border);
+    --text:    var(--t-primary);
+    --muted:   var(--t-secondary);
+    --faint:   var(--t-tertiary);
+
+    /* —— AI 助手模块强调（粉调，与 --rose 同源更亮）—— */
+    --ai-accent:         #c7939f;
+    --ai-accent-deep:    #aa6f7d;
+    --ai-text:           #f6d9df;
+    --ai-border:         rgba(199, 147, 159, 0.34);
+    --ai-surface:        rgba(199, 147, 159, 0.12);
+    --ai-surface-strong: rgba(199, 147, 159, 0.20);
+
+    /* —— 状态色 —— */
     --green: #9fd0b5;
-    --red: #e2a08e;
+    --red:   #e2a08e;
     --shadow: rgba(0, 0, 0, 0.28);
-    --sidebar: 292px;
-    --radius: 8px;
+
+    /* —— 布局 / 字体 —— */
+    --sidebar:    292px;
+    --radius:     1rem;
+    --radius-sm:  0.625rem;
     --font-display: "Fraunces", "Noto Serif SC", "Songti SC", "PingFang SC", serif;
-    --font-body: "Fraunces", "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
-    --font-mono: "DM Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    --font-body:    "Fraunces", "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
+    --font-mono:    "DM Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  /* ===== Backdrop：三层 fixed（admin/index 同源 —— 暗角 + 暖光晕 + 噪点）===== */
+  .bd { position: fixed; inset: 0; pointer-events: none; }
+  .bd-vignette {
+    z-index: -3;
+    background:
+      radial-gradient(120% 90% at 50% -10%,
+        color-mix(in srgb, var(--mid) 5%, transparent) 0%, transparent 55%),
+      radial-gradient(140% 120% at 50% 120%,
+        #000 0%, transparent 60%);
+    opacity: 0.9;
+  }
+  .bd-glow {
+    z-index: -2;
+    background:
+      radial-gradient(ellipse at 0% 0%, transparent 56%, var(--warm-glow) 100%),
+      radial-gradient(ellipse 70% 50% at 100% 100%, transparent 60%, rgba(192,128,143,0.14) 100%);
+    mix-blend-mode: lighten;
+    opacity: 0.32;
+  }
+  .bd-noise {
+    z-index: -1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%23dcc4a8' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+    background-size: 440px 440px;
+    mix-blend-mode: color-dodge;
+    opacity: 0.26;
   }
 
   * { box-sizing: border-box; }
@@ -44,10 +103,7 @@
     letter-spacing: 0.005em;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    background:
-      radial-gradient(900px 520px at 100% 0%, rgba(212, 171, 124, 0.13), transparent 60%),
-      radial-gradient(700px 440px at 0% 100%, rgba(192, 128, 143, 0.12), transparent 62%),
-      var(--bg);
+    background: var(--bg);
     overflow: hidden;
   }
 
@@ -2405,6 +2461,9 @@
 </style>
 </head>
 <body class="auth-pending">
+<div class="bd bd-vignette"></div>
+<div class="bd bd-glow"></div>
+<div class="bd bd-noise"></div>
 <div class="app">
   <aside class="sidebar">
     <div class="brand">

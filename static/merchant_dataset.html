@@ -4,31 +4,90 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>甲趣商家数据查看台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Noto+Serif+SC:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  /* ============================================================
+     Vertex 甲趣数据查看台 — Rosé Lens（与 admin / index / merchant 同源）
+     ============================================================ */
   :root {
-    --bg: #140f11;
-    --panel: #21191c;
-    --panel-2: #2b2024;
-    --line: rgba(241, 220, 207, 0.12);
-    --text: #f1dccf;
-    --muted: rgba(241, 220, 207, 0.7);
-    --faint: rgba(241, 220, 207, 0.44);
-    --accent: #d4ab7c;
-    --rose: #c0808f;
+    /* —— LENS: Bordeaux & Champagne —— */
+    --bg:        #160b10;
+    --mid:       #f1dccf;
+    --warm-glow: rgba(212, 171, 124, 0.26);
+    --accent:    #d4ab7c;
+    --rose:      #c0808f;
+    --gold:      #d4ab7c;
+
+    /* —— 衍生表面 —— */
+    --card:     color-mix(in srgb, var(--mid) 4%,  var(--bg));
+    --elevated: color-mix(in srgb, var(--mid) 7%,  var(--bg));
+    --hover:    color-mix(in srgb, var(--mid) 6%,  transparent);
+    --border:   color-mix(in srgb, var(--mid) 12%, transparent);
+    --hairline: color-mix(in srgb, var(--mid) 7%,  transparent);
+    --input:    color-mix(in srgb, var(--mid) 6%,  var(--bg));
+
+    /* —— 语义文字 —— */
+    --t-primary:   var(--mid);
+    --t-secondary: color-mix(in srgb, var(--mid) 66%, transparent);
+    --t-tertiary:  color-mix(in srgb, var(--mid) 42%, transparent);
+
+    /* —— 旧别名 —— */
+    --panel:   var(--card);
+    --panel-2: var(--elevated);
+    --line:    var(--border);
+    --text:    var(--t-primary);
+    --muted:   var(--t-secondary);
+    --faint:   var(--t-tertiary);
+
     --green: #9fd0b5;
-    --red: #e2a08e;
-    --radius: 12px;
-    font-family: "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+    --red:   #e2a08e;
+    --radius:    1rem;
+    --radius-sm: 0.625rem;
+
+    --font-display: "Fraunces", "Noto Serif SC", "Songti SC", "PingFang SC", serif;
+    --font-body:    "Fraunces", "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
+    --font-mono:    "DM Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
   }
 
   * { box-sizing: border-box; }
   body {
     margin: 0;
     color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.55;
+    letter-spacing: 0.005em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    background: var(--bg);
+  }
+
+  /* ===== Backdrop：三层 fixed ===== */
+  .bd { position: fixed; inset: 0; pointer-events: none; }
+  .bd-vignette {
+    z-index: -3;
     background:
-      radial-gradient(900px 540px at 100% 0%, rgba(212, 171, 124, 0.12), transparent 60%),
-      radial-gradient(700px 460px at 0% 100%, rgba(192, 128, 143, 0.12), transparent 62%),
-      var(--bg);
+      radial-gradient(120% 90% at 50% -10%,
+        color-mix(in srgb, var(--mid) 5%, transparent) 0%, transparent 55%),
+      radial-gradient(140% 120% at 50% 120%,
+        #000 0%, transparent 60%);
+    opacity: 0.9;
+  }
+  .bd-glow {
+    z-index: -2;
+    background:
+      radial-gradient(ellipse at 0% 0%, transparent 56%, var(--warm-glow) 100%),
+      radial-gradient(ellipse 70% 50% at 100% 100%, transparent 60%, rgba(192,128,143,0.14) 100%);
+    mix-blend-mode: lighten;
+    opacity: 0.32;
+  }
+  .bd-noise {
+    z-index: -1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%23dcc4a8' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+    background-size: 440px 440px;
+    mix-blend-mode: color-dodge;
+    opacity: 0.26;
   }
 
   button, input, select { font: inherit; }
@@ -466,6 +525,9 @@
 </style>
 </head>
 <body>
+  <div class="bd bd-vignette"></div>
+  <div class="bd bd-glow"></div>
+  <div class="bd bd-noise"></div>
   <div class="page">
     <div class="topbar">
       <div class="title">
