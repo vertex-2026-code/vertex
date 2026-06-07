@@ -185,6 +185,9 @@
 
   /* ===== 热门款式 horizontal bar ===== */
   .style-chart-box{position:relative;height:360px;padding:8px 0 4px}
+  /* 左面板用 flex 列向，让 styles 图自动撑满空白，跟右侧门店卡总高对齐 */
+  .cat-styles-panel{display:flex;flex-direction:column}
+  .cat-styles-panel .style-chart-box{flex:1;min-height:360px;height:auto}
 
   /* ===== 门店预约 4 指标卡 ===== */
   .shop-cards{display:flex;flex-direction:column;gap:10px;padding-top:6px}
@@ -934,7 +937,7 @@
 
   <!-- Grid -->
   <div class="grid">
-    <section class="panel span-7 reveal" style="animation-delay:.26s">
+    <section class="panel span-7 reveal cat-styles-panel" style="animation-delay:.26s">
       <div class="panel-head">
         <span class="panel-eyebrow">Category Heat</span>
         <h2 class="panel-title">风格分类热度</h2>
