@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GMV 运营看板 · Vertex 甲趣</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Noto+Serif+SC:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Vertex 甲趣 · GMV 运营看板 — Bordeaux & Champagne
+   色板移植自 admin.html Rosé Lens
+   ============================================================ */
+:root {
+  --bg:        #160b10;
+  --mid:       #f1dccf;
+  --warm-glow: rgba(212, 171, 124, 0.26);
+  --accent:    #d4ab7c;
+  --rose:      #c0808f;
+  --gold:      #d4ab7c;
+
+  --card:     color-mix(in srgb, var(--mid) 4%,  var(--bg));
+  --elevated: color-mix(in srgb, var(--mid) 7%,  var(--bg));
+  --muted:    color-mix(in srgb, var(--mid) 9%,  var(--bg));
+  --hover:    color-mix(in srgb, var(--mid) 6%,  transparent);
+  --border:   color-mix(in srgb, var(--mid) 12%, transparent);
+  --hairline: color-mix(in srgb, var(--mid) 7%,  transparent);
+  --input:    color-mix(in srgb, var(--mid) 6%,  var(--bg));
+  --code-bg:  color-mix(in srgb, var(--mid) 10%, transparent);
+
+  --t-primary:   var(--mid);
+  --t-secondary: color-mix(in srgb, var(--mid) 66%, transparent);
+  --t-tertiary:  color-mix(in srgb, var(--mid) 42%, transparent);
+
+  --font-display: "Fraunces", "Noto Serif SC", "Songti SC", "PingFang SC", serif;
+  --font-body:    "Fraunces", "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
+  --font-mono:    "DM Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --radius: 1rem;
+  --radius-sm: 0.625rem;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:14px}
+body{
+  margin:0;min-height:100vh;
+  background:var(--bg);color:var(--t-primary);
+  font-family:var(--font-body);line-height:1.55;
+  letter-spacing:0.005em;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+
+/* ===== Backdrop ===== */
+.bd{position:fixed;inset:0;pointer-events:none}
+.bd-vignette{z-index:-3;background:radial-gradient(120% 90% at 50% -10%,color-mix(in srgb,var(--mid) 5%,transparent) 0%,transparent 55%),radial-gradient(140% 120% at 50% 120%,#000 0%,transparent 60%);opacity:0.9}
+.bd-glow{z-index:-2;background:radial-gradient(ellipse at 0% 0%,transparent 56%,var(--warm-glow) 100%),radial-gradient(ellipse 70% 50% at 100% 100%,transparent 60%,rgba(192,128,143,0.14) 100%);mix-blend-mode:lighten;opacity:0.32}
+.bd-noise{z-index:-1;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%23dcc4a8' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");background-size:440px 440px;mix-blend-mode:color-dodge;opacity:0.26}
+
+/* ===== Shell ===== */
+.shell{max-width:1400px;margin:0 auto;padding:clamp(16px,2.5vw,28px) clamp(14px,2vw,24px) 80px}
+
+/* ===== Topbar ===== */
+.topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding-bottom:18px;margin-bottom:clamp(18px,3vw,28px);border-bottom:1px solid var(--hairline)}
+.wordmark{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,3.5vw,2rem);letter-spacing:0;line-height:1.05;color:var(--t-primary)}
+.wordmark .dot{color:var(--accent);font-weight:400}
+.nav-row{display:flex;gap:18px;align-items:center}
+.nav-row a{font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--t-tertiary);text-decoration:none;transition:color 0.18s}
+.nav-row a:hover,.nav-row a.active{color:var(--accent)}
+.live{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--t-secondary)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 70%,transparent);animation:live-pulse 2.4s ease-out infinite}
+@keyframes live-pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 60%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+
+/* ===== KPI Card Row ===== */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(8px,1.2vw,14px);margin-bottom:clamp(14px,2vw,20px)}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:clamp(14px,1.8vw,20px);position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 38%,transparent) 50%,transparent)}
+.kpi-card .kpi-eyebrow{font-family:var(--font-mono);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:0.22em;color:var(--t-tertiary);margin-bottom:10px;display:block}
+.kpi-card .kpi-val{font-family:var(--font-display);font-weight:500;font-size:clamp(1.6rem,2.8vw,2.2rem);line-height:1;letter-spacing:-0.015em;color:var(--t-primary);margin-bottom:4px;font-feature-settings:"tnum"1}
+.kpi-card .kpi-val .unit{font-size:0.42em;color:var(--accent);font-family:var(--font-mono);vertical-align:0.15em;margin-left:3px}
+.kpi-card .kpi-change{font-size:11px;display:inline-flex;align-items:center;gap:4px}
+.kpi-card .kpi-change.up{color:var(--rose)}
+.kpi-card .kpi-change.down{color:#e0a07e}
+.kpi-card .kpi-spark{height:28px;margin-top:8px;opacity:0.55}
+.kpi-card .kpi-spark canvas{width:100%!important;height:100%!important}
+
+/* ===== Grid Layout ===== */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(10px,1.4vw,16px);margin-bottom:clamp(14px,2vw,20px)}
+.dash-grid.single{grid-template-columns:1fr}
+.dash-grid.three{grid-template-columns:2fr 1fr}
+
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:clamp(16px,2vw,24px);position:relative;overflow:hidden}
+.panel::before{content:'';position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 24%,transparent) 50%,transparent)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px}
+.panel-eyebrow{font-family:var(--font-mono);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:0.22em;color:var(--t-tertiary);display:block;margin-bottom:3px}
+.panel-title{font-family:var(--font-display);font-weight:500;font-size:1.15rem;letter-spacing:0.005em;color:var(--t-primary);margin:0}
+.panel-badge{font-family:var(--font-mono);font-size:10px;padding:2px 10px;border-radius:4px;letter-spacing:0.06em;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+
+/* ===== Chart ===== */
+.chart-wrap{position:relative;height:300px;margin:-6px -8px}
+
+/* ===== Style Table ===== */
+.sty-table{width:100%;border-collapse:collapse}
+.sty-table th{text-align:left;font-size:10px;color:var(--t-tertiary);padding:6px 8px;border-bottom:1px solid var(--hairline);text-transform:uppercase;font-family:var(--font-mono);font-weight:500;letter-spacing:0.1em}
+.sty-table td{padding:7px 8px;font-size:12px;border-bottom:1px solid color-mix(in srgb,var(--mid) 3%,transparent);vertical-align:middle}
+.sty-table .rank-num{font-family:var(--font-mono);font-size:11px;color:var(--t-tertiary);width:20px}
+.sty-table .sty-code{font-family:var(--font-mono);font-size:12px;color:var(--t-primary)}
+.sty-table .sty-tag{font-size:10px;color:var(--t-tertiary)}
+.sty-table .sty-bar-wrap{display:inline-block;width:70px;height:5px;background:var(--muted);border-radius:3px;vertical-align:middle;margin-right:6px}
+.sty-table .sty-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 60%,var(--rose)))}
+.sty-table .sty-val{font-family:var(--font-mono);font-size:12px;color:var(--t-primary);text-align:right}
+.sty-table .sty-share{font-family:var(--font-mono);font-size:11px;color:var(--t-secondary);text-align:right}
+.sty-table .sty-chg{font-size:11px;text-align:right}
+
+/* ===== Rec Cards ===== */
+.rec-card{background:var(--code-bg);border:1px solid var(--hairline);border-radius:9px;padding:12px 14px;margin-bottom:8px;transition:border-color 0.18s}
+.rec-card:hover{border-color:color-mix(in srgb,var(--accent) 25%,transparent)}
+.rec-card:last-child{margin-bottom:0}
+.rec-rank{font-family:var(--font-mono);font-size:10px;color:var(--t-tertiary);margin-right:6px}
+.rec-title{font-weight:500;font-size:13px;color:var(--t-primary)}
+.rec-meta{display:flex;gap:14px;margin-top:6px;font-size:11px}
+.rec-lift{color:var(--accent);font-family:var(--font-mono)}
+.rec-cost{color:var(--t-secondary)}
+.rec-roi{font-family:var(--font-mono);font-size:10px;padding:1px 7px;border-radius:3px;letter-spacing:0.05em}
+.rec-roi.high{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.rec-roi.medium{color:#e0a07e;background:color-mix(in srgb,#e0a07e 14%,transparent)}
+.rec-roi.low{color:var(--t-tertiary);background:color-mix(in srgb,var(--mid) 8%,transparent)}
+
+/* ===== Risk ===== */
+.risk-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;margin-bottom:6px;border-radius:8px;background:var(--code-bg);border-left:3px solid #e0a07e;font-size:12px}
+.risk-item .risk-icon{flex-shrink:0;font-size:14px}
+.risk-item .risk-body{flex:1;min-width:0}
+.risk-item .risk-type{font-family:var(--font-mono);font-size:10px;color:#e0a07e;text-transform:uppercase;letter-spacing:0.08em}
+.risk-item .risk-loss{font-family:var(--font-mono);font-size:11px;color:#e0a07e;flex-shrink:0}
+
+/* ===== Footer ===== */
+.forecast-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;margin-top:12px;border-radius:9px;font-size:13px}
+.forecast-bar.good{background:color-mix(in srgb,var(--accent) 8%,transparent);border:1px solid color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.forecast-bar.warn{background:color-mix(in srgb,#e0a07e 8%,transparent);border:1px solid color-mix(in srgb,#e0a07e 18%,transparent);color:#e0a07e}
+.forecast-bar .f-icon{font-size:18px}
+.forecast-bar .f-text{flex:1}
+.forecast-bar .f-num{font-family:var(--font-display);font-size:1.3rem;font-weight:600}
+
+/* ===== Responsive ===== */
+@media(max-width:1100px){.kpi-row{grid-template-columns:repeat(3,1fr)}.dash-grid,.dash-grid.three{grid-template-columns:1fr}}
+@media(max-width:680px){.kpi-row{grid-template-columns:1fr 1fr}.dash-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="bd bd-vignette"></div>
+<div class="bd bd-glow"></div>
+<div class="bd bd-noise"></div>
+
+<div class="shell">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div>
+      <h1 class="wordmark">GMV<span class="dot"> · </span>运营看板</h1>
+    </div>
+    <div class="nav-row">
+      <a href="/admin/kpi" class="active">GMV 看板</a>
+      <a href="/admin">运营中心</a>
+      <a href="/">C 端</a>
+      <span class="live"><span class="live-dot"></span>Live · 15s</span>
+    </div>
+  </header>
+
+  <!-- ====== KPI Cards ====== -->
+  <div class="kpi-row" id="kpi-row">
+    <div class="kpi-card"><span class="kpi-eyebrow">GMV</span><div class="kpi-val" id="k-gmv">—</div><span class="kpi-change" id="k-gmv-chg"></span><div class="kpi-spark"><canvas id="spark-gmv"></canvas></div></div>
+    <div class="kpi-card"><span class="kpi-eyebrow">订单数</span><div class="kpi-val" id="k-orders">—</div><span class="kpi-change" id="k-orders-chg"></span><div class="kpi-spark"><canvas id="spark-orders"></canvas></div></div>
+    <div class="kpi-card"><span class="kpi-eyebrow">AOV</span><div class="kpi-val" id="k-aov">—</div><span class="kpi-change" id="k-aov-chg"></span><div class="kpi-spark"><canvas id="spark-aov"></canvas></div></div>
+    <div class="kpi-card"><span class="kpi-eyebrow">浏览量</span><div class="kpi-val" id="k-views">—</div><span class="kpi-change" id="k-views-chg"></span><div class="kpi-spark"><canvas id="spark-views"></canvas></div></div>
+    <div class="kpi-card"><span class="kpi-eyebrow">CVR</span><div class="kpi-val" id="k-cvr">—</div><span class="kpi-change" id="k-cvr-chg"></span><div class="kpi-spark"><canvas id="spark-cvr"></canvas></div></div>
+  </div>
+
+  <!-- ====== Row 1: Chart (full width) ====== -->
+  <div class="dash-grid single">
+    <div class="panel">
+      <div class="panel-head">
+        <div><span class="panel-eyebrow">30-Day Trend</span><h2 class="panel-title">GMV 趋势</h2></div>
+        <span class="panel-badge" id="target-badge">目标 ¥1.50M</span>
+      </div>
+      <div class="chart-wrap"><canvas id="gmvChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ====== Row 2: Styles + Recommendations ====== -->
+  <div class="dash-grid">
+    <!-- Left: Style Ranking -->
+    <div class="panel">
+      <div class="panel-head">
+        <div><span class="panel-eyebrow">Style Ranking</span><h2 class="panel-title">款式 GMV 排行</h2></div>
+        <span class="panel-badge">Top 10</span>
+      </div>
+      <div style="max-height:360px;overflow-y:auto">
+        <table class="sty-table">
+          <thead><tr><th>#</th><th>款式</th><th>标签</th><th colspan="2">GMV</th><th>占比</th><th>7日</th></tr></thead>
+          <tbody id="style-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Right: AI Recommendations -->
+    <div class="panel">
+      <div class="panel-head">
+        <div><span class="panel-eyebrow">AI Insights</span><h2 class="panel-title">增长建议</h2></div>
+      </div>
+      <div id="rec-list"></div>
+      <div id="forecast-foot"></div>
+    </div>
+  </div>
+
+  <!-- ====== Row 3: Breakdown + Risk ====== -->
+  <div class="dash-grid three">
+    <!-- Left: GMV Breakdown -->
+    <div class="panel">
+      <div class="panel-head">
+        <div><span class="panel-eyebrow">Decomposition</span><h2 class="panel-title">GMV 拆解</h2></div>
+      </div>
+      <div id="breakdown-area"></div>
+      <div class="chart-wrap" style="height:140px;margin-top:8px"><canvas id="breakChart"></canvas></div>
+    </div>
+    <!-- Right: Risk Alerts -->
+    <div class="panel">
+      <div class="panel-head">
+        <div><span class="panel-eyebrow">Risk Monitor</span><h2 class="panel-title">风险预警</h2></div>
+        <span class="panel-badge" id="risk-count-badge">0 项</span>
+      </div>
+      <div id="risk-list" style="max-height:260px;overflow-y:auto">
+        <div style="text-align:center;padding:20px;color:var(--t-tertiary);font-size:13px">加载中…</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Utils ──
+const F = n => n == null ? '—' : Number(n).toLocaleString('en-US');
+const FP = (n, d) => n == null ? '—' : (n > 0 ? '+' : '') + n.toFixed(d) + '%';
+const $ = q => document.querySelector(q);
+
+// ── Sparkline helper ──
+function drawSpark(canvasId, data, color) {
+  const c = document.getElementById(canvasId);
+  if (!c) return;
+  const w = c.parentElement.clientWidth;
+  const h = 28;
+  c.width = w * devicePixelRatio;
+  c.height = h * devicePixelRatio;
+  c.style.width = w + 'px';
+  c.style.height = h + 'px';
+  const ctx = c.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  const xs = data.map((_, i) => i / (data.length - 1) * w);
+  const min = Math.min(...data), max = Math.max(...data), range = max - min || 1;
+  const ys = data.map(v => h - 4 - (v - min) / range * (h - 10));
+  ctx.beginPath();
+  ctx.moveTo(xs[0], ys[0]);
+  for (let i = 1; i < xs.length; i++) ctx.lineTo(xs[i], ys[i]);
+  ctx.strokeStyle = color; ctx.lineWidth = 1.6;
+  ctx.lineJoin = 'round'; ctx.stroke();
+  // fill
+  ctx.lineTo(xs[xs.length - 1], h); ctx.lineTo(xs[0], h); ctx.closePath();
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, color.replace(')', ',0.18)').replace('rgb', 'rgba'));
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad; ctx.fill();
+}
+
+// ── Main Chart ──
+let gmvChart = null;
+function drawMainChart(curve, promos) {
+  const ctx = document.getElementById('gmvChart').getContext('2d');
+  if (gmvChart) gmvChart.destroy();
+  const dates = curve.map(c => c.date.slice(5));
+  const vals = curve.map(c => c.gmv);
+  const targetLine = Array(dates.length).fill(50000); // daily target ~50k
+
+  gmvChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [
+        {
+          label: 'GMV',
+          data: vals,
+          borderColor: '#d4ab7c',
+          backgroundColor: 'rgba(212,171,124,0.08)',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: '#d4ab7c',
+          borderWidth: 1.8,
+        },
+        {
+          label: '目标线',
+          data: targetLine,
+          borderColor: 'rgba(192,128,143,0.5)',
+          borderDash: [6, 4],
+          borderWidth: 1,
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1018',
+          borderColor: 'rgba(212,171,124,0.3)',
+          borderWidth: 1,
+          titleColor: '#d4ab7c',
+          bodyColor: '#f1dccf',
+          callbacks: { label: ctx => '¥' + F(ctx.raw) }
+        }
+      },
+      scales: {
+        x: { ticks: { color: 'color-mix(in srgb, #f1dccf 42%, transparent)', font: { size: 10 }, maxTicksLimit: 15, autoSkip: true }, grid: { color: 'rgba(241,220,207,0.04)' } },
+        y: { ticks: { color: 'color-mix(in srgb, #f1dccf 42%, transparent)', callback: v => '¥' + (v / 1000).toFixed(0) + 'k', font: { size: 10 } }, grid: { color: 'rgba(241,220,207,0.05)' } }
+      }
+    }
+  });
+}
+
+// ── Breakdown Bar Chart ──
+let breakChart = null;
+function drawBreakChart(factors) {
+  const ctx = document.getElementById('breakChart').getContext('2d');
+  if (breakChart) breakChart.destroy();
+  const names = factors.map(f => f.name);
+  const vals = factors.map(f => f.contribution);
+  const colors = vals.map(v => v >= 0 ? 'rgba(212,171,124,0.7)' : 'rgba(224,160,126,0.7)');
+
+  breakChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: names,
+      datasets: [{ data: vals, backgroundColor: colors, borderRadius: 4, borderWidth: 0, barThickness: 28 }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: 'color-mix(in srgb, #f1dccf 50%, transparent)', font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: 'color-mix(in srgb, #f1dccf 42%, transparent)', callback: v => (v >= 0 ? '+' : '') + '¥' + (Math.abs(v) / 1000).toFixed(0) + 'k', font: { size: 10 } }, grid: { color: 'rgba(241,220,207,0.05)' } }
+      }
+    }
+  });
+}
+
+// ── Load Overview ──
+fetch('/api/admin/gmv_overview').then(r => r.json()).then(d => {
+  // KPI cards
+  const last7 = d.curve.slice(-7);
+  const gmvVals = last7.map(c => c.gmv);
+
+  $('#k-gmv').innerHTML = '¥' + F(d.month_gmv);
+  const gmvPct = d.completion_pct;
+  $('#k-gmv-chg').innerHTML = gmvPct.toFixed(1) + '% <span style="color:var(--t-tertiary)">完成率</span>';
+  $('#k-gmv-chg').className = 'kpi-change ' + (gmvPct >= 80 ? 'up' : 'down');
+  drawSpark('spark-gmv', d.curve.map(c => c.gmv), '#d4ab7c');
+
+  // Load breakdown for other KPI cards
+  fetch('/api/admin/gmv_breakdown?range=all').then(r => r.json()).then(bd => {
+    $('#k-orders').innerHTML = F(bd.orders);
+    $('#k-orders-chg').innerHTML = FP(bd.orders_change_pct, 1) + ' <span style="color:var(--t-tertiary)">vs 上期</span>';
+    $('#k-orders-chg').className = 'kpi-change ' + (bd.orders_change_pct >= 0 ? 'up' : 'down');
+
+    $('#k-aov').innerHTML = '¥' + F(Math.round(bd.aov));
+    $('#k-aov-chg').innerHTML = FP(bd.aov_change_pct, 1) + ' <span style="color:var(--t-tertiary)">vs 上期</span>';
+    $('#k-aov-chg').className = 'kpi-change ' + (bd.aov_change_pct >= 0 ? 'up' : 'down');
+
+    $('#k-views').innerHTML = F(bd.views);
+    $('#k-views-chg').innerHTML = FP(bd.views_change_pct, 1) + ' <span style="color:var(--t-tertiary)">vs 上期</span>';
+    $('#k-views-chg').className = 'kpi-change ' + (bd.views_change_pct >= 0 ? 'up' : 'down');
+
+    $('#k-cvr').innerHTML = (bd.cvr * 100).toFixed(2) + '%';
+    $('#k-cvr-chg').innerHTML = FP(bd.cvr_change_pct, 1) + ' <span style="color:var(--t-tertiary)">vs 上期</span>';
+    $('#k-cvr-chg').className = 'kpi-change ' + (bd.cvr_change_pct >= 0 ? 'up' : 'down');
+
+    // Sparklines for all KPI cards
+    fetch('/api/admin/gmv_overview').then(r => r.json()).then(ov => {
+      const allDates = ov.curve;
+      // Draw breakdown chart
+      fetch('/api/admin/gmv_breakdown?range=all').then(r => r.json()).then(bd2 => {
+        drawBreakChart(bd2.factors);
+        // Breakdown text
+        const topF = bd2.factors.reduce((a, b) => Math.abs(a.contribution) > Math.abs(b.contribution) ? a : b);
+        const formula = `GMV = ${F(bd2.orders)} × ¥${Math.round(bd2.aov)} = ${F(bd2.views)} × ${(bd2.cvr*100).toFixed(2)}%`;
+        $('#breakdown-area').innerHTML = `
+          <div style="font-size:13px;color:var(--t-secondary);margin-bottom:4px">${formula}</div>
+          <div style="font-size:14px;color:var(--t-primary);margin-bottom:2px">
+            主驱动: <strong style="color:var(--accent)">${topF.name}</strong> 贡献 ¥${F(Math.abs(topF.contribution))}
+          </div>
+          <div style="font-size:12px;color:var(--t-tertiary)">${bd2.narrative || ''}</div>`;
+      });
+    });
+  });
+
+  // Main chart
+  drawMainChart(d.curve, d.promo_events);
+  $('#target-badge').textContent = '目标 ¥' + (d.target / 10000).toFixed(0) + '万';
+});
+
+// ── Load Styles ──
+fetch('/api/admin/gmv_top_styles').then(r => r.json()).then(d => {
+  const maxGMV = d.styles.length ? d.styles[0].gmv : 1;
+  $('#style-tbody').innerHTML = d.styles.slice(0, 10).map((s, i) => {
+    const w = Math.round(s.gmv / maxGMV * 100);
+    const chgCls = s.change_pct >= 0 ? 'color:var(--rose)' : 'color:#e0a07e';
+    return `<tr>
+      <td class="rank-num">${i + 1}</td>
+      <td class="sty-code">${s.style_code}</td>
+      <td class="sty-tag">${s.tag}</td>
+      <td><span class="sty-bar-wrap"><span class="sty-bar" style="width:${w}%"></span></span></td>
+      <td class="sty-val">¥${F(s.gmv)}</td>
+      <td class="sty-share">${s.gmv_share_pct}%</td>
+      <td class="sty-chg" style="${chgCls}">${s.change_pct > 0 ? '+' : ''}${s.change_pct}%</td>
+    </tr>`;
+  }).join('');
+});
+
+// ── Load Recommendations ──
+fetch('/api/admin/gmv_recommend').then(r => r.json()).then(d => {
+  const roiLabel = { high: '高', medium: '中', low: '低' };
+  $('#rec-list').innerHTML = (d.recommendations || []).map((a, i) => `
+    <div class="rec-card">
+      <span class="rec-rank">#${i + 1}</span>
+      <span class="rec-title">${a.action}</span>
+      <div class="rec-meta">
+        <span class="rec-lift">+¥${F(a.expected_gmv_lift)}</span>
+        <span class="rec-cost">${a.cost}</span>
+        <span class="rec-roi ${a.roi}">${roiLabel[a.roi]} ROI</span>
+      </div>
+    </div>
+  `).join('');
+
+  const hit = d.would_hit_target;
+  $('#forecast-foot').innerHTML = `
+    <div class="forecast-bar ${hit ? 'good' : 'warn'}">
+      <span class="f-icon">${hit ? '✓' : '⚠'}</span>
+      <span class="f-text">${hit ? '全部采纳预计达标' : '全部采纳后仍有缺口，建议追加动作'}</span>
+      <span class="f-num">¥${F(d.forecast_if_all)}</span>
+    </div>`;
+});
+
+// ── Load Risks ──
+fetch('/api/admin/skills/detect_risk').then(r => r.json()).then(d => {
+  const list = $('#risk-list');
+  $('#risk-count-badge').textContent = (d.risk_count || 0) + ' 项';
+  if (!d.risks || d.risks.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--accent);font-size:14px">✓ 各项指标正常，无显著风险</div>';
+    return;
+  }
+  const typeMap = { declining_hero: '头部下滑', supply_gap: '供给缺口', cvr_drop: 'CVR下跌' };
+  list.innerHTML = d.risks.map(r => `
+    <div class="risk-item">
+      <span class="risk-icon">⚠</span>
+      <div class="risk-body">
+        <div class="risk-type">${typeMap[r.type] || r.type}</div>
+        <div style="color:var(--t-primary);font-size:12px">${r.target || r.tag}</div>
+        <div style="color:var(--t-secondary);font-size:11px;margin-top:2px">${r.issue}</div>
+      </div>
+      <span class="risk-loss">-¥${F(r.projected_loss)}</span>
+    </div>
+  `).join('');
+});
+
+// ── Auto-refresh ──
+setInterval(() => location.reload(), 30000);
+</script>
+</body>
+</html>

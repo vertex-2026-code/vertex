@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 import requests
 from flask import Flask, g, jsonify, request, send_from_directory, session
 from services.style_taxonomy import TAG_TO_CAT, CATEGORY_NAMES_MAP
+from services.skills import SKILL_MAP
 from openai import OpenAI
 
 ARK_API_KEY = os.environ.get("ARK_API_KEY", "")
@@ -163,6 +164,38 @@ def init_db():
         );
         CREATE INDEX IF NOT EXISTS idx_ct_date ON community_trends(date);
         CREATE INDEX IF NOT EXISTS idx_ct_tag ON community_trends(style_tag);
+        CREATE TABLE IF NOT EXISTS operation_metrics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            metric_date TEXT NOT NULL,
+            metric_type TEXT NOT NULL,
+            metric_value REAL NOT NULL,
+            style_code TEXT,
+            style_tag TEXT,
+            color_family TEXT,
+            style_category TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_om_date ON operation_metrics(metric_date);
+        CREATE INDEX IF NOT EXISTS idx_om_type ON operation_metrics(metric_type);
+        CREATE TABLE IF NOT EXISTS gmv_targets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            period_type TEXT NOT NULL,
+            period_start TEXT NOT NULL,
+            period_end TEXT NOT NULL,
+            target_value REAL NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS promo_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_date TEXT NOT NULL,
+            action_type TEXT NOT NULL,
+            target_tag TEXT,
+            target_style TEXT,
+            boost_factor REAL NOT NULL,
+            duration_days INTEGER DEFAULT 3,
+            expected_gmv_lift REAL,
+            actual_gmv_lift REAL,
+            description TEXT
+        );
         """
     )
     conn.close()
@@ -1021,6 +1054,330 @@ def merchant_skills():
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
+
+
+# ============ GMV 运营看板 ============
+
+@app.route('/admin/kpi')
+def admin_kpi():
+    return send_from_directory(STATIC_DIR, 'admin_kpi.html')
+
+
+@app.route('/api/admin/gmv_overview')
+def gmv_overview():
+    db = get_db()
+
+    month_gmv_row = db.execute(
+        "SELECT SUM(metric_value) FROM operation_metrics "
+        "WHERE metric_type='category_gmv' AND metric_date BETWEEN '2026-06-01' AND '2026-06-04'"
+    ).fetchone()
+    month_gmv = month_gmv_row[0] or 0
+
+    total_gmv_row = db.execute(
+        "SELECT SUM(metric_value) FROM operation_metrics WHERE metric_type='category_gmv'"
+    ).fetchone()
+    total_gmv = total_gmv_row[0] or 0
+
+    target_row = db.execute(
+        "SELECT target_value FROM gmv_targets WHERE period_type='monthly' AND period_start='2026-06-01'"
+    ).fetchone()
+    target = target_row[0] if target_row else 1500000
+    completion_pct = round(month_gmv / target * 100, 1)
+
+    curve_rows = db.execute(
+        "SELECT metric_date, metric_value FROM operation_metrics "
+        "WHERE metric_type='category_gmv' ORDER BY metric_date"
+    ).fetchall()
+    curve = [{"date": r[0], "gmv": r[1]} for r in curve_rows]
+
+    recent_dates = [r[0] for r in curve_rows[-7:]]
+    recent_vals = [r[1] for r in curve_rows[-7:]]
+    if len(recent_vals) >= 2:
+        n = len(recent_vals)
+        avg_growth = sum(
+            (recent_vals[i] - recent_vals[i-1]) / recent_vals[i-1]
+            for i in range(1, n)
+        ) / (n - 1)
+        last_val = recent_vals[-1]
+        forecast = last_val * ((1 + avg_growth) ** 26)
+        forecast = round(min(forecast, target * 2))
+    else:
+        forecast = target
+
+    promos = [
+        {"date": r[0], "action_type": r[1], "target_tag": r[2],
+         "description": r[3]}
+        for r in db.execute(
+            "SELECT event_date, action_type, target_tag, description FROM promo_events ORDER BY event_date"
+        ).fetchall()
+    ]
+
+    return jsonify({
+        "month_gmv": month_gmv,
+        "total_gmv": total_gmv,
+        "target": target,
+        "completion_pct": completion_pct,
+        "gap": target - month_gmv,
+        "forecast_end_of_month": forecast,
+        "forecast_pct": round(forecast / target * 100, 1),
+        "curve": curve,
+        "promo_events": promos,
+    })
+
+
+@app.route('/api/admin/gmv_breakdown')
+def gmv_breakdown():
+    db = get_db()
+    date_range = request.args.get('range', 'month')
+
+    if date_range == 'week':
+        where = "AND metric_date BETWEEN '2026-05-29' AND '2026-06-04'"
+    elif date_range == 'all':
+        where = ""
+    else:
+        where = "AND metric_date BETWEEN '2026-06-01' AND '2026-06-04'"
+
+    def val(mtype):
+        r = db.execute(
+            f"SELECT SUM(metric_value) FROM operation_metrics WHERE metric_type=? {where}",
+            (mtype,),
+        ).fetchone()
+        return r[0] or 0
+
+    gmv = val("category_gmv")
+    orders = val("category_order_count")
+    aov = val("category_aov")
+    views = val("category_view_count")
+    cvr_sum = db.execute(
+        f"SELECT AVG(metric_value) FROM operation_metrics WHERE metric_type='category_cvr' {where}",
+    ).fetchone()[0] or 0
+
+    def prev_val(mtype):
+        r = db.execute(
+            "SELECT SUM(metric_value) FROM operation_metrics WHERE metric_type=? "
+            "AND metric_date BETWEEN '2026-05-22' AND '2026-05-28'",
+            (mtype,),
+        ).fetchone()
+        return r[0] or 0
+
+    prev_gmv = prev_val("category_gmv")
+    prev_orders = prev_val("category_order_count")
+    prev_aov = prev_val("category_aov")
+    prev_views = prev_val("category_view_count")
+
+    def chg(cur, prev):
+        if prev == 0:
+            return 0
+        return round((cur - prev) / prev * 100, 1)
+
+    prev_cvr_sum = db.execute(
+        "SELECT AVG(metric_value) FROM operation_metrics WHERE metric_type='category_cvr' "
+        "AND metric_date BETWEEN '2026-05-22' AND '2026-05-28'"
+    ).fetchone()[0] or 0
+
+    order_contrib = round((orders - prev_orders) * aov)
+    aov_contrib = round((aov - prev_aov) * orders)
+    view_contrib = round((views - prev_views) * cvr_sum * aov)
+    cvr_contrib = round((cvr_sum - prev_cvr_sum) * views * aov)
+
+    return jsonify({
+        "gmv": gmv,
+        "orders": orders,
+        "aov": round(aov, 2),
+        "views": views,
+        "cvr": round(cvr_sum, 4),
+        "gmv_change_pct": chg(gmv, prev_gmv),
+        "orders_change_pct": chg(orders, prev_orders),
+        "aov_change_pct": chg(aov, prev_aov),
+        "views_change_pct": chg(views, prev_views),
+        "cvr_change_pct": chg(cvr_sum, prev_cvr_sum),
+        "order_contrib": order_contrib,
+        "aov_contrib": aov_contrib,
+        "view_contrib": view_contrib,
+        "cvr_contrib": cvr_contrib,
+    })
+
+
+@app.route('/api/admin/gmv_top_styles')
+def gmv_top_styles():
+    db = get_db()
+
+    rows = db.execute("""
+        SELECT style_code, style_tag, style_category,
+               SUM(CASE WHEN metric_type='style_gmv' THEN metric_value ELSE 0 END) AS gmv,
+               SUM(CASE WHEN metric_type='style_view_count' THEN metric_value ELSE 0 END) AS views,
+               SUM(CASE WHEN metric_type='style_tryon_count' THEN metric_value ELSE 0 END) AS tryons,
+               SUM(CASE WHEN metric_type='style_favorite_count' THEN metric_value ELSE 0 END) AS favorites
+        FROM operation_metrics
+        WHERE style_code IS NOT NULL
+        GROUP BY style_code
+        ORDER BY gmv DESC
+    """).fetchall()
+
+    total_gmv = sum(r[3] for r in rows)
+    result = []
+    for r in rows:
+        code, tag, cat, gmv, views, tryons, favs = r
+
+        recent = db.execute(
+            "SELECT SUM(metric_value) FROM operation_metrics "
+            "WHERE style_code=? AND metric_type='style_gmv' AND metric_date BETWEEN '2026-05-29' AND '2026-06-04'",
+            (code,),
+        ).fetchone()[0] or 0
+        prior = db.execute(
+            "SELECT SUM(metric_value) FROM operation_metrics "
+            "WHERE style_code=? AND metric_type='style_gmv' AND metric_date BETWEEN '2026-05-22' AND '2026-05-28'",
+            (code,),
+        ).fetchone()[0] or 0
+        chg_pct = round((recent - prior) / prior * 100, 1) if prior else 0
+
+        result.append({
+            "style_code": code,
+            "style_tag": tag,
+            "style_category": cat,
+            "gmv": gmv,
+            "gmv_share_pct": round(gmv / total_gmv * 100, 1) if total_gmv else 0,
+            "views": views,
+            "tryons": tryons,
+            "favorites": favs,
+            "change_pct": chg_pct,
+        })
+
+    return jsonify({"styles": result, "total_gmv": total_gmv})
+
+
+@app.route('/api/admin/gmv_recommend')
+def gmv_recommend():
+    db = get_db()
+
+    month_gmv = db.execute(
+        "SELECT SUM(metric_value) FROM operation_metrics "
+        "WHERE metric_type='category_gmv' AND metric_date BETWEEN '2026-06-01' AND '2026-06-04'"
+    ).fetchone()[0] or 0
+
+    target_row = db.execute(
+        "SELECT target_value FROM gmv_targets WHERE period_type='monthly'"
+    ).fetchone()
+    target = target_row[0] if target_row else 1500000
+
+    top = db.execute("""
+        SELECT style_code, style_tag, SUM(metric_value) AS gmv
+        FROM operation_metrics
+        WHERE metric_type='style_gmv' AND style_code IS NOT NULL
+        GROUP BY style_code ORDER BY gmv DESC LIMIT 3
+    """).fetchall()
+
+    bottom = db.execute("""
+        SELECT style_code, style_tag, SUM(metric_value) AS gmv
+        FROM operation_metrics
+        WHERE metric_type='style_gmv' AND style_code IS NOT NULL
+        GROUP BY style_code ORDER BY gmv ASC LIMIT 3
+    """).fetchall()
+
+    promos = db.execute(
+        "SELECT description, expected_gmv_lift FROM promo_events ORDER BY event_date DESC LIMIT 3"
+    ).fetchall()
+
+    trends = db.execute("""
+        SELECT style_tag, ROUND(AVG(growth_rate)*100, 1) AS avg_growth
+        FROM community_trends WHERE date >= '2026-06-01'
+        GROUP BY style_tag ORDER BY avg_growth DESC LIMIT 5
+    """).fetchall()
+
+    gap = target - month_gmv
+
+    recs = []
+    rising_tags = [t[0] for t in trends if t[1] > 5]
+    declining_tags = [t[0] for t in trends if t[1] < -5]
+
+    if rising_tags:
+        top_rising_style = db.execute(
+            "SELECT style_code, SUM(metric_value) FROM operation_metrics "
+            "WHERE metric_type='style_gmv' AND style_tag=? "
+            "GROUP BY style_code ORDER BY SUM(metric_value) DESC LIMIT 1",
+            (rising_tags[0],),
+        ).fetchone()
+        if top_rising_style:
+            est_lift = int(gap * 0.25)
+            recs.append({
+                "action": f"给 {top_rising_style[0]}（{rising_tags[0]}）加 Banner 主推位",
+                "expected_gmv_lift": est_lift,
+                "cost": "低 · 改配置即可",
+                "roi": "高",
+                "reason": f"社区 {rising_tags[0]} 热度上升 {trends[0][1]}%，顺势主推变现",
+            })
+
+    if declining_tags:
+        bottom_declining = db.execute(
+            "SELECT style_code, SUM(metric_value) FROM operation_metrics "
+            "WHERE metric_type='style_gmv' AND style_tag=? "
+            "GROUP BY style_code ORDER BY SUM(metric_value) DESC LIMIT 1",
+            (declining_tags[0],),
+        ).fetchone()
+        if bottom_declining:
+            est_lift = int(gap * 0.15)
+            recs.append({
+                "action": f"对 {bottom_declining[0]}（{declining_tags[0]}）做限时折扣清库存",
+                "expected_gmv_lift": est_lift,
+                "cost": "中 · 需商家配合",
+                "roi": "中",
+                "reason": f"{declining_tags[0]} 社区热度跌 {trends[-1][1] if trends else 'N/A'}%，清仓回笼资金",
+            })
+
+    recs.append({
+        "action": "推美拉德/多巴胺撞色高价款，目标提 AOV 15%",
+        "expected_gmv_lift": int(gap * 0.20),
+        "cost": "低 · 调整推荐权重",
+        "roi": "高",
+        "reason": "高价款 AOV ¥240+，CVR 不输平价，利润空间大",
+    })
+
+    recs.append({
+        "action": "推送通知召回 7 天未活跃用户 + 收藏未试戴用户",
+        "expected_gmv_lift": int(gap * 0.15),
+        "cost": "低 · Push 一次",
+        "roi": "中",
+        "reason": "低成本拉回存量用户，预计 CVR 3-5%",
+    })
+
+    total_lift = sum(r["expected_gmv_lift"] for r in recs)
+    forecast_with_all = month_gmv + total_lift
+
+    return jsonify({
+        "month_gmv": month_gmv,
+        "target": target,
+        "gap": gap,
+        "top_styles": [{"code": r[0], "tag": r[1], "gmv": r[2]} for r in top],
+        "declining_styles": [{"code": r[0], "tag": r[1], "gmv": r[2]} for r in bottom],
+        "recent_promos": [{"desc": r[0], "lift": r[1]} for r in promos],
+        "rising_trends": [{"tag": r[0], "growth": r[1]} for r in trends[:3]],
+        "recommendations": recs,
+        "total_lift_if_all": total_lift,
+        "forecast_if_all": forecast_with_all,
+        "would_hit_target": forecast_with_all >= target,
+    })
+
+
+# ============ Skills API ============
+
+@app.route('/api/admin/skills/<skill_name>')
+def skill_endpoint(skill_name):
+    fn = SKILL_MAP.get(skill_name)
+    if not fn:
+        return jsonify({"error": f"Unknown skill: {skill_name}"}), 404
+    db = get_db()
+    params = {}
+    for k, v in request.args.items():
+        if v.isdigit():
+            params[k] = int(v)
+        elif v.replace('.', '', 1).isdigit():
+            params[k] = float(v)
+        else:
+            params[k] = v
+    try:
+        return jsonify(fn(db, **params))
+    except TypeError:
+        return jsonify(fn(db))
 
 
 @app.route("/api/merchant/skills/registry")
