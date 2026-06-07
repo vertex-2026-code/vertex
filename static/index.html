@@ -500,6 +500,42 @@
     background: var(--accent);
     border-color: var(--accent);
   }
+  /* 细分风格 chip 条 —— 跟 cat-tab 同一套字体/圆 chip，但更小更克制 */
+  .tag-tabs {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+    scrollbar-width: none;
+  }
+  .tag-tabs::-webkit-scrollbar { display: none; }
+  .tag-tab {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--t-secondary);
+    background: transparent;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.18s, border-color 0.18s, background 0.18s;
+    white-space: nowrap;
+  }
+  .tag-tab:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+  .tag-tab.active {
+    color: var(--bg);
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .tag-tab .tag-count {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    opacity: 0.6;
+    margin-left: 4px;
+  }
 
   .styles-grid {
     display: grid;
@@ -1341,6 +1377,7 @@
         <span class="cat-tab" data-cat="D">Noir</span>
         <span class="cat-tab" data-cat="E">Avant-Garde</span>
       </div>
+      <div id="tag-tabs" class="tag-tabs" aria-label="细分风格筛选"></div>
       <div id="styles-grid" class="styles-grid">
         <label class="style-card custom-tile" data-id="__custom__" id="custom-tile">
           <input type="file" accept="image/*" id="custom-style-input" class="hidden">
@@ -1707,6 +1744,7 @@
       card.className = 'style-card';
       card.dataset.id = s.id;
       card.dataset.cat = s.category;
+      card.dataset.tags = (s.user_tags || []).join('|');
       card.innerHTML = `
         <img src="${s.url}" loading="lazy" alt="">
         <button class="fav-heart" data-style-id="${s.id}" data-style-url="${s.url}" aria-label="收藏">
@@ -1721,16 +1759,47 @@
   });
 
   // === 分类筛选 ===
+  let currentCat = 'all';
+  let currentTag = null;
+  function applyFilters() {
+    allStyleCards.forEach(c => {
+      const catMatch = (currentCat === 'all' || c.dataset.cat === currentCat);
+      const tagMatch = !currentTag || (c.dataset.tags || '').split('|').includes(currentTag);
+      c.style.display = (catMatch && tagMatch) ? '' : 'none';
+    });
+  }
   $('#cat-tabs').addEventListener('click', e => {
     const tab = e.target.closest('.cat-tab');
     if (!tab) return;
     $$('.cat-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
-    const cat = tab.dataset.cat;
-    allStyleCards.forEach(c => {
-      c.style.display = (cat === 'all' || c.dataset.cat === cat) ? '' : 'none';
-    });
+    currentCat = tab.dataset.cat;
+    applyFilters();
   });
+
+  // === 细分风格 chip 筛选 ===
+  fetch('/api/styles/tags').then(r => r.json()).then(tags => {
+    const wrap = $('#tag-tabs');
+    if (!Array.isArray(tags) || !tags.length) { wrap.style.display = 'none'; return; }
+    wrap.innerHTML = tags.map(t =>
+      `<span class="tag-tab" data-tag="${t.tag}">${t.tag}<span class="tag-count">${t.count}</span></span>`
+    ).join('');
+    wrap.addEventListener('click', e => {
+      const chip = e.target.closest('.tag-tab');
+      if (!chip) return;
+      const tag = chip.dataset.tag;
+      // 再次点击同一 chip = 取消筛选
+      if (currentTag === tag) {
+        currentTag = null;
+        chip.classList.remove('active');
+      } else {
+        $$('.tag-tab').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentTag = tag;
+      }
+      applyFilters();
+    });
+  }).catch(()=>{});
 
   // === 选预设款式 & 收藏切换 ===
   $('#styles-grid').addEventListener('click', e => {

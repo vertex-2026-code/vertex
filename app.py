@@ -401,6 +401,7 @@ def admin_merchant_dataset_shop_detail(shop_id: str):
 
 @app.route("/api/styles")
 def list_styles():
+    from services.style_taxonomy import STYLE_TO_USER_TAGS
     files = sorted([f for f in os.listdir(NAILS_DIR) if f.lower().endswith((".png", ".jpg", ".jpeg"))])
     styles = []
     for f in files:
@@ -409,10 +410,11 @@ def list_styles():
         cat = STYLE_CATEGORIES.get(sid, "?")
         styles.append({
             "id": sid,
-            "name": f"Style {num}",
+            "name": f"款式 {num}",
             "url": f"/static/nails/{f}",
             "category": cat,
             "category_name": CATEGORY_NAMES.get(cat, ""),
+            "user_tags": STYLE_TO_USER_TAGS.get(sid, []),
         })
     return jsonify(styles)
 
@@ -420,6 +422,17 @@ def list_styles():
 @app.route("/api/shops")
 def list_shops():
     return jsonify(MOCK_SHOPS)
+
+
+@app.route("/api/styles/tags")
+def list_user_style_tags():
+    """C 端细分筛选 chip 用：13 个用户视角风格 tag 列表 + 每个 tag 命中款数。"""
+    from services.style_taxonomy import USER_STYLE_TAGS, STYLE_TO_USER_TAGS
+    counts = {}
+    for sid, tags in STYLE_TO_USER_TAGS.items():
+        for t in tags:
+            counts[t] = counts.get(t, 0) + 1
+    return jsonify([{"tag": t, "count": counts.get(t, 0)} for t in USER_STYLE_TAGS])
 
 
 @app.route("/api/tryon", methods=["POST"])
