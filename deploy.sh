@@ -22,14 +22,16 @@ if ss -tln 2>/dev/null | grep -q ":5000 "; then
 fi
 echo "    端口 5000 已清空"
 
-echo "==> [2/6] 兜底 stash 任何 dirty 文件（nohup.out / VS Code 临时改的 wiki 等）"
-if [ -n "$(git status --porcelain)" ]; then
-  git stash push -u -m "deploy_auto_$(date +%Y%m%d_%H%M%S)" > /dev/null
-  echo "    已 stash dirty 文件（git stash list 可见）"
-fi
+echo "==> [2/6] 强制同步 working tree 到 origin/main（抛弃所有本地修改，含 unmerged）"
+# 服务器只跑命令、不在服务器改代码 → 任何 dirty / unmerged / 半成品 rebase 都是噪音
+# 直接 fetch + reset --hard 一招清场，比 stash 鲁棒（stash 会被 unmerged 状态卡死）
+# untracked 文件（nail_*.jpg / nails_orig/ / static/fonts/）不会被动到
+git fetch origin main 2>&1 | tail -3 || { echo "    ❌ git fetch 失败，看网络"; exit 1; }
+git reset --hard origin/main
+echo "    ✅ working tree 已同步到 origin/main"
 
-echo "==> [3/6] 拉新代码"
-git pull --rebase origin main
+echo "==> [3/6] 确认 HEAD"
+# 上一步 reset 已经把 HEAD 移到 origin/main，这里只是打印确认
 echo "    HEAD: $(git log --oneline -1)"
 
 echo "==> [4/6] 同步 OpenClaw skill"
