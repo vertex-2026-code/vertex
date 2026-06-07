@@ -517,8 +517,18 @@ def tryon():
         )
         img_data = requests.get(resp.data[0].url, timeout=30).content
         result_filename = f"{request_id}.png"
-        with open(f"{RESULTS_DIR}/{result_filename}", "wb") as fp:
+        result_png_path = f"{RESULTS_DIR}/{result_filename}"
+        with open(result_png_path, "wb") as fp:
             fp.write(img_data)
+        # 顺手压一份 jpg 缩略图给 plaza grid 用（png 原图留给下载/分享）
+        try:
+            from PIL import Image
+            with Image.open(result_png_path) as im:
+                im = im.convert("RGB")
+                im.thumbnail((800, 800), Image.LANCZOS)
+                im.save(result_png_path[:-4] + ".jpg", "JPEG", quality=80, optimize=True, progressive=True)
+        except Exception:
+            pass
         latency = int((time.time() - t0) * 1000)
         result_url = f"/static/results/{result_filename}"
         log_event("tryon_success", {
@@ -1439,9 +1449,20 @@ def plaza_share():
 @app.route("/api/plaza/feed")
 def plaza_feed():
     rows = get_db().execute(
-        "SELECT id, user_id, style_id, result_image_url, caption, likes, created_at FROM plaza ORDER BY RANDOM()"
+        "SELECT id, user_id, style_id, result_image_url, caption, likes, created_at FROM plaza ORDER BY created_at DESC"
     ).fetchall()
-    return jsonify({"items": [dict(r) for r in rows], "total": len(rows)})
+    items = []
+    for r in rows:
+        d = dict(r)
+        # 优先用 jpg 缩略图（scripts/compress_results.py 生成的），原 png 留给用户下载/分享
+        url = d.get("result_image_url") or ""
+        if url.endswith(".png"):
+            jpg_url = url[:-4] + ".jpg"
+            jpg_path = f"{BASE_DIR}{jpg_url}"
+            if os.path.exists(jpg_path):
+                d["result_image_url"] = jpg_url
+        items.append(d)
+    return jsonify({"items": items, "total": len(items)})
 
 
 @app.route("/api/plaza/<int:post_id>/like", methods=["POST"])
