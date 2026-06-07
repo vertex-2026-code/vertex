@@ -279,6 +279,25 @@ def save_data_url(data_url, path):
     return data
 
 
+def _compress_hand_to_jpg(user_id):
+    """把 hands/{uid}.png 压成 hands/{uid}.jpg（600×600 q80）。
+    沿用 nails 双版本架构：png 原图留作复用源 / AI fallback，jpg 给前端展示。
+    带宽 375 KB/s 下 1.5MB hand → 4s，35KB jpg → 0.1s。
+    """
+    try:
+        from PIL import Image
+        png_path = f"{HANDS_DIR}/{user_id}.png"
+        jpg_path = f"{HANDS_DIR}/{user_id}.jpg"
+        if not os.path.exists(png_path):
+            return
+        with Image.open(png_path) as im:
+            im = im.convert("RGB")
+            im.thumbnail((600, 600), Image.LANCZOS)
+            im.save(jpg_path, "JPEG", quality=80, optimize=True, progressive=True)
+    except Exception:
+        pass
+
+
 @app.route("/")
 def index():
     resp = send_from_directory(STATIC_DIR, "index.html")
@@ -427,6 +446,79 @@ def list_shops():
     return jsonify(MOCK_SHOPS)
 
 
+@app.route("/api/shops/for_style")
+def shops_for_style():
+    """试戴完点「找门店」用：1 家完美匹配主理店 + 2-3 家备选。
+    定义：
+      primary = 与试戴款 category 严格匹配的店（rating × 距离权重排序取 top 1）
+      alternatives = 剩余店里：
+        - 用户偏好契合度（favorites/tryon_history 出现过的 category 加分）+ 距离 排序
+        - 取 top 2，命中用户偏好 → badge 「你常戴 · X 风格」，否则 「X 风格 · 近」
+      自定义款（__custom__ / 用户上传）兜底按距离排前 3 家，文案不承诺风格匹配。
+    """
+    style_id = request.args.get("style_id", "")
+    user_id = request.args.get("user_id", "").strip()
+
+    # 用户偏好的 categories（从 favorites + tryon_history 推断）
+    pref_cats = set()
+    if user_id and user_id != "anonymous":
+        try:
+            db = get_db()
+            for r in db.execute("SELECT style_id FROM favorites WHERE user_id=?", (user_id,)).fetchall():
+                c = STYLE_CATEGORIES.get(r["style_id"])
+                if c: pref_cats.add(c)
+            for r in db.execute("SELECT style_id FROM tryon_history WHERE user_id=?", (user_id,)).fetchall():
+                c = STYLE_CATEGORIES.get(r["style_id"])
+                if c: pref_cats.add(c)
+        except Exception:
+            pass
+
+    # 兜底：自定义款或无法识别的 style_id → 按距离 top 3，不承诺风格匹配
+    target_cat = STYLE_CATEGORIES.get(style_id)
+    if not target_cat:
+        sorted_by_dist = sorted(MOCK_SHOPS, key=lambda s: s["distance_km"])[:3]
+        return jsonify({
+            "primary": None,
+            "alternatives": [
+                {**s, "badge": f"{CATEGORY_NAMES.get(s['style'], s['style'])} · {s['distance_km']} km",
+                 "badge_kind": "neutral"}
+                for s in sorted_by_dist
+            ],
+            "mode": "custom",
+        })
+
+    # 主推：试戴款 category 严格匹配
+    matched = [s for s in MOCK_SHOPS if s["style"] == target_cat]
+    if matched:
+        primary_shop = max(matched, key=lambda s: s["rating"] / (1 + s["distance_km"] * 0.3))
+    else:
+        primary_shop = None
+
+    # 备选：除主推外的店，按"偏好契合 + 距离"打分取前 2
+    rest = [s for s in MOCK_SHOPS if not primary_shop or s["id"] != primary_shop["id"]]
+    def alt_score(s):
+        pref_bonus = 3.0 if s["style"] in pref_cats else 0.0
+        return pref_bonus + s["rating"] / (1 + s["distance_km"] * 0.3)
+    alternatives = sorted(rest, key=alt_score, reverse=True)[:2]
+
+    def badge_for_alt(s):
+        cat_name = CATEGORY_NAMES.get(s["style"], s["style"])
+        if s["style"] in pref_cats:
+            return {"badge": f"你常戴 · {cat_name}", "badge_kind": "pref"}
+        return {"badge": f"{cat_name} · {s['distance_km']} km", "badge_kind": "neutral"}
+
+    return jsonify({
+        "primary": {
+            **primary_shop,
+            "badge": f"完美匹配 · {CATEGORY_NAMES.get(target_cat, target_cat)}",
+            "badge_kind": "primary",
+        } if primary_shop else None,
+        "alternatives": [{**s, **badge_for_alt(s)} for s in alternatives],
+        "mode": "matched",
+        "target_category_name": CATEGORY_NAMES.get(target_cat, target_cat),
+    })
+
+
 @app.route("/api/styles/tags")
 def list_user_style_tags():
     """C 端细分筛选 chip 用：13 个用户视角风格 tag 列表 + 每个 tag 命中款数。"""
@@ -487,6 +579,7 @@ def tryon():
         if user_id != "anonymous":
             hand_orig_path = f"{HANDS_DIR}/{user_id}.png"
             save_data_url(hand_image, hand_orig_path)
+            _compress_hand_to_jpg(user_id)
             db = get_db()
             db.execute(
                 "INSERT INTO hand_originals(user_id, image_path, updated_at) VALUES(?, ?, ?) "
@@ -631,6 +724,13 @@ def user_migrate():
     new_hand = os.path.join(HANDS_DIR, f"{new_id}.png")
     if os.path.exists(old_hand):
         os.rename(old_hand, new_hand)
+        # 同步 rename / 重新生成 jpg
+        old_jpg = os.path.join(HANDS_DIR, f"{old_id}.jpg")
+        new_jpg = os.path.join(HANDS_DIR, f"{new_id}.jpg")
+        if os.path.exists(old_jpg):
+            os.rename(old_jpg, new_jpg)
+        else:
+            _compress_hand_to_jpg(new_id)
         db.execute("UPDATE hand_originals SET image_path=? WHERE user_id=?", (f"/static/uploads/hands/{new_id}.png", new_id))
         db.commit()
     log_event("user_migrate", {"old_id": old_id, "new_id": new_id})
@@ -643,7 +743,14 @@ def user_hand():
     if not user_id:
         return jsonify({"error": "missing user_id"}), 400
     row = get_db().execute("SELECT image_path, updated_at FROM hand_originals WHERE user_id=?", (user_id,)).fetchone()
-    return jsonify({"image_path": row["image_path"], "updated_at": row["updated_at"]} if row else {"image_path": None})
+    if not row:
+        return jsonify({"image_path": None})
+    # 展示用 jpg 缩略图（如果存在）；DB 字段保留 png 不动，符合"原图必保存"约定
+    image_path = row["image_path"]
+    jpg_disk = os.path.join(HANDS_DIR, f"{user_id}.jpg")
+    if os.path.exists(jpg_disk):
+        image_path = f"/static/uploads/hands/{user_id}.jpg"
+    return jsonify({"image_path": image_path, "updated_at": row["updated_at"]})
 
 
 @app.route("/api/user/favorites")
@@ -959,10 +1066,16 @@ def user_ai_recommend():
         f'{{"user_id":"...", "tier":"...", "signal_count":N, '
         f'"user_profile":{{"summary":"..."}}, '
         f'"external_signal":{{"top_rising":[{{"tag":"...","growth":"+X%"}}], "top_declining":[...]}}, '
-        f'"recommendations":[{{"rank":1, "style_id":"nail_XX", "category":"E", '
-        f'"category_name":"潮流前卫", "score":0.42, "reason":"..."}}], '
-        f'"business_insight":"..."}}\n\n'
-        f"不要省略 reason 字段。不要编造数据。"
+        f'"recommendations":[{{"rank":1, "style_id":"nail_XX", '
+        f'"title":"猫眼 · 暗夜冰川", "style_tags":["猫眼","独特小众"], '
+        f'"reason":"..."}}]}}\n\n'
+        f"输出规则（重要，违反则报告无效）：\n"
+        f"- title 形如「工艺 · 意象」，2-6 字 + 间隔点 + 2-6 字；工艺取自 style_tags 第一项\n"
+        f"- style_tags 必须从这 13 个里选 1-3 个：中短款 / 显白夏天 / 简约高级 / 杏仁款 / "
+        f"独特小众 / 猫眼 / 帕斯蒂尔风 / 韩系 / 本甲款 / 多巴胺 / 清冷感 / 甜酷风格 / 裸色系\n"
+        f"- recommendations 数组里**相邻两张不能同 A-E 大类**（避免 3 张华丽璀璨连排这种刻意聚堆）\n"
+        f"- 不要输出 category / category_name / score / business_insight 字段（已废弃）\n"
+        f"- 不要省略 reason 字段。不要编造数据。reason 1-2 句话讲为什么推给这个用户。"
     )
 
     try:

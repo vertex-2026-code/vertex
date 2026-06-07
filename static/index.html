@@ -445,23 +445,54 @@
   .ai-rec-item {
     display: flex; gap: 10px; padding: 8px 0;
     border-bottom: 1px dashed var(--border);
+    cursor: pointer;
+    transition: background 0.15s ease;
+    border-radius: 6px;
   }
+  .ai-rec-item:hover { background: rgba(212,165,116,0.06); }
+  .ai-rec-item:active { transform: scale(0.985); }
   .ai-rec-item:last-child { border-bottom: none; }
-  .ai-rec-rank {
-    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
-    background: var(--accent); color: var(--bg);
-    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  .ai-rec-thumb {
+    position: relative;
+    width: 72px; height: 72px; flex-shrink: 0;
+    border-radius: 8px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .ai-rec-thumb img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .ai-rec-thumb .ai-rec-rank {
+    position: absolute; top: 4px; left: 4px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(0,0,0,0.65); color: var(--accent);
+    font-family: var(--font-mono); font-size: 10px; font-weight: 600;
     display: flex; align-items: center; justify-content: center;
   }
-  .ai-rec-body { flex: 1; min-width: 0; }
-  .ai-rec-title { font-size: 13px; color: var(--t-primary); margin-bottom: 2px; }
-  .ai-rec-num { font-family: var(--font-mono); font-size: 10px; color: var(--t-tertiary); margin-left: 4px; letter-spacing: 0.06em; }
-  .ai-rec-reason { font-size: 11px; color: var(--t-secondary); line-height: 1.45; }
-  .ai-rec-score { font-family: var(--font-mono); font-size: 10px; color: var(--accent); opacity: 0.8; }
+  .ai-rec-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .ai-rec-title {
+    font-size: 13px; color: var(--t-primary);
+    letter-spacing: 0.01em; line-height: 1.3;
+  }
+  .ai-rec-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .ai-rec-tag {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em;
+    padding: 2px 6px; border-radius: 999px;
+    background: rgba(212,165,116,0.10);
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    color: var(--accent);
+  }
+  .ai-rec-reason {
+    font-size: 11px; color: var(--t-secondary); line-height: 1.45;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
   .ai-insight-box {
     padding: 11px 13px; background: rgba(212,165,116,0.08);
     border-left: 2px solid var(--accent); border-radius: 4px;
     font-size: 13px; color: var(--t-primary); line-height: 1.55;
+    display: none;
   }
   .ai-raw-fallback {
     font-family: var(--font-mono); font-size: 11px; line-height: 1.55;
@@ -514,6 +545,8 @@
   .chip {
     flex-shrink: 0;
     padding: 6px 12px;
+    min-height: 30px;
+    box-sizing: border-box;
     border: 1px solid var(--border);
     border-radius: 999px;
     font-family: var(--font-body);
@@ -525,7 +558,7 @@
     transition: color 0.18s, border-color 0.18s, background 0.18s;
     white-space: nowrap;
     display: inline-flex;
-    align-items: baseline;
+    align-items: center;
     gap: 5px;
   }
   .chip em {
@@ -983,6 +1016,17 @@
   .result-actions .btn-ghost { width: 100%; margin-top: 4px; }
 
   /* ===== 门店列表 ===== */
+  .shop-section-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0.75;
+    margin: 14px 0 8px;
+  }
+  .shop-section-label:first-child { margin-top: 0; }
+  .shop-section-label.alt { color: var(--t-tertiary); opacity: 0.6; }
   .shop-card {
     background: var(--elevated);
     border: 1px solid var(--border);
@@ -999,6 +1043,13 @@
     background: var(--hover);
     border-color: color-mix(in srgb, var(--accent) 35%, transparent);
   }
+  .shop-card.primary {
+    border: 1px solid var(--accent);
+    background: linear-gradient(135deg, rgba(212,165,116,0.10), rgba(212,165,116,0.02));
+    padding: 14px 16px;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+  .shop-card.alt { padding: 10px 12px; }
   .shop-card-main { flex: 1; min-width: 0; }
   .shop-name {
     font-family: var(--font-display);
@@ -1010,6 +1061,8 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .shop-card.primary .shop-name { font-size: 16px; }
+  .shop-card.alt .shop-name { font-size: 13px; }
   .shop-meta {
     display: flex;
     align-items: center;
@@ -1028,6 +1081,31 @@
     color: var(--accent);
     margin-top: 4px;
   }
+  .shop-badge {
+    display: inline-block;
+    margin-top: 5px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    padding: 3px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+  }
+  .shop-badge.primary {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .shop-badge.pref {
+    background: rgba(212,165,116,0.12);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  .shop-badge.neutral {
+    background: rgba(255,255,255,0.04);
+    color: var(--t-secondary);
+    border: 1px solid var(--border);
+  }
   .shop-book-btn {
     flex-shrink: 0;
     background: transparent;
@@ -1042,6 +1120,12 @@
     text-transform: uppercase;
     cursor: pointer;
     transition: background 0.18s, color 0.18s;
+  }
+  .shop-card.primary .shop-book-btn {
+    background: var(--accent);
+    color: var(--bg);
+    padding: 8px 18px;
+    font-size: 11px;
   }
   .shop-card:hover .shop-book-btn {
     background: var(--accent);
@@ -1494,8 +1578,8 @@
     <div class="modal-head">
       <div class="modal-head-text">
         <span class="panel-eyebrow">Salons</span>
-        <h2 class="modal-title">推荐门店</h2>
-        <p class="modal-sub">能做这款美甲 · 按距离排序</p>
+        <h2 class="modal-title">这款门店</h2>
+        <p class="modal-sub">主理店 + 你可能也喜欢的备选</p>
       </div>
     </div>
     <div id="shops-list"></div>
@@ -1842,6 +1926,18 @@
       `<span class="chip" data-type="tag" data-value="${t.tag}">${t.tag}<span class="tag-count">${t.count}</span></span>`
     ).join('');
     wrap.insertAdjacentHTML('beforeend', html);
+
+    // 打乱「全部」之外的所有 chip：风格大类 + 细分 tag 完全混排，
+    // 不再按 A/B/C/D/E 整齐字母序——避免感觉刻意分组。
+    const all = wrap.querySelector('.chip[data-type="all"]');
+    const others = Array.from(wrap.querySelectorAll('.chip')).filter(c => c !== all);
+    for (let i = others.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [others[i], others[j]] = [others[j], others[i]];
+    }
+    wrap.innerHTML = '';
+    if (all) wrap.appendChild(all);
+    others.forEach(c => wrap.appendChild(c));
   }).catch(()=>{});
 
   // === 选预设款式 & 收藏切换 ===
@@ -2018,17 +2114,36 @@
   // === 门店列表 ===
   let shopsBound = false;
   function showShops() {
-    fetch('/api/shops').then(r => r.json()).then(shops => {
-      $('#shops-list').innerHTML = shops.map(s => `
-        <div class="shop-card" data-shop="${s.id}">
+    const sid = selectedStyle === '__custom__' ? '__custom__' : (selectedStyle || '');
+    const url = `/api/shops/for_style?style_id=${encodeURIComponent(sid)}&user_id=${encodeURIComponent(userId || '')}`;
+    fetch(url).then(r => r.json()).then(data => {
+      const renderShop = (s, kind) => `
+        <div class="shop-card ${kind}" data-shop="${s.id}">
           <div class="shop-card-main">
             <p class="shop-name">${s.name}</p>
             <p class="shop-meta">${icon('star')}<span>${s.rating}</span><span>·</span><span>${s.distance_km} km</span><span>·</span><span>均价 ¥${s.price_avg}</span></p>
-            ${s.desc ? `<p class="shop-desc">${s.desc}</p>` : ''}
+            ${s.badge ? `<span class="shop-badge ${s.badge_kind || 'neutral'}">${s.badge}</span>` : ''}
           </div>
-          <button class="shop-book-btn">预约</button>
-        </div>
-      `).join('');
+          <button class="shop-book-btn">${kind === 'primary' ? '立即预约' : '预约'}</button>
+        </div>`;
+
+      const parts = [];
+      if (data.primary) {
+        parts.push(`<div class="shop-section-label">这款由这家主理</div>`);
+        parts.push(renderShop(data.primary, 'primary'));
+      } else if (data.mode === 'custom') {
+        parts.push(`<div class="shop-section-label">附近门店 · 联系确认是否能做这款</div>`);
+      }
+      if (data.alternatives && data.alternatives.length) {
+        if (data.primary) {
+          parts.push(`<div class="shop-section-label alt">你可能也喜欢</div>`);
+        }
+        parts.push(data.alternatives.map(s => renderShop(s, 'alt')).join(''));
+      }
+      if (!parts.length) {
+        parts.push(`<p style="color:var(--t-secondary); text-align:center; padding:20px;">附近暂无可预约门店</p>`);
+      }
+      $('#shops-list').innerHTML = parts.join('');
       if (!shopsBound) {
         shopsBound = true;
         $('#shops-list').addEventListener('click', e => {
@@ -2330,11 +2445,9 @@
   function renderParsed(p) {
     if (!p || !p.recommendations) return null;
     const tier = p.tier || 'cold';
-    const sigC = p.signal_count != null ? p.signal_count : '?';
     const prof = p.user_profile || {};
     const ext = p.external_signal || {};
     const recs = p.recommendations || [];
-    const insight = p.business_insight || '';
 
     const rising = (ext.top_rising || []).map(t =>
       `<span class="ai-trend-chip rising">↑ ${t.tag||''} ${t.growth||''}</span>`
@@ -2345,15 +2458,20 @@
 
     const recHTML = recs.map((r,i) => {
       const sid = r.style_id || '';
-      const num = sid.replace('nail_','').replace(/^0/,'') || sid;
-      const catName = r.category_name || '';
+      const num = sid.replace('nail_','') || sid;
+      const thumb = sid ? `/static/nails/${sid}.jpg` : '';
+      const title = r.title || (r.style_tags && r.style_tags[0]) || `Style #${num.replace(/^0/,'')}`;
+      const tags = (r.style_tags || []).map(t => `<span class="ai-rec-tag">${t}</span>`).join('');
       return `
-      <div class="ai-rec-item">
-        <div class="ai-rec-rank">${r.rank || (i+1)}</div>
+      <div class="ai-rec-item" data-id="${sid}">
+        <div class="ai-rec-thumb">
+          <img src="${thumb}" loading="lazy" alt="">
+          <span class="ai-rec-rank">${r.rank || (i+1)}</span>
+        </div>
         <div class="ai-rec-body">
-          <div class="ai-rec-title">${catName} <span class="ai-rec-num">#${num}</span></div>
+          <div class="ai-rec-title">${title}</div>
+          ${tags ? `<div class="ai-rec-tags">${tags}</div>` : ''}
           <div class="ai-rec-reason">${r.reason || ''}</div>
-          ${r.score != null ? `<div class="ai-rec-score">score ${(+r.score).toFixed(2)}</div>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -2374,16 +2492,31 @@
         <div class="ai-trend-row">${rising}${declining}</div>
       </div>` : ''}
       <div class="ai-section">
-        <div class="ai-section-title">深度推荐 · ${recs.length} 款</div>
+        <div class="ai-section-title">深度推荐 · ${recs.length} 款 · 点击试戴</div>
         ${recHTML}
       </div>
-      ${insight ? `
-      <div class="ai-section">
-        <div class="ai-section-title">给运营 / 商家的建议</div>
-        <div class="ai-insight-box">${insight}</div>
-      </div>` : ''}
     `;
   }
+
+  // 点击 AI 推荐卡 → 关掉抽屉 + 跳到对应款式（复用 recommend-card 的逻辑）
+  aiBody.addEventListener('click', e => {
+    const item = e.target.closest('.ai-rec-item');
+    if (!item) return;
+    const sid = item.dataset.id;
+    if (!sid) return;
+    const tabs = Array.from($$('.cat-tab'));
+    const allTab = tabs.find(t => t.dataset.cat === 'all');
+    if (allTab && !allTab.classList.contains('active')) allTab.click();
+    const target = allStyleCards.find(card => card.dataset.id === sid);
+    if (!target) return;
+    $$('.style-card').forEach(x => x.classList.remove('selected'));
+    target.classList.add('selected');
+    selectedStyle = sid;
+    customStyleImage = null;
+    checkReady();
+    closeAiDrawer();
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
 
   aiBtn.addEventListener('click', async () => {
     const uid = (userId || '').trim();
