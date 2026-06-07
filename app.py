@@ -1151,24 +1151,37 @@ def events_push():
         if event_type == "new_order":
             date_str = data.get("date", datetime.now(BJT).strftime("%Y-%m-%d"))
             sid = data["style_id"]
-            # 更新店铺日指标
-            db.execute("""
-                INSERT INTO merchant_shop_daily_metrics
-                (shop_id, date, revenue, group_buy_orders, search_volume, click_volume, consultation_volume, ad_spend, repeat_orders, refund_orders, favorites_added, created_at)
-                VALUES(?, ?, ?, 1, 10, 5, 2, 0, 0, 0, 0, ?)
-                ON CONFLICT(shop_id, date) DO UPDATE SET
-                revenue = revenue + excluded.revenue,
-                group_buy_orders = group_buy_orders + 1
-            """, (data["shop_id"], date_str, data.get("revenue", 0), now_iso()))
+            shop_id = data["shop_id"]
+            rev = data.get("revenue", 0)
+            ts = now_iso()
+
+            # 更新店铺日指标 (先查后写，表无 unique 约束)
+            existing = db.execute(
+                "SELECT id FROM merchant_shop_daily_metrics WHERE shop_id=? AND date=?",
+                (shop_id, date_str)).fetchone()
+            if existing:
+                db.execute(
+                    "UPDATE merchant_shop_daily_metrics SET revenue=revenue+?, group_buy_orders=group_buy_orders+1 WHERE id=?",
+                    (rev, existing[0]))
+            else:
+                db.execute(
+                    "INSERT INTO merchant_shop_daily_metrics(shop_id,date,revenue,group_buy_orders,search_volume,click_volume,consultation_volume,ad_spend,repeat_orders,refund_orders,favorites_added,created_at) "
+                    "VALUES(?,?,?,1,10,5,2,0,0,0,0,?)",
+                    (shop_id, date_str, rev, ts))
+
             # 更新款式日指标
-            db.execute("""
-                INSERT INTO merchant_style_daily_metrics
-                (shop_id, style_id, date, search_volume, click_volume, group_buy_orders, favorites_added, created_at)
-                VALUES(?, ?, ?, 10, 5, 1, 0, ?)
-                ON CONFLICT(shop_id, style_id, date) DO UPDATE SET
-                group_buy_orders = group_buy_orders + 1,
-                click_volume = click_volume + 5
-            """, (data["shop_id"], sid, date_str, now_iso()))
+            sexist = db.execute(
+                "SELECT id FROM merchant_style_daily_metrics WHERE shop_id=? AND style_id=? AND date=?",
+                (shop_id, sid, date_str)).fetchone()
+            if sexist:
+                db.execute(
+                    "UPDATE merchant_style_daily_metrics SET group_buy_orders=group_buy_orders+1, click_volume=click_volume+5 WHERE id=?",
+                    (sexist[0],))
+            else:
+                db.execute(
+                    "INSERT INTO merchant_style_daily_metrics(shop_id,style_id,date,search_volume,click_volume,group_buy_orders,favorites_added,created_at) "
+                    "VALUES(?,?,?,10,5,1,0,?)",
+                    (shop_id, sid, date_str, ts))
             db.commit()
 
             from services.gmv_data import get_gmv_overview
@@ -1194,17 +1207,26 @@ def events_push():
 
         elif event_type == "daily_batch":
             date_str = data.get("date", datetime.now(BJT).strftime("%Y-%m-%d"))
-            db.execute("""
-                INSERT INTO merchant_shop_daily_metrics
-                (shop_id, date, revenue, group_buy_orders, search_volume, click_volume, consultation_volume, ad_spend, repeat_orders, refund_orders, favorites_added, created_at)
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(shop_id, date) DO UPDATE SET
-                revenue = excluded.revenue, group_buy_orders = excluded.group_buy_orders,
-                search_volume = excluded.search_volume, click_volume = excluded.click_volume
-            """, (data["shop_id"], date_str, data.get("revenue", 0), data.get("orders", 0),
-                  data.get("views", 0), data.get("clicks", 0), data.get("consultations", 0),
-                  data.get("ad_spend", 0), data.get("repeat_orders", 0),
-                  data.get("refund_orders", 0), data.get("favorites", 0), now_iso()))
+            shop_id = data["shop_id"]
+            ts = now_iso()
+            existing = db.execute(
+                "SELECT id FROM merchant_shop_daily_metrics WHERE shop_id=? AND date=?",
+                (shop_id, date_str)).fetchone()
+            if existing:
+                db.execute(
+                    "UPDATE merchant_shop_daily_metrics SET revenue=?, group_buy_orders=?, search_volume=?, click_volume=?, consultation_volume=?, ad_spend=?, repeat_orders=?, refund_orders=?, favorites_added=? WHERE id=?",
+                    (data.get("revenue", 0), data.get("orders", 0), data.get("views", 0),
+                     data.get("clicks", 0), data.get("consultations", 0), data.get("ad_spend", 0),
+                     data.get("repeat_orders", 0), data.get("refund_orders", 0),
+                     data.get("favorites", 0), existing[0]))
+            else:
+                db.execute(
+                    "INSERT INTO merchant_shop_daily_metrics(shop_id,date,revenue,group_buy_orders,search_volume,click_volume,consultation_volume,ad_spend,repeat_orders,refund_orders,favorites_added,created_at) "
+                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (shop_id, date_str, data.get("revenue", 0), data.get("orders", 0),
+                     data.get("views", 0), data.get("clicks", 0), data.get("consultations", 0),
+                     data.get("ad_spend", 0), data.get("repeat_orders", 0),
+                     data.get("refund_orders", 0), data.get("favorites", 0), ts))
             db.commit()
 
             _broadcast_event("gmv_update", {"date": date_str, "shop_id": data["shop_id"]})
