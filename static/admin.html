@@ -317,14 +317,17 @@
   .msg-user {
     background: color-mix(in srgb, var(--mid) 10%, var(--bg));
     border-radius: 14px 14px 4px 14px;
-    margin-left: clamp(28px, 18%, 80px);
+    margin-left: clamp(16px, 18%, 80px);
     color: var(--t-primary);
+    overflow-x: auto;
   }
   .msg-ai {
     background: color-mix(in srgb, var(--mid) 4%, var(--bg));
     border-radius: 14px 14px 14px 4px;
-    margin-right: clamp(28px, 18%, 80px);
+    margin-right: clamp(8px, 18%, 80px);
     color: var(--t-primary);
+    overflow-x: hidden;
+    word-break: break-word;
   }
   .msg-ai h1, .msg-ai h2, .msg-ai h3, .msg-ai h4 {
     font-family: var(--font-display); font-weight: 600;
@@ -683,6 +686,24 @@
     .skill-bar { gap: 5px; padding: 6px 8px; }
     .skill-bar-label { display: none; }
     .skill-chip { font-size: 10px; padding: 4px 8px; border-radius: 5px; }
+    /* 消息内容自适应 */
+    .msg-ai { margin-right: 4px; margin-left: 4px; font-size: 13px; padding: 10px 12px; }
+    .msg-user { margin-left: 16px; margin-right: 4px; }
+    .msg-ai .table-wrap { margin: 4px -12px; border-radius: 0; border-left: none; border-right: none; }
+    .msg-ai .table-wrap table { font-size: 0.75em; }
+    .msg-ai th, .msg-ai td { padding: 4px 5px; white-space: normal; }
+    /* viz 组件自适应 */
+    .viz-kpi .kpi-number { font-size: 2rem; }
+    .viz-meta { gap: 8px; }
+    .viz-meta-item { min-width: 44px; }
+    .viz-meta-item .v { font-size: 1rem; }
+    .viz-bar-row .bar-label { width: 36px; font-size: 10px; }
+    .viz-bar-row .bar-val { width: 44px; font-size: 10px; }
+    .viz-bar-row .bar-contrib { width: 52px; font-size: 10px; }
+    .viz-card { padding: 10px 12px; }
+    .viz-card .card-title { font-size: 12px; }
+    .viz-card .card-badge { font-size: 9px; padding: 1px 6px; }
+    .copy-card.card-banner .copy-main { font-size: 1.1rem; }
   }
 </style>
 </head>
