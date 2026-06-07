@@ -816,6 +816,9 @@
       <select id="gmv-style" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 10px;font-size:12px;font-family:var(--font-body);min-width:110px" onchange="loadGmvDashboard()">
         <option value="">全部风格</option>
       </select>
+      <select id="gmv-persona" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 10px;font-size:12px;font-family:var(--font-body);min-width:120px" onchange="loadGmvDashboard()">
+        <option value="">风格人设</option>
+      </select>
       <input type="text" id="merchant-search" placeholder="搜索门店…" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 10px;font-size:12px;font-family:var(--font-body);width:120px" oninput="loadMerchantList()">
       <input type="date" id="gmv-from" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 8px;font-size:12px;font-family:var(--font-body);margin-left:auto" onchange="loadGmvDashboard()">
       <span style="color:var(--t-tertiary);font-size:12px">→</span>
@@ -1058,10 +1061,12 @@ async function loadGmvDashboard() {
   const from = $('#gmv-from')?.value || '';
   const to = $('#gmv-to')?.value || '';
   const style = $('#gmv-style')?.value || '';
+  const persona = $('#gmv-persona')?.value || '';
   if (city) params.set('city', city);
   if (from) params.set('from', from);
   if (to) params.set('to', to);
   if (style) params.set('style', style);
+  if (persona) params.set('persona', persona);
   const qs = params.toString();
   const url = '/api/admin/gmv_dashboard' + (qs ? '?' + qs : '');
 
@@ -1215,6 +1220,10 @@ async function loadMerchantList() {
     if (d.styles?.length) {
       const sel = $('#gmv-style');
       d.styles.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel?.appendChild(o); });
+    }
+    if (d.personas?.length) {
+      const sel = $('#gmv-persona');
+      d.personas.forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = p; sel?.appendChild(o); });
     }
   } catch(e) {}
 })();
