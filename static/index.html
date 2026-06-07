@@ -589,10 +589,8 @@
     justify-content: center;
     gap: 8px;
     width: 100%;
-    /* 等高于 styles-grid 里一张 style-card：grid 3 列 + gap 8px 时，
-       一张 card 宽 ≈ (100% - 16px)/3，aspect 1:1 → card 高同此值；
-       横条占 100% 宽 + aspect 3:1 即高度同此值，视觉等高 */
-    aspect-ratio: 3 / 1;
+    /* 5/1 ≈ 一张 card 高的 60%（用户校准：3/1 太高，窄约 40%） */
+    aspect-ratio: 5 / 1;
     padding: 0 18px;
     background: transparent;
     border: 1px dashed color-mix(in srgb, var(--accent) 50%, var(--border));
