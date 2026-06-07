@@ -451,13 +451,23 @@
   .msg-ai hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
   .msg-ai .table-wrap {
     overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%;
-    margin: 8px 0; border-radius: 8px; border: 1px solid var(--border);
+    margin: 8px 0; border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
   }
   .msg-ai .table-wrap table { margin: 0; width: max-content; min-width: 100%; font-size: 0.85em; border: none; }
   .msg-ai .table-wrap th, .msg-ai .table-wrap td { white-space: nowrap; }
   .msg-ai table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 0.9em; }
-  .msg-ai th, .msg-ai td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
-  .msg-ai th { background: var(--muted); font-family: var(--font-display); font-weight: 600; }
+  .msg-ai th, .msg-ai td {
+    border-bottom: 1px solid color-mix(in srgb, var(--accent) 14%, transparent);
+    padding: 7px 12px; text-align: left;
+  }
+  .msg-ai th {
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+    font-family: var(--font-display); font-weight: 600;
+    border-bottom-color: color-mix(in srgb, var(--accent) 32%, transparent);
+    color: var(--t-primary);
+  }
+  .msg-ai tr:last-child td { border-bottom: none; }
   .msg-ai > *:first-child { margin-top: 0; }
   .msg-ai > *:last-child { margin-bottom: 0; }
 
@@ -587,9 +597,9 @@
     display: flex; align-items: center; gap: 6px; padding: 5px 0; font-size: 12px;
     min-width: 0;
   }
-  .viz-bar-row .bar-label { width: 40px; flex-shrink: 0; color: var(--t-secondary); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .viz-bar-row .bar-val { width: 46px; flex-shrink: 0; text-align: right; color: var(--t-primary); font-family: var(--font-mono); font-size: 10px; }
-  .viz-bar-row .bar-contrib { max-width: 60px; flex-shrink: 0; text-align: right; font-family: var(--font-mono); font-size: 10px; }
+  .viz-bar-row .bar-label { width: 48px; flex-shrink: 0; color: var(--t-secondary); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .viz-bar-row .bar-val { min-width: 88px; flex-shrink: 0; text-align: right; color: var(--t-primary); font-family: var(--font-mono); font-size: 11px; white-space: nowrap; }
+  .viz-bar-row .bar-contrib { min-width: 96px; flex-shrink: 0; text-align: right; font-family: var(--font-mono); font-size: 11px; white-space: nowrap; padding-left: 6px; }
   .viz-bar-row .viz-track { flex: 1; min-width: 20px; height: 6px; background: var(--muted); border-radius: 3px; overflow: hidden; }
   .viz-bar-row .viz-fill { height: 100%; border-radius: 3px; transition: width 0.6s cubic-bezier(0.16,1,0.3,1); }
   .fill-gold { background: var(--accent); }
@@ -808,9 +818,9 @@
     .viz-meter { padding: 8px 12px; }
     /* 条形图行 — 缩窄固定宽度 */
     .viz-bar-row { gap: 4px; padding: 3px 0; }
-    .viz-bar-row .bar-label { width: 30px; font-size: 9px; }
-    .viz-bar-row .bar-val { width: 40px; font-size: 10px; }
-    .viz-bar-row .bar-contrib { width: 48px; font-size: 10px; }
+    .viz-bar-row .bar-label { width: 36px; font-size: 9px; }
+    .viz-bar-row .bar-val { min-width: 72px; font-size: 10px; }
+    .viz-bar-row .bar-contrib { min-width: 78px; font-size: 10px; }
     .viz-bar-row .viz-track { height: 5px; }
     /* 卡片 */
     .viz-card { padding: 8px 10px; margin: 5px 0; }
@@ -1441,7 +1451,9 @@ var COPY_VARIANTS=[{channel:'banner',tone:'playful',cssClass:'card-banner',label
 function formatSkillResult(skill,data){
   switch(skill){
     case 'get_gmv_status':
-      return '<h3>GMV 现状</h3><p><strong>本月 GMV:</strong> ¥'+F(data.month_gmv)+' / 目标 ¥'+F(data.target)+' ('+data.completion_pct+'%)</p><p><strong>缺口:</strong> ¥'+F(data.gap)+' · <strong>预测月末:</strong> ¥'+F(data.forecast_end_of_month)+' · <strong>状态:</strong> '+data.status+'</p>';
+      var pct=data.completion_pct||0;
+      var tone=pct>=95?{label:'达标',color:'var(--accent)'}:pct>=80?{label:'在轨',color:'var(--accent)'}:pct>=60?{label:'偏离',color:'#e0a07e'}:{label:'告急',color:'#e0a07e'};
+      return '<h3>GMV 现状</h3><p><strong>本月 GMV:</strong> ¥'+F(data.month_gmv)+' / 目标 ¥'+F(data.target)+' ('+pct+'%)</p><p><strong>缺口:</strong> ¥'+F(data.gap)+' · <strong>预测月末:</strong> ¥'+F(data.forecast_end_of_month)+' ('+(data.forecast_pct||0)+'%) · <strong>状态:</strong> <span style="color:'+tone.color+'">'+tone.label+'</span></p>';
     case 'breakdown_gmv':
       var bars=(data.factors||[]).map(function(f){var w=Math.round(Math.abs(f.contribution)/Math.max.apply(null,(data.factors||[]).map(function(x){return Math.abs(x.contribution)}).concat([1]))*100);var cls=f.contribution>=0?'fill-gold':'fill-warn';return '<div class=\"viz-bar-row\"><span class=\"bar-label\">'+f.name+'</span><div class=\"viz-track\"><div class=\"viz-fill '+cls+'\" style=\"width:'+w+'%\"></div></div><span class=\"bar-val\">¥'+F(f.current)+'</span><span class=\"bar-contrib\" style=\"color:'+(f.contribution>=0?'var(--accent)':'#e0a07e')+'\">'+(f.contribution>=0?'+':'')+'¥'+F(f.contribution)+'</span></div>'}).join('');
       return '<h3>GMV 归因拆解</h3><p>GMV 变化: <strong>'+(data.gmv_change>=0?'+':'')+'¥'+F(data.gmv_change)+' ('+data.gmv_change_pct+'%)</strong></p><div class=\"viz-card\">'+bars+'</div><p style=\"font-size:13px;color:var(--accent);margin-top:6px\">'+data.narrative+'</p>';
