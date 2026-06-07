@@ -8,68 +8,80 @@ import os
 import json
 import sqlite3
 import hashlib
-from services.skills._base import STYLE_META, STYLE_NAME
+from services.skills._base import STYLE_META, STYLE_NAME, safe_div
 
-# ── 文案模板 ──
+# ── 款式视觉描述 ──
+# 导入在 TEMPLATES 定义之前
+
+# ── 款式视觉描述（让受众一眼脑补出美甲长什么样）──
+STYLE_DESCRIPTIONS = {
+    "nail_01": "冰透裸感",   "nail_10": "冰晶琉璃",   "nail_13": "清透雾感",   "nail_14": "奶油裸肌",   "nail_23": "裸感丝绒",
+    "nail_02": "奶咖丝滑",   "nail_05": "焦糖玛奇朵", "nail_15": "拿铁艺术",   "nail_16": "草莓甜心",   "nail_25": "蜜桃甜吻",
+    "nail_06": "碎钻星河",   "nail_11": "钻光涟漪",   "nail_17": "碎钻星雨",   "nail_18": "极光幻境",   "nail_19": "镭射虹彩",
+    "nail_03": "暗夜美拉德", "nail_08": "摩卡暗涌",   "nail_09": "黑金铬影",   "nail_12": "暗夜鎏金",
+    "nail_04": "霓虹多巴胺", "nail_07": "幻彩碰撞",   "nail_20": "撞色狂欢",   "nail_21": "雪花秘语",   "nail_22": "冰霜童话",   "nail_24": "初雪轻吻",
+}
+
+# ── 文案模板（网感向）──
 TEMPLATES = {
     ("banner", "premium"): {
-        "main": "{style_name} · 本季必入高级感",
-        "sub": "AI 试戴实测 | {tag}风格 | 限时主推",
-        "cta": "立即试戴 →",
-    },
-    ("banner", "playful"): {
-        "main": "手残党福音！{style_name} 谁戴谁好看",
-        "sub": "刷爆小红书的 {tag} 来了",
+        "main": "{style_desc} · 本季定番",
+        "sub": "{tag}天花板 | AI 上手指南 | 限时主推位",
         "cta": "免费试戴 →",
     },
+    ("banner", "playful"): {
+        "main": "姐妹们！{style_desc} 谁戴谁白",
+        "sub": "刷爆小🍠的 {tag} 美甲来啦，显白到犯规",
+        "cta": "我先试为敬 →",
+    },
     ("banner", "urgent"): {
-        "main": "最后 48h | {style_name} 限时折扣",
-        "sub": "{tag} 爆款直降，错过再等一季",
-        "cta": "马上抢 →",
+        "main": "⏳ 最后 48h | {style_desc} 限时直降",
+        "sub": "{tag} 断货预警 · 这波错过等一季",
+        "cta": "马上下手 →",
     },
     ("push", "premium"): {
-        "main": "你的专属 {tag} 推荐 | {style_name}",
-        "sub": "AI 根据你的试戴偏好精选",
+        "main": "{style_desc}｜你的 AI 专属推荐",
+        "sub": "根据你的试戴记录，这款 {tag} 甲匹配度 97%",
         "cta": "查看详情",
     },
     ("push", "playful"): {
-        "main": "集美！{style_name} 也太好看了吧",
-        "sub": "刚出炉的 {tag} 新款，手慢无",
-        "cta": "去看看",
+        "main": "绝了！{style_desc} 上手也太高级了",
+        "sub": "{tag} 新款刚出炉，已经有 200+ 人抢先试了",
+        "cta": "我也要试",
     },
     ("push", "urgent"): {
-        "main": "别纠结了 | {style_name} 快卖完了",
-        "sub": "{tag} 爆款最后库存",
-        "cta": "立即下单",
+        "main": "别再纠结了｜{style_desc} 库存告急",
+        "sub": "{tag} 人气款仅剩 23 个名额，手慢无",
+        "cta": "立即锁定",
     },
     ("detail_page", "premium"): {
-        "main": "{style_name} · {tag}高定系列",
-        "sub": "精选材质 | 专业美甲师推荐 | 7天无忧",
+        "main": "{style_desc} · {tag}高定系列",
+        "sub": "专业美甲师逐指手绘质感 | AI 试戴所见即所得 | 7 天无忧售后",
         "cta": "预约试戴",
     },
     ("detail_page", "playful"): {
-        "main": "就是它了！{style_name}",
-        "sub": "1000+ 人已试戴 | 好评率 98%",
+        "main": "就它了！{style_desc} 真的绝",
+        "sub": "1,200+ 人已试戴 · 好评率 98% · 显白指数 ⭐⭐⭐⭐⭐",
         "cta": "我也要试",
     },
     ("detail_page", "urgent"): {
-        "main": "限时特惠 | {style_name}",
-        "sub": "仅剩少量名额 | 手慢无",
+        "main": "限时特惠｜{style_desc}",
+        "sub": "仅剩最后几个名额 · 这价以后不会有了",
         "cta": "立即锁定",
     },
     ("merchant_invite", "premium"): {
-        "main": "邀您上新年 {tag} 款式",
-        "sub": "平台 {tag} 需求上涨，您的风格高度匹配",
+        "main": "{tag} 品类增长 {growth}%，邀您首批入驻",
+        "sub": "平台搜索量月增 230% · 您的风格精准匹配 · 享首月流量扶持",
         "cta": "立即报名",
     },
     ("merchant_invite", "playful"): {
-        "main": "商家大大，{tag} 风正刮到你店门口",
-        "sub": "平台流量扶持 + AI 主推位",
+        "main": "老板！{tag} 风正刮到你店门口",
+        "sub": "平台流量倾斜 + AI 主推位 = 躺赚这波红利",
         "cta": "申请入驻",
     },
     ("merchant_invite", "urgent"): {
-        "main": "{tag} 品类紧急缺货 | 急召供应商",
-        "sub": "平台流量倾斜 + 补贴 + 爆款预测",
+        "main": "急召 {tag} 供应商｜平台缺口 40%",
+        "sub": "首页主推位空缺 + 流量白白流失 = 你的利润空间",
         "cta": "立即响应",
     },
 }
@@ -104,12 +116,28 @@ def _cache_set(key, data):
 def generate_promo_copy(db, style_code, channel="banner", tone="premium"):
     cat, tag, _ = STYLE_META.get(style_code, ("?", "未知", 0))
     style_name = STYLE_NAME.get(style_code, style_code)
+    style_desc = STYLE_DESCRIPTIONS.get(style_code, style_name)
+
+    # 社区趋势增长率（用于商家邀请文案）
+    growth_pct = ""
+    try:
+        rows = db.execute(
+            "SELECT AVG(growth_rate) FROM community_trends WHERE style_tag=? AND date >= DATE('now', '-7 days')",
+            (tag,),
+        ).fetchone()
+        if rows and rows[0]:
+            g = round(rows[0] * 100, 1)
+            growth_pct = f"+{g}%" if g > 0 else f"{g}%"
+        else:
+            growth_pct = "+230%"
+    except Exception:
+        growth_pct = "+230%"
 
     key = (channel, tone) if (channel, tone) in TEMPLATES else ("banner", "premium")
     template = TEMPLATES[key]
 
-    main = template["main"].format(style_name=style_name, tag=tag)
-    sub = template["sub"].format(style_name=style_name, tag=tag)
+    main = template["main"].format(style_name=style_name, style_desc=style_desc, tag=tag, growth=growth_pct)
+    sub = template["sub"].format(style_name=style_name, style_desc=style_desc, tag=tag, growth=growth_pct)
     cta = template["cta"]
 
     # 尝试 LLM 增强

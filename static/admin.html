@@ -302,7 +302,7 @@
     display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
   }
   .chat-sub { font-size: 12px; color: var(--t-secondary); margin: 4px 0 0; }
-  .chat-box { display: flex; flex-direction: column; height: clamp(380px, 52vh, 520px); }
+  .chat-box { display: flex; flex-direction: column; height: clamp(520px, 72vh, 800px); }
   .chat-messages { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 18px clamp(18px, 2vw, 26px); }
   .chat-messages::-webkit-scrollbar { width: 5px; }
   .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -555,9 +555,8 @@
   }
   .copy-card.card-push .copy-icon {
     width: 36px; height: 36px; border-radius: 9px;
-    background: linear-gradient(135deg, var(--rose), var(--accent));
     flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
+    overflow: hidden;
   }
   .copy-card.card-push .copy-app {
     font-size: 12px; font-weight: 500; color: var(--t-primary);
@@ -1174,11 +1173,10 @@ function formatSkillResult(skill, data) {
 
 /* ===== 文案卡片画廊 ===== */
 const COPY_VARIANTS = [
-  { channel: 'banner', tone: 'premium', cssClass: 'card-banner', label: 'Banner · 高级感' },
-  { channel: 'banner', tone: 'playful', cssClass: 'card-banner', label: 'Banner · 活泼' },
-  { channel: 'push', tone: 'urgent', cssClass: 'card-push', label: 'Push · 紧迫感' },
-  { channel: 'detail_page', tone: 'premium', cssClass: 'card-detail', label: '详情页 · 高级' },
-  { channel: 'merchant_invite', tone: 'playful', cssClass: 'card-merchant', label: '商家邀请 · 轻松' },
+  { channel: 'banner', tone: 'playful', cssClass: 'card-banner', label: 'Banner 横幅' },
+  { channel: 'push', tone: 'playful', cssClass: 'card-push', label: 'App Push' },
+  { channel: 'detail_page', tone: 'premium', cssClass: 'card-detail', label: '详情页' },
+  { channel: 'merchant_invite', tone: 'premium', cssClass: 'card-merchant', label: '商家邀请' },
 ];
 
 function formatCopyGallery(results) {
@@ -1194,7 +1192,7 @@ function formatCopyGallery(results) {
         break;
       case 'card-push':
         inner = `<div class="copy-bar">
-          <span class="copy-icon">💅</span>
+          <span class="copy-icon"><svg width="36" height="36" viewBox="0 0 36 36"><defs><linearGradient id="pg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c0808f"/><stop offset="100%" stop-color="#d4ab7c"/></linearGradient></defs><rect width="36" height="36" rx="9" fill="url(#pg)"/><text x="18" y="24" text-anchor="middle" fill="#160b10" font-size="18" font-weight="600" font-family="serif">V</text></svg></span>
           <span class="copy-app">甲趣 · Vertex</span>
           <span class="copy-time">刚刚</span>
         </div>
@@ -1209,7 +1207,7 @@ function formatCopyGallery(results) {
           <span class="copy-cta">${data.cta} →</span>`;
         break;
       case 'card-merchant':
-        inner = `<div class="copy-label">📨 ${variant.label}</div>
+        inner = `<div class="copy-label"><svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:-2px;margin-right:4px"><polygon points="7,0 9,4 13,5 10,8 11,13 7,11 3,13 4,8 1,5 5,4" fill="#d4ab7c"/></svg>${variant.label}</div>
           <div class="copy-main">${data.main_copy}</div>
           <div class="copy-sub">${data.sub_copy}</div>
           <span class="copy-cta">${data.cta}</span>`;
