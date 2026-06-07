@@ -1173,11 +1173,9 @@ def gmv_breakdown():
 
     gmv = val("category_gmv")
     orders = val("category_order_count")
-    aov = val("category_aov")
+    aov = round(gmv / orders, 2) if orders else 0
     views = val("category_view_count")
-    cvr_sum = db.execute(
-        f"SELECT AVG(metric_value) FROM operation_metrics WHERE metric_type='category_cvr' {where}",
-    ).fetchone()[0] or 0
+    cvr_sum = round(orders / views, 4) if views else 0
 
     def prev_val(mtype):
         r = db.execute(
@@ -1189,7 +1187,7 @@ def gmv_breakdown():
 
     prev_gmv = prev_val("category_gmv")
     prev_orders = prev_val("category_order_count")
-    prev_aov = prev_val("category_aov")
+    prev_aov = round(prev_gmv / prev_orders, 2) if prev_orders else 0
     prev_views = prev_val("category_view_count")
 
     def chg(cur, prev):

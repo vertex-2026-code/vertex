@@ -13,19 +13,19 @@ def breakdown_gmv(db, period="this_month", compare_to="last_month"):
     start, end = parse_period(period)
     p_start, p_end = prev_period(start, end)
 
-    # 当期
+    # 当期 — AOV 和 CVR 从 GMV/订单/浏览 实时计算，不依赖存储值
     gmv = sum_metric(db, "category_gmv", start, end)
     orders = sum_metric(db, "category_order_count", start, end)
-    aov = safe_div(gmv, orders)
     views = sum_metric(db, "category_view_count", start, end)
-    cvr = avg_metric(db, "category_cvr", start, end)
+    aov = safe_div(gmv, orders)
+    cvr = safe_div(orders, views)
 
     # 上期
     prev_gmv = sum_metric(db, "category_gmv", p_start, p_end)
     prev_orders = sum_metric(db, "category_order_count", p_start, p_end)
-    prev_aov = safe_div(prev_gmv, prev_orders)
     prev_views = sum_metric(db, "category_view_count", p_start, p_end)
-    prev_cvr = avg_metric(db, "category_cvr", p_start, p_end)
+    prev_aov = safe_div(prev_gmv, prev_orders)
+    prev_cvr = safe_div(prev_orders, prev_views)
 
     gmv_change = gmv - prev_gmv
 
