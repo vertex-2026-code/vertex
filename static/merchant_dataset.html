@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>甲趣商家数据查看台</title>
+<style>
+  :root {
+    --bg: #140f11;
+    --panel: #21191c;
+    --panel-2: #2b2024;
+    --line: rgba(241, 220, 207, 0.12);
+    --text: #f1dccf;
+    --muted: rgba(241, 220, 207, 0.7);
+    --faint: rgba(241, 220, 207, 0.44);
+    --accent: #d4ab7c;
+    --rose: #c0808f;
+    --green: #9fd0b5;
+    --red: #e2a08e;
+    --radius: 12px;
+    font-family: "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    color: var(--text);
+    background:
+      radial-gradient(900px 540px at 100% 0%, rgba(212, 171, 124, 0.12), transparent 60%),
+      radial-gradient(700px 460px at 0% 100%, rgba(192, 128, 143, 0.12), transparent 62%),
+      var(--bg);
+  }
+
+  button, input, select { font: inherit; }
+  button { cursor: pointer; }
+
+  .page {
+    min-height: 100vh;
+    padding: 28px;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    gap: 18px;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+  }
+
+  .title h1 {
+    margin: 0;
+    font-size: clamp(28px, 3.2vw, 40px);
+    line-height: 1.05;
+    font-weight: 760;
+  }
+
+  .title p {
+    margin: 10px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .top-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  .pill-link,
+  .version-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(241, 220, 207, 0.04);
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 12px;
+  }
+
+  .version-pill { color: var(--accent); }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .summary-card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: rgba(241, 220, 207, 0.04);
+    padding: 14px 16px;
+  }
+
+  .summary-label {
+    color: var(--faint);
+    font-size: 12px;
+  }
+
+  .summary-value {
+    margin-top: 8px;
+    font-size: clamp(26px, 2.8vw, 38px);
+    line-height: 1;
+    font-weight: 780;
+    color: var(--text);
+  }
+
+  .summary-note {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .workspace {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 360px minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .panel {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(22, 17, 19, 0.92);
+    min-height: 0;
+  }
+
+  .sidebar {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    overflow: hidden;
+  }
+
+  .sidebar-head,
+  .detail-head {
+    padding: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .section-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 720;
+  }
+
+  .section-sub {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .filters {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .filters-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .input,
+  .select {
+    width: 100%;
+    min-height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--text);
+    padding: 0 12px;
+    outline: none;
+  }
+
+  .list {
+    overflow: auto;
+    padding: 12px;
+  }
+
+  .merchant-item {
+    width: 100%;
+    text-align: left;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--muted);
+    padding: 12px;
+    display: grid;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .merchant-item:hover {
+    background: rgba(241, 220, 207, 0.05);
+    border-color: rgba(212, 171, 124, 0.16);
+    color: var(--text);
+  }
+
+  .merchant-item.active {
+    background: rgba(212, 171, 124, 0.12);
+    border-color: rgba(212, 171, 124, 0.24);
+    color: var(--text);
+  }
+
+  .merchant-name {
+    font-size: 15px;
+    font-weight: 720;
+    color: var(--text);
+  }
+
+  .merchant-meta {
+    color: var(--faint);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .merchant-kpis {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(212, 171, 124, 0.22);
+    background: rgba(212, 171, 124, 0.09);
+    color: var(--text);
+    font-size: 11px;
+  }
+
+  .pager {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--line);
+  }
+
+  .pager button {
+    min-height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: rgba(241, 220, 207, 0.05);
+    color: var(--text);
+    padding: 0 12px;
+  }
+
+  .pager button:disabled {
+    opacity: 0.38;
+    cursor: default;
+  }
+
+  .detail {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+  }
+
+  .detail-scroll {
+    overflow: auto;
+    padding: 16px;
+    display: grid;
+    gap: 14px;
+  }
+
+  .hero {
+    border: 1px solid rgba(212, 171, 124, 0.18);
+    border-radius: 16px;
+    background:
+      radial-gradient(120% 160% at 100% 0%, rgba(212, 171, 124, 0.18), transparent 58%),
+      linear-gradient(135deg, rgba(241, 220, 207, 0.07), rgba(0, 0, 0, 0.18));
+    padding: 18px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.9fr);
+    gap: 18px;
+  }
+
+  .hero-eyebrow {
+    color: var(--accent);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  .hero-title {
+    margin-top: 8px;
+    font-size: clamp(24px, 2.6vw, 34px);
+    line-height: 1.15;
+    font-weight: 780;
+  }
+
+  .hero-desc {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .metric-tile {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.14);
+    padding: 12px;
+  }
+
+  .metric-tile .label {
+    color: var(--faint);
+    font-size: 11px;
+  }
+
+  .metric-tile .value {
+    margin-top: 6px;
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 780;
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(241, 220, 207, 0.035);
+    padding: 14px;
+    min-width: 0;
+  }
+
+  .card h3 {
+    margin: 0 0 12px;
+    font-size: 15px;
+  }
+
+  .kv {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 0;
+    border-top: 1px solid rgba(241, 220, 207, 0.07);
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .kv:first-of-type { border-top: 0; padding-top: 0; }
+  .kv b { color: var(--text); font-weight: 720; }
+
+  .table-card {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(241, 220, 207, 0.035);
+    overflow: hidden;
+  }
+
+  .table-head {
+    padding: 14px 14px 0;
+  }
+
+  .table-head h3 {
+    margin: 0;
+    font-size: 15px;
+  }
+
+  .table-head p {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  th, td {
+    padding: 10px 14px;
+    border-top: 1px solid rgba(241, 220, 207, 0.06);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    color: var(--faint);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  td {
+    color: var(--muted);
+  }
+
+  td strong { color: var(--text); }
+
+  .empty,
+  .loading {
+    padding: 22px;
+    color: var(--faint);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 1120px) {
+    .workspace { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hero { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 720px) {
+    .page { padding: 18px; }
+    .summary-grid,
+    .card-grid,
+    .filters-row,
+    .hero-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="title">
+        <h1>商家数据查看台</h1>
+        <p>浏览你生成的商家样本，查看单店画像、主力款式、搜索点击团购转化和最近日运营数据。</p>
+      </div>
+      <div class="top-links">
+        <a class="pill-link" href="/admin">返回运营看板</a>
+        <a class="pill-link" href="/merchant">进入商家端</a>
+        <span class="version-pill" id="versionPill">merchant-data-ui</span>
+      </div>
+    </div>
+
+    <div class="summary-grid" id="summaryGrid">
+      <div class="summary-card"><div class="summary-label">加载中</div><div class="summary-value">...</div></div>
+      <div class="summary-card"><div class="summary-label">加载中</div><div class="summary-value">...</div></div>
+      <div class="summary-card"><div class="summary-label">加载中</div><div class="summary-value">...</div></div>
+      <div class="summary-card"><div class="summary-label">加载中</div><div class="summary-value">...</div></div>
+    </div>
+
+    <div class="workspace">
+      <section class="panel sidebar">
+        <div class="sidebar-head">
+          <h2 class="section-title">商家列表</h2>
+          <p class="section-sub">支持按门店名、账号、城市、风格筛选。点左侧商家，右边会展开完整数据。</p>
+          <div class="filters">
+            <input class="input" id="queryInput" placeholder="搜索门店名 / shop_id / 登录账号">
+            <div class="filters-row">
+              <select class="select" id="citySelect">
+                <option value="">全部城市</option>
+              </select>
+              <select class="select" id="styleSelect">
+                <option value="">全部风格</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="list" id="merchantList">
+          <div class="loading">正在加载商家列表…</div>
+        </div>
+        <div class="pager">
+          <button id="prevBtn" type="button">上一页</button>
+          <span id="pageInfo">第 1 页</span>
+          <button id="nextBtn" type="button">下一页</button>
+        </div>
+      </section>
+
+      <section class="panel detail">
+        <div class="detail-head">
+          <h2 class="section-title">单店数据详情</h2>
+          <p class="section-sub">查看单店画像、登录账号、近 30 天款式表现、近期日运营走势和低转化款式。</p>
+        </div>
+        <div class="detail-scroll" id="detailRoot">
+          <div class="loading">请选择左侧一个商家以查看详情…</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+const UI_VERSION = 'merchant-data-ui 2026-06-06 23:40';
+const state = {
+  page: 1,
+  pageSize: 24,
+  total: 0,
+  query: '',
+  city: '',
+  style: '',
+  selectedShopId: '',
+  selectedDetail: null,
+};
+
+const $ = selector => document.querySelector(selector);
+const summaryGrid = $('#summaryGrid');
+const merchantList = $('#merchantList');
+const detailRoot = $('#detailRoot');
+const queryInput = $('#queryInput');
+const citySelect = $('#citySelect');
+const styleSelect = $('#styleSelect');
+const prevBtn = $('#prevBtn');
+const nextBtn = $('#nextBtn');
+const pageInfo = $('#pageInfo');
+const versionPill = $('#versionPill');
+
+init();
+
+async function init() {
+  versionPill.textContent = UI_VERSION;
+  bindEvents();
+  await Promise.all([loadOverview(), loadMerchants()]);
+}
+
+function bindEvents() {
+  let timer = null;
+  queryInput.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      state.query = queryInput.value.trim();
+      state.page = 1;
+      loadMerchants();
+    }, 220);
+  });
+  citySelect.addEventListener('change', () => {
+    state.city = citySelect.value;
+    state.page = 1;
+    loadMerchants();
+  });
+  styleSelect.addEventListener('change', () => {
+    state.style = styleSelect.value;
+    state.page = 1;
+    loadMerchants();
+  });
+  prevBtn.addEventListener('click', () => {
+    if (state.page <= 1) return;
+    state.page -= 1;
+    loadMerchants();
+  });
+  nextBtn.addEventListener('click', () => {
+    if (state.page * state.pageSize >= state.total) return;
+    state.page += 1;
+    loadMerchants();
+  });
+}
+
+async function loadOverview() {
+  try {
+    const payload = await getJson('/api/admin/merchant-dataset/summary');
+    renderOverview(payload);
+    fillFilters(payload);
+  } catch (error) {
+    summaryGrid.innerHTML = `<div class="summary-card"><div class="summary-label">加载失败</div><div class="summary-note">${escapeHtml(error.message || String(error))}</div></div>`;
+  }
+}
+
+function renderOverview(payload) {
+  const totals = payload?.totals || {};
+  const summary = payload?.summary || {};
+  const cards = [
+    { label: '商家总数', value: totals.merchants || summary.merchant_count || 0, note: '当前库里的门店画像总量' },
+    { label: '上架款式', value: totals.styles || summary.styles_total || 0, note: '所有门店合计的款式数量' },
+    { label: '可登录账号', value: totals.portal_accounts || 0, note: '已开放商家端登录的账号数量' },
+    { label: '日运营数据', value: totals.shop_daily_rows || summary.shop_daily_rows || 0, note: '商家日级运营记录行数' },
+  ];
+  summaryGrid.innerHTML = cards.map(card => `
+    <div class="summary-card">
+      <div class="summary-label">${escapeHtml(card.label)}</div>
+      <div class="summary-value">${formatNumber(card.value)}</div>
+      <div class="summary-note">${escapeHtml(card.note)}</div>
+    </div>
+  `).join('');
+}
+
+function fillFilters(payload) {
+  const cities = Array.isArray(payload?.cities) ? payload.cities : [];
+  const styles = Array.isArray(payload?.styles) ? payload.styles : [];
+  citySelect.innerHTML = '<option value="">全部城市</option>' + cities.map(item => `<option value="${escapeAttr(item.city)}">${escapeHtml(item.city)} (${formatNumber(item.merchant_count)})</option>`).join('');
+  styleSelect.innerHTML = '<option value="">全部风格</option>' + styles.map(item => `<option value="${escapeAttr(item.style)}">${escapeHtml(item.style_name || item.style)} (${formatNumber(item.merchant_count)})</option>`).join('');
+  citySelect.value = state.city;
+  styleSelect.value = state.style;
+}
+
+async function loadMerchants() {
+  merchantList.innerHTML = '<div class="loading">正在加载商家列表…</div>';
+  try {
+    const params = new URLSearchParams({
+      page: String(state.page),
+      page_size: String(state.pageSize),
+      query: state.query,
+      city: state.city,
+      style: state.style,
+    });
+    const payload = await getJson(`/api/admin/merchant-dataset/shops?${params.toString()}`);
+    state.total = Number(payload.total || 0);
+    renderMerchantList(Array.isArray(payload.items) ? payload.items : []);
+    const totalPages = Math.max(1, Math.ceil(state.total / state.pageSize));
+    pageInfo.textContent = `第 ${state.page} / ${totalPages} 页`;
+    prevBtn.disabled = state.page <= 1;
+    nextBtn.disabled = state.page >= totalPages;
+
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    if (!items.length) {
+      detailRoot.innerHTML = '<div class="empty">当前筛选条件下没有商家数据。</div>';
+      state.selectedShopId = '';
+      return;
+    }
+    const target = items.find(item => item.shop_id === state.selectedShopId) || items[0];
+    if (!state.selectedShopId || target.shop_id !== state.selectedShopId || !state.selectedDetail) {
+      await loadMerchantDetail(target.shop_id);
+    }
+  } catch (error) {
+    merchantList.innerHTML = `<div class="empty">商家列表加载失败：${escapeHtml(error.message || String(error))}</div>`;
+  }
+}
+
+function renderMerchantList(items) {
+  if (!items.length) {
+    merchantList.innerHTML = '<div class="empty">没有找到符合条件的商家。</div>';
+    return;
+  }
+  merchantList.innerHTML = '';
+  items.forEach(item => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'merchant-item';
+    btn.dataset.shopId = item.shop_id;
+    if (item.shop_id === state.selectedShopId) btn.classList.add('active');
+    btn.innerHTML = `
+      <div class="merchant-name">${escapeHtml(item.shop_name)}</div>
+      <div class="merchant-meta">${escapeHtml(item.shop_id)} · ${escapeHtml(item.city || '')}${item.district ? ` / ${escapeHtml(item.district)}` : ''} · ${escapeHtml(item.style_name || item.style || '')}</div>
+      <div class="merchant-kpis">
+        <span class="chip">账号 ${escapeHtml(item.username || '未绑定')}</span>
+        <span class="chip">款式 ${formatNumber(item.style_count || 0)}</span>
+        <span class="chip">搜索 ${formatNumber(item.search_volume_30d || 0)}</span>
+        <span class="chip">团购 ${formatNumber(item.group_buy_orders_30d || 0)}</span>
+      </div>
+    `;
+    btn.addEventListener('click', () => loadMerchantDetail(item.shop_id));
+    merchantList.appendChild(btn);
+  });
+}
+
+async function loadMerchantDetail(shopId) {
+  if (!shopId) return;
+  state.selectedShopId = shopId;
+  state.selectedDetail = null;
+  syncListSelection();
+  detailRoot.innerHTML = '<div class="loading">正在加载单店详情…</div>';
+  try {
+    const payload = await getJson(`/api/admin/merchant-dataset/shop/${encodeURIComponent(shopId)}?style_limit=16&daily_limit=14`);
+    state.selectedDetail = payload;
+    renderMerchantDetail(payload);
+    syncListSelection();
+  } catch (error) {
+    detailRoot.innerHTML = `<div class="empty">详情加载失败：${escapeHtml(error.message || String(error))}</div>`;
+  }
+}
+
+function syncListSelection() {
+  document.querySelectorAll('.merchant-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.shopId === state.selectedShopId);
+  });
+}
+
+function renderMerchantDetail(payload) {
+  const profile = payload?.profile || {};
+  const account = payload?.account || null;
+  const totals = payload?.totals || {};
+  const topStyles = Array.isArray(payload?.top_styles) ? payload.top_styles : [];
+  const lowStyles = Array.isArray(payload?.low_conversion_styles) ? payload.low_conversion_styles : [];
+  const daily = Array.isArray(payload?.recent_daily_metrics) ? payload.recent_daily_metrics : [];
+
+  detailRoot.innerHTML = `
+    <section class="hero">
+      <div>
+        <div class="hero-eyebrow">${escapeHtml(profile.shop_id || '')}</div>
+        <div class="hero-title">${escapeHtml(profile.shop_name || '未命名门店')}</div>
+        <div class="hero-desc">
+          ${escapeHtml((profile.city || '') + (profile.district ? ` / ${profile.district}` : ''))} · ${escapeHtml(profile.style_name || profile.style || '未设置风格')} · 评分 ${escapeHtml(String(profile.rating ?? '未提供'))} · 客单价 ¥${escapeHtml(formatNumber(profile.avg_ticket || 0))}
+        </div>
+        <div class="merchant-kpis" style="margin-top:12px;">
+          <span class="chip">登录账号 ${escapeHtml(account?.username || '未绑定')}</span>
+          <span class="chip">${account?.enabled_for_portal ? '已开放商家端登录' : '未开放登录'}</span>
+          ${account?.enabled_for_portal ? '<span class="chip">默认密码 demo123456</span>' : ''}
+          <span class="chip">主力款 ${escapeHtml(profile.hero_sku_name || '未设置')}</span>
+        </div>
+      </div>
+      <div class="hero-grid">
+        ${renderMetricTile('月营收', `¥${formatNumber(profile.monthly_revenue || 0)}`)}
+        ${renderMetricTile('总款式数', formatNumber(totals.style_count || 0))}
+        ${renderMetricTile('30天搜索', formatNumber(totals.search_volume_30d || 0))}
+        ${renderMetricTile('30天团购', formatNumber(totals.group_buy_orders_30d || 0))}
+        ${renderMetricTile('平均 CTR', formatPercent(totals.avg_ctr))}
+        ${renderMetricTile('平均转化率', formatPercent(totals.avg_conversion_rate))}
+      </div>
+    </section>
+
+    <div class="card-grid">
+      <section class="card">
+        <h3>门店画像</h3>
+        ${renderKv('店主', profile.owner_name)}
+        ${renderKv('风格代码', profile.style)}
+        ${renderKv('评价数', formatNumber(profile.review_count || 0))}
+        ${renderKv('复购率', formatPercent(profile.repeat_customer_rate))}
+        ${renderKv('退款率', formatPercent(profile.refund_rate))}
+        ${renderKv('投诉率', formatPercent(profile.complaint_rate))}
+        ${renderKv('店铺状态', profile.store_status)}
+      </section>
+      <section class="card">
+        <h3>近 30 天总览</h3>
+        ${renderKv('点击量', formatNumber(totals.click_volume_30d || 0))}
+        ${renderKv('加购量', formatNumber(totals.cart_volume_30d || 0))}
+        ${renderKv('团购量', formatNumber(totals.group_buy_orders_30d || 0))}
+        ${renderKv('退款单量', formatNumber(totals.refund_orders_30d || 0))}
+        ${renderKv('30天 GMV', `¥${formatNumber(totals.gmv_30d || 0)}`)}
+        ${renderKv('账号来源', profile.shop_id?.startsWith('m_shop_') ? '批量生成商家样本' : 'Demo 门店账号')}
+      </section>
+    </div>
+
+    ${renderStylesTable('主力款式表现', '按团购量、点击量和搜索量排序，适合快速看这家店最能打的款。', topStyles, true)}
+    ${renderStylesTable('低转化款式观察', '按转化率从低到高排序，适合排查高点击低团购的款式。', lowStyles, false)}
+    ${renderDailyTable(daily)}
+  `;
+}
+
+function renderMetricTile(label, value) {
+  return `
+    <div class="metric-tile">
+      <div class="label">${escapeHtml(label)}</div>
+      <div class="value">${escapeHtml(value)}</div>
+    </div>
+  `;
+}
+
+function renderKv(label, value) {
+  return `
+    <div class="kv">
+      <span>${escapeHtml(label)}</span>
+      <b>${escapeHtml(value == null || value === '' ? '未提供' : String(value))}</b>
+    </div>
+  `;
+}
+
+function renderStylesTable(title, subtitle, rows, showTags) {
+  if (!rows.length) {
+    return `
+      <section class="table-card">
+        <div class="table-head">
+          <h3>${escapeHtml(title)}</h3>
+          <p>${escapeHtml(subtitle)}</p>
+        </div>
+        <div class="empty">当前门店还没有可展示的款式数据。</div>
+      </section>
+    `;
+  }
+  return `
+    <section class="table-card">
+      <div class="table-head">
+        <h3>${escapeHtml(title)}</h3>
+        <p>${escapeHtml(subtitle)}</p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>款式</th>
+            <th>价格</th>
+            <th>搜索</th>
+            <th>点击</th>
+            <th>团购</th>
+            <th>CTR</th>
+            <th>转化率</th>
+            <th>趋势</th>
+            <th>${showTags ? '标签' : '退款'}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(row => `
+            <tr>
+              <td><strong>${escapeHtml(row.style_name || row.style_id || '')}</strong><div style="margin-top:4px;color:var(--faint)">${escapeHtml(row.style_id || '')}</div></td>
+              <td>¥${formatNumber(row.price || 0)}</td>
+              <td>${formatNumber(row.search_volume_30d || 0)}</td>
+              <td>${formatNumber(row.click_volume_30d || 0)}</td>
+              <td>${formatNumber(row.group_buy_orders_30d || 0)}</td>
+              <td>${formatPercent(row.ctr)}</td>
+              <td>${formatPercent(row.conversion_rate)}</td>
+              <td>${escapeHtml(localizeTrend(row.trend_signal))}</td>
+              <td>${showTags ? escapeHtml((Array.isArray(row.title_tags) ? row.title_tags.slice(0, 3).join(' / ') : row.launch_stage || '')) : formatNumber(row.refund_orders_30d || 0)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </section>
+  `;
+}
+
+function renderDailyTable(rows) {
+  if (!rows.length) {
+    return `
+      <section class="table-card">
+        <div class="table-head">
+          <h3>最近日运营数据</h3>
+          <p>当前门店还没有日级运营记录。</p>
+        </div>
+      </section>
+    `;
+  }
+  return `
+    <section class="table-card">
+      <div class="table-head">
+        <h3>最近 14 天日运营数据</h3>
+        <p>包含搜索、点击、咨询、团购、营收、投放消耗和收藏变化，适合看波动。</p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th>搜索</th>
+            <th>点击</th>
+            <th>咨询</th>
+            <th>团购</th>
+            <th>营收</th>
+            <th>投放</th>
+            <th>复购</th>
+            <th>退款</th>
+            <th>收藏</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(row => `
+            <tr>
+              <td><strong>${escapeHtml(row.date || '')}</strong></td>
+              <td>${formatNumber(row.search_volume || 0)}</td>
+              <td>${formatNumber(row.click_volume || 0)}</td>
+              <td>${formatNumber(row.consultation_volume || 0)}</td>
+              <td>${formatNumber(row.group_buy_orders || 0)}</td>
+              <td>¥${formatNumber(row.revenue || 0)}</td>
+              <td>¥${formatNumber(row.ad_spend || 0)}</td>
+              <td>${formatNumber(row.repeat_orders || 0)}</td>
+              <td>${formatNumber(row.refund_orders || 0)}</td>
+              <td>${formatNumber(row.favorites_added || 0)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </section>
+  `;
+}
+
+async function getJson(url) {
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+function formatNumber(value) {
+  const num = Number(value || 0);
+  if (!Number.isFinite(num)) return '0';
+  return num.toLocaleString('zh-CN');
+}
+
+function formatPercent(value) {
+  if (value == null || value === '') return '未提供';
+  const num = Number(value);
+  if (!Number.isFinite(num)) return String(value);
+  return `${Math.round(num * 100)}%`;
+}
+
+function localizeTrend(value) {
+  return {
+    breakout: '爆发中',
+    rising: '上升中',
+    stable: '稳定',
+    cooling: '降温中',
+    falling: '下滑中',
+    flat: '平稳',
+    up: '上行',
+    down: '回落',
+  }[String(value || '')] || String(value || '未标注');
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value).replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>

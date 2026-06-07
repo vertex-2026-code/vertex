@@ -1,0 +1,3455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>甲趣商家 SKILLS 工作台</title>
+<style>
+  :root {
+    --bg: #151012;
+    --panel: #21191c;
+    --panel-2: #2a2023;
+    --line: rgba(241, 220, 207, 0.13);
+    --text: #f1dccf;
+    --muted: rgba(241, 220, 207, 0.68);
+    --faint: rgba(241, 220, 207, 0.42);
+    --accent: #d4ab7c;
+    --rose: #c0808f;
+    --green: #9fd0b5;
+    --red: #e2a08e;
+    --shadow: rgba(0, 0, 0, 0.28);
+    --sidebar: 292px;
+    --radius: 8px;
+    font-family: "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    color: var(--text);
+    background:
+      radial-gradient(900px 520px at 100% 0%, rgba(212, 171, 124, 0.13), transparent 60%),
+      radial-gradient(700px 440px at 0% 100%, rgba(192, 128, 143, 0.12), transparent 62%),
+      var(--bg);
+    overflow: hidden;
+  }
+
+  button, select, input, textarea {
+    font: inherit;
+  }
+
+  button {
+    border: 0;
+    cursor: pointer;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: var(--sidebar) 1fr;
+    height: 100vh;
+    min-height: 640px;
+  }
+
+  .sidebar {
+    border-right: 1px solid var(--line);
+    background: rgba(18, 13, 15, 0.82);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .brand {
+    padding: 20px 18px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .brand h1 {
+    margin: 0;
+    font-size: 20px;
+    letter-spacing: 0;
+    font-weight: 650;
+  }
+
+  .brand p {
+    margin: 7px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .collapse-btn, .icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--line);
+  }
+
+  .collapse-btn:hover, .icon-btn:hover {
+    color: var(--text);
+    background: rgba(241, 220, 207, 0.06);
+  }
+
+  .new-skill {
+    margin: 14px 18px 10px;
+    min-height: 40px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #1a1012;
+    font-weight: 700;
+  }
+
+  .side-section {
+    padding: 6px 12px 10px;
+    overflow: auto;
+  }
+
+  .section-title {
+    padding: 12px 8px 7px;
+    color: var(--faint);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  .skill-item {
+    width: 100%;
+    text-align: left;
+    padding: 11px 10px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .skill-item:hover {
+    background: rgba(241, 220, 207, 0.06);
+    color: var(--text);
+  }
+
+  .skill-item.active {
+    background: rgba(212, 171, 124, 0.14);
+    color: var(--text);
+  }
+
+  .skill-name {
+    font-size: 14px;
+    font-weight: 650;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .skill-short {
+    display: none;
+  }
+
+  .skill-meta {
+    margin-top: 3px;
+    font-size: 12px;
+    color: var(--faint);
+    line-height: 1.35;
+  }
+
+  .skill-eta {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 7px;
+    min-height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: rgba(212, 171, 124, 0.12);
+    color: var(--accent);
+    font-size: 11px;
+  }
+
+  .skill-run {
+    color: var(--accent);
+    font-size: 12px;
+    align-self: center;
+  }
+
+  .history-item {
+    width: 100%;
+    text-align: left;
+    padding: 11px 10px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    display: grid;
+    gap: 6px;
+    margin-bottom: 4px;
+    border: 1px solid transparent;
+  }
+
+  .history-item:hover {
+    background: rgba(241, 220, 207, 0.06);
+    border-color: rgba(212, 171, 124, 0.14);
+    color: var(--text);
+  }
+
+  .history-item.active {
+    background: rgba(212, 171, 124, 0.14);
+    border-color: rgba(212, 171, 124, 0.26);
+    color: var(--text);
+  }
+
+  .history-title {
+    font-size: 13px;
+    font-weight: 650;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .history-summary {
+    font-size: 12px;
+    color: var(--faint);
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .history-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--faint);
+  }
+
+  .side-empty {
+    padding: 8px;
+    color: var(--faint);
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .account-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 10px;
+    background: rgba(241, 220, 207, 0.04);
+    padding: 10px;
+  }
+
+  .account-name {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .account-meta {
+    margin-top: 5px;
+    color: var(--faint);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .logout-btn {
+    width: 100%;
+    min-height: 36px;
+    border-radius: 8px;
+    background: rgba(192, 128, 143, 0.12);
+    color: #f0bdc9;
+    border: 1px solid rgba(192, 128, 143, 0.22);
+  }
+
+  .side-footer {
+    margin-top: auto;
+    padding: 14px 18px 18px;
+    border-top: 1px solid var(--line);
+  }
+
+  .field {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .field label {
+    color: var(--faint);
+    font-size: 12px;
+  }
+
+  .field select {
+    width: 100%;
+    min-height: 36px;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0 10px;
+    outline: none;
+  }
+
+  .toggle-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 8px;
+  }
+
+  .switch {
+    position: relative;
+    width: 42px;
+    height: 24px;
+  }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    inset: 0;
+    background: rgba(241, 220, 207, 0.16);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+
+  .slider::before {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 2px;
+    top: 2px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: transform 0.18s, background 0.18s;
+  }
+
+  .switch input:checked + .slider::before {
+    transform: translateX(18px);
+    background: var(--accent);
+  }
+
+  .main {
+    min-width: 0;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+    position: relative;
+  }
+
+  .auth-gate {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background:
+      radial-gradient(700px 360px at 100% 0%, rgba(212, 171, 124, 0.16), transparent 60%),
+      rgba(12, 8, 9, 0.76);
+    backdrop-filter: blur(12px);
+  }
+
+  .auth-gate.hidden {
+    display: none;
+  }
+
+  .auth-card {
+    width: min(520px, 100%);
+    border: 1px solid rgba(241, 220, 207, 0.12);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(33, 25, 28, 0.98), rgba(21, 16, 18, 0.98));
+    box-shadow: 0 28px 68px rgba(0, 0, 0, 0.45);
+    padding: 22px;
+  }
+
+  .auth-card h3 {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  .auth-card p {
+    margin: 10px 0 0;
+    color: var(--muted);
+    line-height: 1.7;
+    font-size: 13px;
+  }
+
+  .auth-form {
+    display: grid;
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .auth-input {
+    width: 100%;
+    min-height: 46px;
+    border-radius: 10px;
+    border: 1px solid rgba(241, 220, 207, 0.12);
+    background: rgba(241, 220, 207, 0.04);
+    color: var(--text);
+    padding: 0 14px;
+    outline: none;
+  }
+
+  .auth-submit {
+    min-height: 46px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #1a1012;
+    font-weight: 800;
+  }
+
+  .auth-error {
+    min-height: 20px;
+    color: var(--red);
+    font-size: 12px;
+  }
+
+  .demo-grid {
+    display: grid;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .demo-account {
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    background: rgba(241, 220, 207, 0.035);
+    color: var(--muted);
+  }
+
+  .demo-account:hover {
+    border-color: rgba(212, 171, 124, 0.25);
+    color: var(--text);
+  }
+
+  .demo-account strong {
+    display: block;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  .demo-account span {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--faint);
+  }
+
+  .topbar {
+    min-height: 70px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    background: rgba(21, 16, 18, 0.78);
+  }
+
+  .session-title {
+    min-width: 0;
+  }
+
+  .session-title h2 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .session-title p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    background: rgba(241, 220, 207, 0.04);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+
+  .dot.offline {
+    background: var(--red);
+  }
+
+  .messages {
+    overflow: auto;
+    padding: 24px clamp(18px, 4vw, 58px);
+  }
+
+  .empty-state {
+    max-width: 760px;
+    margin: 7vh auto 0;
+    text-align: center;
+  }
+
+  .empty-state h3 {
+    margin: 0;
+    font-size: clamp(24px, 4vw, 38px);
+    font-weight: 750;
+  }
+
+  .empty-state p {
+    margin: 14px auto 0;
+    max-width: 620px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .quick-grid {
+    margin: 26px auto 0;
+    max-width: 760px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .quick-card {
+    text-align: left;
+    padding: 14px;
+    min-height: 86px;
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(241, 220, 207, 0.045);
+  }
+
+  .quick-card:hover {
+    border-color: rgba(212, 171, 124, 0.42);
+    background: rgba(212, 171, 124, 0.08);
+  }
+
+  .quick-card strong {
+    display: block;
+    font-size: 14px;
+  }
+
+  .quick-card span {
+    display: block;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .message {
+    max-width: 880px;
+    margin: 0 auto 18px;
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 12px;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: rgba(212, 171, 124, 0.16);
+    color: var(--accent);
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .message.user .avatar {
+    background: rgba(192, 128, 143, 0.18);
+    color: #f0bdc9;
+  }
+
+  .bubble {
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(241, 220, 207, 0.045);
+    padding: 14px 15px;
+    box-shadow: 0 10px 24px var(--shadow);
+  }
+
+  .message.user .bubble {
+    background: rgba(192, 128, 143, 0.08);
+  }
+
+  .bubble-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: var(--faint);
+    font-size: 12px;
+  }
+
+  .bubble-title {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .bubble-body {
+    color: var(--muted);
+    line-height: 1.72;
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .result-grid {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .result-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.12);
+    padding: 12px;
+    min-width: 0;
+  }
+
+  .result-card h4 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .kv {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 26px;
+    color: var(--muted);
+    font-size: 13px;
+    border-top: 1px solid rgba(241, 220, 207, 0.07);
+  }
+
+  .kv:first-of-type {
+    border-top: 0;
+  }
+
+  .kv b {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .action-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .action-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+    border: 1px solid rgba(241, 220, 207, 0.1);
+    border-radius: 8px;
+    padding: 9px;
+    background: rgba(241, 220, 207, 0.035);
+  }
+
+  .action-title {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .action-reason {
+    margin-top: 3px;
+    color: var(--faint);
+    font-size: 12px;
+  }
+
+  .mini-btn {
+    min-height: 30px;
+    padding: 0 9px;
+    border-radius: 7px;
+    background: rgba(212, 171, 124, 0.14);
+    color: var(--accent);
+    border: 1px solid rgba(212, 171, 124, 0.25);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .json-block {
+    max-height: 280px;
+    overflow: auto;
+    margin: 10px 0 0;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(241, 220, 207, 0.1);
+    background: rgba(0, 0, 0, 0.22);
+    color: rgba(241, 220, 207, 0.78);
+    font-family: Consolas, "SF Mono", monospace;
+    font-size: 12px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
+
+  .reply-stack {
+    display: grid;
+    gap: 10px;
+  }
+
+  .reply-text {
+    color: var(--muted);
+    line-height: 1.72;
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .bullet-list {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  .bullet-list li + li {
+    margin-top: 6px;
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(212, 171, 124, 0.24);
+    background: rgba(212, 171, 124, 0.09);
+    color: var(--text);
+    font-size: 12px;
+  }
+
+  .hero-card {
+    padding: 0;
+    overflow: hidden;
+    background:
+      radial-gradient(120% 160% at 100% 0%, rgba(212, 171, 124, 0.18), transparent 58%),
+      linear-gradient(135deg, rgba(241, 220, 207, 0.07), rgba(0, 0, 0, 0.18));
+    border-color: rgba(212, 171, 124, 0.2);
+  }
+
+  .hero-banner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(220px, 0.9fr);
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .hero-copy {
+    display: grid;
+    gap: 10px;
+    align-content: start;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+  }
+
+  .hero-eyebrow::before {
+    content: "";
+    width: 20px;
+    height: 1px;
+    background: rgba(212, 171, 124, 0.45);
+  }
+
+  .hero-summary {
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.85;
+  }
+
+  .hero-side {
+    display: grid;
+    gap: 10px;
+    align-content: start;
+  }
+
+  .hero-kpi {
+    border: 1px solid rgba(241, 220, 207, 0.1);
+    border-radius: 10px;
+    padding: 11px 12px;
+    background: rgba(0, 0, 0, 0.15);
+  }
+
+  .hero-kpi span {
+    display: block;
+    color: var(--faint);
+    font-size: 11px;
+  }
+
+  .hero-kpi b {
+    display: block;
+    margin-top: 5px;
+    color: var(--text);
+    font-size: 20px;
+    line-height: 1.2;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .stat-tile {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 10px;
+    padding: 10px 11px;
+    background: rgba(241, 220, 207, 0.03);
+  }
+
+  .stat-label {
+    color: var(--faint);
+    font-size: 11px;
+  }
+
+  .stat-value {
+    margin-top: 5px;
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 750;
+    line-height: 1.2;
+  }
+
+  .stat-note {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .story-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .story-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 10px;
+    padding: 12px;
+    background: rgba(241, 220, 207, 0.035);
+  }
+
+  .story-card h5 {
+    margin: 0;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  .story-note {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .visual-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .visual-row {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 10px;
+    padding: 10px;
+    background: rgba(241, 220, 207, 0.03);
+  }
+
+  .visual-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .visual-title {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .visual-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: rgba(212, 171, 124, 0.1);
+    color: var(--accent);
+    font-size: 11px;
+  }
+
+  .visual-meta {
+    margin-top: 6px;
+    color: var(--faint);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .mini-bar {
+    height: 7px;
+    margin-top: 10px;
+    border-radius: 999px;
+    background: rgba(241, 220, 207, 0.08);
+    overflow: hidden;
+  }
+
+  .mini-bar-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, rgba(192, 128, 143, 0.8), rgba(212, 171, 124, 0.95));
+  }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .gallery-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 10px;
+    padding: 12px;
+    background: rgba(241, 220, 207, 0.03);
+  }
+
+  .gallery-card .tag-row {
+    margin-top: 8px;
+  }
+
+  .roadmap {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .roadmap-item {
+    display: grid;
+    grid-template-columns: 74px 1fr;
+    gap: 10px;
+    align-items: start;
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 10px;
+    padding: 10px;
+    background: rgba(241, 220, 207, 0.03);
+  }
+
+  .roadmap-stage {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: rgba(212, 171, 124, 0.12);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .roadmap-main {
+    display: grid;
+    gap: 5px;
+  }
+
+  .roadmap-title {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .roadmap-desc {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  .composer {
+    padding: 16px clamp(18px, 4vw, 58px) 20px;
+    border-top: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(21, 16, 18, 0.84), rgba(21, 16, 18, 0.98));
+  }
+
+  .composer-inner {
+    max-width: 880px;
+    margin: 0 auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    padding: 10px;
+    box-shadow: 0 16px 44px var(--shadow);
+  }
+
+  .composer textarea {
+    resize: none;
+    max-height: 160px;
+    min-height: 42px;
+    padding: 10px 8px;
+    background: transparent;
+    color: var(--text);
+    border: 0;
+    outline: none;
+    line-height: 1.5;
+  }
+
+  .composer textarea::placeholder {
+    color: var(--faint);
+  }
+
+  .send-btn {
+    align-self: end;
+    min-width: 76px;
+    min-height: 42px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #1a1012;
+    font-weight: 800;
+  }
+
+  .send-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .hint-line {
+    max-width: 880px;
+    margin: 8px auto 0;
+    color: var(--faint);
+    font-size: 12px;
+  }
+
+  body.sidebar-collapsed {
+    --sidebar: 118px;
+  }
+
+  body.sidebar-collapsed .brand p,
+  body.sidebar-collapsed .new-skill,
+  body.sidebar-collapsed .section-title,
+  body.sidebar-collapsed .side-empty,
+  body.sidebar-collapsed .skill-meta,
+  body.sidebar-collapsed .skill-name,
+  body.sidebar-collapsed .skill-run,
+  body.sidebar-collapsed .skill-eta,
+  body.sidebar-collapsed .history-summary,
+  body.sidebar-collapsed .history-meta,
+  body.sidebar-collapsed .side-footer {
+    display: none;
+  }
+
+  body.sidebar-collapsed .brand {
+    padding: 16px 10px 14px;
+  }
+
+  body.sidebar-collapsed .brand h1 {
+    font-size: 12px;
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
+  }
+
+  body.sidebar-collapsed .brand-row {
+    flex-direction: column;
+  }
+
+  body.sidebar-collapsed .side-section {
+    padding: 8px;
+  }
+
+  body.sidebar-collapsed .skill-item {
+    grid-template-columns: 1fr;
+    text-align: center;
+    justify-items: center;
+    padding: 10px 8px;
+    min-height: 78px;
+    border: 1px solid rgba(241, 220, 207, 0.06);
+  }
+
+  body.sidebar-collapsed .skill-short {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: rgba(212, 171, 124, 0.12);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+
+  body.sidebar-collapsed #historySection {
+    display: none;
+  }
+
+  @media (max-width: 860px) {
+    body { overflow: auto; }
+    .app {
+      grid-template-columns: 1fr;
+      height: auto;
+      min-height: 100vh;
+    }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      max-height: 48vh;
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .main {
+      height: 100vh;
+    }
+    .quick-grid, .result-grid {
+      grid-template-columns: 1fr;
+    }
+    .hero-banner,
+    .story-grid,
+    .gallery-grid,
+    .stat-grid {
+      grid-template-columns: 1fr;
+    }
+    body.sidebar-collapsed {
+      --sidebar: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-row">
+        <h1>甲趣商家 SKILLS</h1>
+        <button class="collapse-btn" id="collapseBtn" title="折叠侧边栏">☰</button>
+      </div>
+      <p>保存、运行和生成商家运营技能。OpenClaw 会根据你的意图调度对应 SKILL。</p>
+    </div>
+
+    <button class="new-skill" id="newSkillBtn">+ 新建 SKILL</button>
+
+    <div class="side-section" id="skillList">
+      <div class="section-title">已保存 SKILLS</div>
+    </div>
+
+    <div class="side-section" id="customSkillSection">
+      <div class="section-title">自定义 SKILLS</div>
+      <div id="customSkillList"></div>
+    </div>
+
+    <div class="side-section" id="historySection">
+      <div class="section-title">最近记录</div>
+      <div id="historyList"></div>
+    </div>
+
+    <div class="side-footer">
+      <div class="field">
+        <label for="shopSelect">当前门店</label>
+        <select id="shopSelect">
+          <option value="">请先登录商家账号</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>登录账号</label>
+        <div class="account-card">
+          <div class="account-name" id="merchantDisplay">未登录</div>
+          <div class="account-meta" id="merchantMeta">登录后才可以运行商家技能、查看历史和保存自定义 SKILL。</div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="periodSelect">分析周期</label>
+        <select id="periodSelect">
+          <option value="7">近 7 天</option>
+          <option value="14" selected>近 14 天</option>
+          <option value="30">近 30 天</option>
+        </select>
+      </div>
+      <div class="toggle-line">
+        <span>调用 OpenClaw</span>
+        <label class="switch">
+          <input type="checkbox" id="openclawToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <button class="logout-btn" id="logoutBtn" type="button" hidden>退出商家登录</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="auth-gate" id="authGate">
+      <div class="auth-card">
+        <h3>商家登录</h3>
+        <p>现在商家端只允许查看当前登录商家的数据，不再支持左下角随意切换其他门店。</p>
+        <form class="auth-form" id="loginForm">
+          <input class="auth-input" id="loginUsername" type="text" placeholder="请输入商家账号">
+          <input class="auth-input" id="loginPassword" type="password" placeholder="请输入密码">
+          <button class="auth-submit" type="submit">登录商家端</button>
+          <div class="auth-error" id="loginError"></div>
+        </form>
+        <div class="section-title" style="padding-left:0;">示例账号</div>
+        <div class="demo-grid" id="demoAccounts"></div>
+      </div>
+    </div>
+    <header class="topbar">
+      <div class="session-title">
+        <h2 id="sessionTitle">商家智能体工作台</h2>
+        <p id="sessionSub">选择左侧 SKILL，或直接在底部告诉 OpenClaw 你想完成什么。</p>
+      </div>
+      <div class="status-row">
+        <span class="pill"><span class="dot offline" id="openclawDot"></span><span id="openclawStatus">测试模式</span></span>
+        <span class="pill" id="shopPill">Fleur Rose · 五道口</span>
+        <span class="pill" id="periodPill">近 14 天</span>
+        <span class="pill" id="etaPill">预计 1 分钟</span>
+        <span class="pill" id="versionPill">merchant-ui</span>
+      </div>
+    </header>
+
+    <section class="messages" id="messages">
+      <div class="empty-state" id="emptyState">
+        <h3>把经营问题交给 OpenClaw</h3>
+        <p>左侧保存的是可调度 SKILLS。点击即可开启会话；也可以在底部直接说需求，让 OpenClaw 选择并组合 SKILLS。</p>
+        <div class="quick-grid">
+          <button class="quick-card" data-message="帮我找出本周适合上线的爆款，并给出动作队列">
+            <strong>找爆款</strong>
+            <span>调度爆款上线建议和自动化动作队列</span>
+          </button>
+          <button class="quick-card" data-message="帮我看看哪些款式应该降权、改款或下架">
+            <strong>找冷门款</strong>
+            <span>识别低转化、低热度、趋势下降款式</span>
+          </button>
+          <button class="quick-card" data-message="请总结我的店铺风格，并对比同风格竞品">
+            <strong>分析我的店</strong>
+            <span>调度商家风格画像和同风格竞品分析</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="composer">
+      <div class="composer-inner">
+        <textarea id="chatInput" rows="1" placeholder="例如：帮我生成一个每周自动分析爆款和冷门款的新 SKILL"></textarea>
+        <button class="send-btn" id="sendBtn">发送</button>
+      </div>
+      <div class="hint-line" id="hintLine">提示：正在检测本机 OpenClaw 状态...</div>
+    </footer>
+  </main>
+</div>
+
+<script>
+const BUILTIN_SKILLS = [
+  {
+    id: 'merchant_style_profile',
+    name: '商家风格画像',
+    desc: '总结店铺主风格、用户偏好、优势与风险',
+    message: '请总结我的店铺风格画像，告诉我优势、风险和推荐方向',
+    estimated_seconds: 65
+  },
+  {
+    id: 'periodic_ops_report',
+    name: '周期运营分析',
+    desc: '生成近 7/14/30 天经营报告和异常提醒',
+    message: '请生成当前周期的运营分析报告',
+    estimated_seconds: 75
+  },
+  {
+    id: 'same_style_competitor_analysis',
+    name: '同风格竞品分析',
+    desc: '对比相近风格店铺，找优势、差距和机会',
+    message: '请分析我的同风格竞品，找出优势和差距',
+    estimated_seconds: 85
+  },
+  {
+    id: 'hot_style_launch',
+    name: '爆款上线建议',
+    desc: '找出适合上新的爆款候选和上线动作',
+    message: '请找出适合我店本周上线的爆款候选',
+    estimated_seconds: 95
+  },
+  {
+    id: 'cold_style_retire',
+    name: '冷门下架建议',
+    desc: '识别低表现款式，建议观察、改款、降权或下架',
+    message: '请找出应该观察、改款、降权或下架的冷门款',
+    estimated_seconds: 80
+  },
+  {
+    id: 'automation_queue',
+    name: '自动化动作队列',
+    desc: '把上新、降权、下架、竞品跟进整理成任务',
+    message: '请为我的店生成本周自动化经营动作队列',
+    estimated_seconds: 90
+  }
+];
+
+const UI_VERSION = 'merchant-ui 2026-06-06 22:20';
+
+const SHOP_LABELS = {
+  shop_001: 'Maison Purete · 三里屯',
+  shop_002: 'Fleur Rose · 五道口',
+  shop_003: 'Bijou Lumiere · 国贸',
+  shop_004: 'Noir Atelier · 望京',
+  shop_005: "L'Avant-Garde · 中关村"
+};
+
+const ACTION_LABELS = {
+  generate_variant: '生成变体款',
+  generate_style_variants: '生成风格变体',
+  promote_homepage: '首页专题推广',
+  promote_shop: '门店活动推广',
+  refresh_primary_styles: '刷新主推款',
+  retire_or_revise_cold_style: '冷门款处理',
+  improve_booking_cta: '优化预约转化',
+  boost_shop_exposure: '提升门店曝光',
+  competitor_gap_followup: '竞品差距跟进',
+  adjust_price_or_campaign: '调整定价或活动',
+  observe: '继续观察',
+  revise: '建议改款',
+  deprioritize: '降低优先级',
+  retire: '建议下架'
+};
+
+const FIELD_LABELS = {
+  style_id: '款式 ID',
+  shop_id: '门店',
+  shop_name: '门店名称',
+  base_style: '基础款式',
+  count: '生成数量',
+  variant_hint: '变体方向',
+  featured_styles: '主推款式',
+  theme: '活动主题',
+  campaign: '活动方案',
+  pricing_note: '定价说明',
+  reason: '原因',
+  target: '目标',
+  priority: '优先级',
+  status: '状态',
+  suggested_action: '建议动作',
+  search_volume: '搜索量',
+  click_volume: '点击量',
+  consultation_volume: '咨询量',
+  group_buy_orders: '团购量',
+  revenue: '营收',
+  ad_spend: '投放消耗',
+  repeat_orders: '复购订单',
+  refund_orders: '退款单量',
+  favorites_added: '收藏量',
+  ctr: '点击率',
+  conversion_rate: '转化率',
+  refund_rate: '退款率',
+  booking_rate: '预约率',
+  like_rate: '好评率',
+  books: '预约数',
+  likes: '喜欢数',
+  tryons: '试戴数',
+  deltas: '变化情况',
+  metrics: '核心指标',
+  previous_metrics: '上期指标',
+  ui_summary: '结论摘要',
+  workflow_suggestion: '流程建议',
+  top_styles: '热门款式',
+  top_categories: '热门风格'
+};
+
+const VALUE_LABELS = {
+  pending_review: '待复核',
+  medium: '中优先级',
+  high: '高优先级',
+  low: '低优先级',
+  ok: '已完成',
+  completed: '已完成',
+  success: '成功',
+  remote_http: '远程代理',
+  local_cli: '本机命令行'
+};
+
+const GENERIC_PROGRESS_STEPS = [
+  '正在识别需求并匹配对应技能。',
+  '正在读取门店、周期和趋势数据。',
+  '正在计算关键指标与动作建议。',
+  '正在整理最终结论并生成商家结果。'
+];
+
+let currentSkillId = null;
+let busy = false;
+let customSkills = [];
+let historyRecords = [];
+let lastEstimateSeconds = 60;
+let merchantSession = null;
+
+const $ = selector => document.querySelector(selector);
+const messages = $('#messages');
+const emptyState = $('#emptyState');
+const skillList = $('#skillList');
+const customSkillList = $('#customSkillList');
+const historyList = $('#historyList');
+const chatInput = $('#chatInput');
+const sendBtn = $('#sendBtn');
+const shopSelect = $('#shopSelect');
+const periodSelect = $('#periodSelect');
+const openclawToggle = $('#openclawToggle');
+const etaPill = $('#etaPill');
+const versionPill = $('#versionPill');
+const authGate = $('#authGate');
+const loginForm = $('#loginForm');
+const loginUsername = $('#loginUsername');
+const loginPassword = $('#loginPassword');
+const loginError = $('#loginError');
+const demoAccounts = $('#demoAccounts');
+const merchantDisplay = $('#merchantDisplay');
+const merchantMeta = $('#merchantMeta');
+const logoutBtn = $('#logoutBtn');
+
+async function init() {
+  if (versionPill) versionPill.textContent = UI_VERSION;
+  renderSkills();
+  bindEvents();
+  syncTopbar();
+  await loadMerchantSession();
+  loadOpenClawStatus();
+}
+
+function renderSkills() {
+  const title = skillList.querySelector('.section-title') || createSectionTitle('已保存 SKILLS');
+  skillList.innerHTML = '';
+  skillList.appendChild(title);
+  BUILTIN_SKILLS.forEach(skill => {
+    skillList.appendChild(createSkillButton(skill));
+  });
+  renderCustomSkills();
+}
+
+function renderCustomSkills() {
+  customSkillList.innerHTML = '';
+  if (!customSkills.length) {
+    const empty = document.createElement('div');
+    empty.className = 'side-empty';
+    empty.textContent = '还没有自定义技能。直接在底部输入“帮我创建一个新的商家 SKILL …”就会保存到这里。';
+    customSkillList.appendChild(empty);
+    return;
+  }
+  customSkills.forEach(skill => {
+    customSkillList.appendChild(createSkillButton(skill, { isCustom: true }));
+  });
+}
+
+function createSkillButton(skill, options = {}) {
+  const btn = document.createElement('button');
+  btn.className = 'skill-item';
+  btn.dataset.skillId = skill.id;
+  if (options.isCustom) btn.dataset.customSkill = 'true';
+  btn.title = skill.name;
+  btn.innerHTML = `
+    <span>
+      <span class="skill-short">${escapeHtml(getCompactLabel(skill.name))}</span>
+      <span class="skill-name">${escapeHtml(skill.name)}</span>
+      <span class="skill-meta">${escapeHtml(skill.desc || skill.description || '')}</span>
+      <span class="skill-eta">预计 ${escapeHtml(formatEta(skill.estimated_seconds || 60))}</span>
+    </span>
+    <span class="skill-run">运行</span>
+  `;
+  return btn;
+}
+
+function createSectionTitle(text) {
+  const node = document.createElement('div');
+  node.className = 'section-title';
+  node.textContent = text;
+  return node;
+}
+
+function bindEvents() {
+  $('#collapseBtn').addEventListener('click', () => {
+    document.body.classList.toggle('sidebar-collapsed');
+  });
+
+  $('#newSkillBtn').addEventListener('click', () => {
+    const text = '我想创建一个新的商家 SKILL：请帮我基于当前门店和周期，设计一个可保存、可调度、可执行的运营技能';
+    chatInput.value = text;
+    chatInput.focus();
+  });
+
+  skillList.addEventListener('click', event => {
+    const item = event.target.closest('.skill-item');
+    if (!item) return;
+    runSkill(item.dataset.skillId);
+  });
+
+  customSkillList.addEventListener('click', event => {
+    const item = event.target.closest('.skill-item');
+    if (!item) return;
+    runSkill(item.dataset.skillId);
+  });
+
+  historyList.addEventListener('click', event => {
+    const item = event.target.closest('.history-item');
+    if (!item) return;
+    event.preventDefault();
+    openHistoryRecord(item.dataset.historyId);
+  });
+
+  document.querySelectorAll('.quick-card').forEach(btn => {
+    btn.addEventListener('click', () => sendChat(btn.dataset.message));
+  });
+
+  sendBtn.addEventListener('click', () => {
+    const text = chatInput.value.trim();
+    if (text) sendChat(text);
+  });
+
+  chatInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      const text = chatInput.value.trim();
+      if (text) sendChat(text);
+    }
+  });
+
+  chatInput.addEventListener('input', () => {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 160) + 'px';
+  });
+
+  shopSelect.addEventListener('change', syncTopbar);
+  periodSelect.addEventListener('change', syncTopbar);
+  openclawToggle.addEventListener('change', syncTopbar);
+  loginForm.addEventListener('submit', handleMerchantLogin);
+  logoutBtn.addEventListener('click', handleMerchantLogout);
+}
+
+async function loadMerchantSession() {
+  try {
+    const payload = await getJson('/api/merchant/auth/session');
+    if (payload.authenticated && payload.merchant) {
+      applyMerchantSession(payload.merchant);
+      hideAuthGate();
+      await Promise.all([loadCustomSkills(), loadHistory()]);
+      return;
+    }
+  } catch (error) {
+    console.warn('merchant session load failed', error);
+  }
+  clearMerchantSession();
+  showAuthGate();
+  await loadDemoAccounts();
+}
+
+async function loadDemoAccounts() {
+  try {
+    const payload = await getJson('/api/merchant/auth/demo-accounts');
+    renderDemoAccounts(Array.isArray(payload.accounts) ? payload.accounts : []);
+  } catch (error) {
+    demoAccounts.innerHTML = `<div class="side-empty">示例账号加载失败：${escapeHtml(error.message || String(error))}</div>`;
+  }
+}
+
+function renderDemoAccounts(accounts) {
+  demoAccounts.innerHTML = '';
+  if (!accounts.length) {
+    demoAccounts.innerHTML = '<div class="side-empty">当前还没有可用的商家账号。</div>';
+    return;
+  }
+  accounts.slice(0, 8).forEach(account => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'demo-account';
+    btn.innerHTML = `
+      <strong>${escapeHtml(account.shop_name || account.display_name || account.username)}</strong>
+      <span>${escapeHtml(account.username)} / demo123456</span>
+    `;
+    btn.addEventListener('click', () => {
+      loginUsername.value = account.username || '';
+      loginPassword.value = 'demo123456';
+      loginError.textContent = '';
+    });
+    demoAccounts.appendChild(btn);
+  });
+}
+
+async function handleMerchantLogin(event) {
+  event.preventDefault();
+  const username = loginUsername.value.trim();
+  const password = loginPassword.value;
+  if (!username || !password) {
+    loginError.textContent = '请输入完整的账号和密码。';
+    return;
+  }
+  loginError.textContent = '';
+  try {
+    const payload = await postJson('/api/merchant/auth/login', { username, password });
+    applyMerchantSession(payload.merchant);
+    hideAuthGate();
+    await Promise.all([loadCustomSkills(), loadHistory()]);
+  } catch (error) {
+    loginError.textContent = error.message || String(error);
+  }
+}
+
+async function handleMerchantLogout() {
+  try {
+    await postJson('/api/merchant/auth/logout', {});
+  } catch (error) {
+    console.warn('merchant logout failed', error);
+  }
+  clearMerchantSession();
+  showAuthGate();
+  await loadDemoAccounts();
+}
+
+function applyMerchantSession(merchant) {
+  merchantSession = merchant || null;
+  const option = document.createElement('option');
+  option.value = merchant?.shop_id || '';
+  option.textContent = merchant?.shop_name || '未登录';
+  shopSelect.innerHTML = '';
+  shopSelect.appendChild(option);
+  shopSelect.value = merchant?.shop_id || '';
+  shopSelect.disabled = true;
+  merchantDisplay.textContent = merchant?.shop_name || '未登录';
+  merchantMeta.textContent = merchant
+    ? `${merchant.username} · ${merchant.city || ''}${merchant.district ? ` / ${merchant.district}` : ''} · ${merchant.style_name || merchant.style || ''}`
+    : '登录后才可以运行商家技能、查看历史和保存自定义 SKILL。';
+  logoutBtn.hidden = !merchant;
+  syncTopbar();
+}
+
+function clearMerchantSession() {
+  merchantSession = null;
+  customSkills = [];
+  historyRecords = [];
+  renderCustomSkills();
+  renderHistory();
+  shopSelect.innerHTML = '<option value="">请先登录商家账号</option>';
+  shopSelect.disabled = true;
+  merchantDisplay.textContent = '未登录';
+  merchantMeta.textContent = '登录后才可以运行商家技能、查看历史和保存自定义 SKILL。';
+  logoutBtn.hidden = true;
+  syncTopbar();
+}
+
+function showAuthGate() {
+  authGate.classList.remove('hidden');
+  loginError.textContent = '';
+}
+
+function hideAuthGate() {
+  authGate.classList.add('hidden');
+  loginError.textContent = '';
+}
+
+function syncTopbar() {
+  const shop = merchantSession?.shop_name || SHOP_LABELS[shopSelect.value] || shopSelect.value || '请先登录';
+  const period = `近 ${periodSelect.value} 天`;
+  $('#shopPill').textContent = shop;
+  $('#periodPill').textContent = period;
+  $('#openclawStatus').textContent = openclawToggle.checked ? 'OpenClaw 在线调用' : '测试模式';
+  $('#openclawDot').classList.toggle('offline', !openclawToggle.checked);
+  etaPill.textContent = `预计 ${formatEta(lastEstimateSeconds)}`;
+}
+
+async function loadCustomSkills() {
+  if (!merchantSession) {
+    customSkillList.innerHTML = '<div class="side-empty">登录后才会显示当前商家的自定义 SKILL。</div>';
+    return;
+  }
+  try {
+    const payload = await getJson('/api/merchant/custom-skills');
+    customSkills = Array.isArray(payload.skills) ? payload.skills : [];
+    renderCustomSkills();
+  } catch (error) {
+    customSkillList.innerHTML = '';
+    const errorNode = document.createElement('div');
+    errorNode.className = 'side-empty';
+    errorNode.textContent = `自定义技能加载失败：${error.message || String(error)}`;
+    customSkillList.appendChild(errorNode);
+  }
+}
+
+async function loadHistory() {
+  if (!merchantSession) {
+    historyList.innerHTML = '<div class="side-empty">登录后才会显示当前商家的运行记录。</div>';
+    return;
+  }
+  try {
+    const payload = await getJson('/api/merchant/history?limit=24');
+    historyRecords = Array.isArray(payload.records) ? payload.records : [];
+    renderHistory();
+  } catch (error) {
+    historyList.innerHTML = '';
+    const errorNode = document.createElement('div');
+    errorNode.className = 'side-empty';
+    errorNode.textContent = `记录加载失败：${error.message || String(error)}`;
+    historyList.appendChild(errorNode);
+  }
+}
+
+function renderHistory() {
+  historyList.innerHTML = '';
+  if (!historyRecords.length) {
+    const empty = document.createElement('div');
+    empty.className = 'side-empty';
+    empty.textContent = '运行后的结果会自动保存到这里，刷新页面后也能继续查看。';
+    historyList.appendChild(empty);
+    return;
+  }
+  historyRecords.forEach(record => {
+    historyList.appendChild(createHistoryButton(record));
+  });
+}
+
+function createHistoryButton(record) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'history-item';
+  btn.dataset.historyId = String(record.id || '');
+  btn.title = record.title || '历史记录';
+  const shopLabel = record.shop_name || SHOP_LABELS[record.shop_id] || '';
+  const periodLabel = record.period_days ? `近 ${record.period_days} 天` : '';
+  btn.innerHTML = `
+    <span class="history-title">${escapeHtml(record.title || '历史记录')}</span>
+    <span class="history-summary">${escapeHtml(record.summary || '点击重新打开这条已保存结果')}</span>
+    <span class="history-meta">
+      <span>${escapeHtml(shopLabel || periodLabel || '已保存')}</span>
+      <span>${escapeHtml(formatTimestamp(record.created_at))}</span>
+    </span>
+  `;
+  return btn;
+}
+
+function getSkillById(skillId) {
+  return [...BUILTIN_SKILLS, ...customSkills].find(item => item.id === skillId) || null;
+}
+
+function upsertCustomSkill(skill) {
+  const existingIndex = customSkills.findIndex(item => item.id === skill.id);
+  if (existingIndex >= 0) {
+    customSkills.splice(existingIndex, 1, skill);
+  } else {
+    customSkills.unshift(skill);
+  }
+  renderCustomSkills();
+}
+
+function formatEta(seconds) {
+  const safe = Math.max(20, Number(seconds) || 60);
+  if (safe < 60) return `${Math.round(safe)} 秒`;
+  const minutes = Math.round(safe / 60);
+  return `${minutes} 分钟`;
+}
+
+function formatTimestamp(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function getCompactLabel(name) {
+  const text = String(name || '').trim();
+  const chinese = text.replace(/[^\u4e00-\u9fa5]/g, '');
+  if (chinese.length >= 2) return chinese.slice(0, 2);
+  const latin = text.replace(/\s+/g, ' ').trim();
+  if (!latin) return 'SK';
+  return latin.slice(0, 2).toUpperCase();
+}
+
+function truncateText(value, length = 80) {
+  const text = String(value || '');
+  return text.length > length ? `${text.slice(0, length)}…` : text;
+}
+
+function looksLikeSkillCreation(text) {
+  const normalized = String(text || '').toLowerCase();
+  const hasSkill = /skill|skills/.test(normalized) || /技能/.test(normalized);
+  const hasCreate = /新建|创建|新增|保存|生成/.test(text || '');
+  return hasSkill && hasCreate;
+}
+
+async function loadOpenClawStatus() {
+  try {
+    const status = await getJson('/api/merchant/openclaw/status');
+    if (status.available) {
+      openclawToggle.checked = true;
+      if (status.transport === 'remote_http') {
+        $('#hintLine').textContent = `提示：已配置远程 OpenClaw 代理，商家端默认在线调用。目标：${status.remote_url || status.remote_base_url || '未显示'}`;
+      } else {
+        $('#hintLine').textContent = '提示：已检测到本机 OpenClaw CLI，商家端默认使用在线调用。';
+      }
+    } else if (status.config_path) {
+      openclawToggle.checked = false;
+      $('#hintLine').textContent = `提示：${status.reason}`;
+    } else {
+      openclawToggle.checked = false;
+      $('#hintLine').textContent = `提示：${status.reason}`;
+    }
+    syncTopbar();
+  } catch (error) {
+    $('#hintLine').textContent = `提示：OpenClaw 状态检测失败，先保持测试模式。${error.message ? ` ${error.message}` : ''}`;
+  }
+}
+
+async function runSkill(skillId) {
+  if (!merchantSession) {
+    showAuthGate();
+    return;
+  }
+  if (busy) return;
+  const skill = getSkillById(skillId);
+  if (!skill) return;
+  lastEstimateSeconds = skill.estimated_seconds || 60;
+  syncTopbar();
+  currentSkillId = skillId;
+  setActiveSkill(skillId);
+  document.querySelectorAll('.history-item').forEach(item => item.classList.remove('active'));
+  $('#sessionTitle').textContent = skill.name;
+  $('#sessionSub').textContent = skill.desc;
+  clearEmpty();
+  addUserMessage(`运行 SKILL：${skill.name}`);
+  const loading = addAssistantMessage('OpenClaw 调度中', `正在运行「${skill.name}」，读取当前门店、周期和本地数据上下文...\n预计耗时：${formatEta(lastEstimateSeconds)}`);
+  setBusy(true);
+  const startedAt = performance.now();
+  try {
+    const payload = await postJson('/api/merchant/agent/run-skill', {
+      shop_id: shopSelect.value,
+      period_days: Number(periodSelect.value),
+      skill_id: skillId,
+      message: skill.message,
+      use_openclaw: openclawToggle.checked
+    });
+    payload.__actualDurationMs = Math.round(performance.now() - startedAt);
+    payload.__expectedSeconds = lastEstimateSeconds;
+    replaceWithResult(loading, payload, skill.name);
+    persistHistoryRecord({
+      type: 'run_skill',
+      title: skill.name,
+      userMessage: `运行 SKILL：${skill.name}`,
+      skillId,
+      payload,
+    });
+  } catch (error) {
+    replaceWithError(loading, error);
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function sendChat(text) {
+  if (!merchantSession) {
+    showAuthGate();
+    return;
+  }
+  if (busy) return;
+  clearEmpty();
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+  currentSkillId = null;
+  setActiveSkill(null);
+  document.querySelectorAll('.history-item').forEach(item => item.classList.remove('active'));
+  $('#sessionTitle').textContent = currentSkillId ? getSkillName(currentSkillId) : '商家自由会话';
+  $('#sessionSub').textContent = 'OpenClaw 会根据你的意图选择和组合 SKILLS。';
+  addUserMessage(text);
+  const creatingSkill = looksLikeSkillCreation(text);
+  lastEstimateSeconds = creatingSkill ? 50 : 90;
+  syncTopbar();
+  const loading = addAssistantMessage(
+    creatingSkill ? '正在创建 SKILL' : 'OpenClaw 正在理解你的需求',
+    creatingSkill
+      ? `正在根据你的描述生成并保存新 SKILL...\n预计耗时：${formatEta(lastEstimateSeconds)}`
+      : `正在识别意图、选择 SKILLS，并生成结构化结果...\n预计耗时：${formatEta(lastEstimateSeconds)}`
+  );
+  setBusy(true);
+  const startedAt = performance.now();
+  try {
+    const payload = creatingSkill
+      ? await postJson('/api/merchant/custom-skills', {
+          shop_id: shopSelect.value,
+          period_days: Number(periodSelect.value),
+          message: text,
+          use_openclaw: openclawToggle.checked
+        })
+      : await postJson('/api/merchant/agent/chat', {
+          shop_id: shopSelect.value,
+          period_days: Number(periodSelect.value),
+          message: text,
+          use_openclaw: openclawToggle.checked
+        });
+    payload.__actualDurationMs = Math.round(performance.now() - startedAt);
+    payload.__expectedSeconds = lastEstimateSeconds;
+    if (creatingSkill && payload.created_skill) {
+      upsertCustomSkill(payload.created_skill);
+      replaceWithResult(loading, payload, `已创建 SKILL：${payload.created_skill.name}`);
+      persistHistoryRecord({
+        type: 'create_skill',
+        title: `已创建 SKILL：${payload.created_skill.name}`,
+        userMessage: text,
+        skillId: payload.created_skill.id,
+        payload,
+      });
+    } else {
+      replaceWithResult(loading, payload, '商家自由会话');
+      persistHistoryRecord({
+        type: 'agent_chat',
+        title: '商家自由会话',
+        userMessage: text,
+        skillId: '',
+        payload,
+      });
+    }
+  } catch (error) {
+    replaceWithError(loading, error);
+  } finally {
+    setBusy(false);
+  }
+}
+
+function addUserMessage(text, options = {}) {
+  const node = messageShell('user', '你', options.title || '商家输入', options.timeLabel);
+  node.querySelector('.bubble-body').textContent = text;
+  messages.appendChild(node);
+  scrollBottom();
+}
+
+function addAssistantMessage(title, text, options = {}) {
+  const node = messageShell('assistant', 'AI', title, options.timeLabel);
+  node.querySelector('.bubble-body').textContent = text;
+  messages.appendChild(node);
+  scrollBottom();
+  return node;
+}
+
+function replaceWithResult(node, payload, title) {
+  node.querySelector('.bubble-title').textContent = title;
+  node.querySelector('.bubble-body').innerHTML = renderResult(payload);
+  scrollBottom();
+}
+
+function replaceWithError(node, error) {
+  node.querySelector('.bubble-title').textContent = '调用失败';
+  node.querySelector('.bubble-body').innerHTML = `<span style="color:var(--red)">接口返回错误：${escapeHtml(error.message || String(error))}</span>`;
+}
+
+function messageShell(role, avatar, title, timeLabel) {
+  const node = document.createElement('article');
+  node.className = `message ${role}`;
+  const stamp = timeLabel || new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  node.innerHTML = `
+    <div class="avatar">${avatar}</div>
+    <div class="bubble">
+      <div class="bubble-head">
+        <span class="bubble-title">${escapeHtml(title)}</span>
+        <span>${escapeHtml(stamp)}</span>
+      </div>
+      <div class="bubble-body"></div>
+    </div>
+  `;
+  return node;
+}
+
+function renderResult(payload) {
+  const openclaw = payload.openclaw || {};
+  const fallback = payload.local_fallback || {};
+  const currentShopLabel = merchantSession?.shop_name || SHOP_LABELS[shopSelect.value] || shopSelect.options[shopSelect.selectedIndex]?.text || shopSelect.value;
+  const used = openclaw.used
+    ? (openclaw.transport === 'remote_http' ? '远程 OpenClaw 代理' : '本机 OpenClaw CLI')
+    : '测试模式，未调用 OpenClaw';
+  const timing = renderTimingCard(payload);
+  const error = openclaw.error ? `<div style="color:var(--red);margin-top:8px;">OpenClaw 错误：${escapeHtml(openclaw.error)}</div>` : '';
+  const reply = payload.created_skill
+    ? renderCreatedSkill(payload)
+    : (openclaw.reply ? renderReply(openclaw.reply, payload) : '<span style="color:var(--faint)">暂无 OpenClaw 回复，下面展示本地 fallback 结果。</span>');
+  const actions = extractActions(payload);
+  return `
+    <div>${reply}</div>
+    ${error}
+    <div class="result-grid">
+      <div class="result-card">
+        <h4>调度信息</h4>
+        <div class="kv"><span>执行方式</span><b>${escapeHtml(used)}</b></div>
+        <div class="kv"><span>门店</span><b>${escapeHtml(currentShopLabel)}</b></div>
+        <div class="kv"><span>周期</span><b>近 ${escapeHtml(String(periodSelect.value))} 天</b></div>
+        <div class="kv"><span>技能</span><b>${escapeHtml(payload.skill_id ? getSkillName(payload.skill_id) : (payload.mode === 'openclaw_agent_dispatch' ? '自动调度' : '本地结果'))}</b></div>
+        ${openclaw.target ? `<div class="kv"><span>远程目标</span><b>${escapeHtml(openclaw.target)}</b></div>` : ''}
+      </div>
+      <div class="result-card">
+        <h4>使用数据</h4>
+        <div class="kv"><span>行为日志</span><b>tryon.jsonl</b></div>
+        <div class="kv"><span>数据库</span><b>jiaqu.db</b></div>
+        <div class="kv"><span>趋势表</span><b>community_trends</b></div>
+        <div class="kv"><span>广场表</span><b>plaza</b></div>
+      </div>
+      ${timing}
+    </div>
+    ${actions.length ? renderActions(actions) : ''}
+    ${(!openclaw.reply || openclaw.error || !openclaw.used) ? renderFallback(fallback) : ''}
+  `;
+}
+
+function renderReply(reply, payload = {}) {
+  const normalized = normalizeReply(reply, payload);
+  if (normalized?.kind === 'structured') {
+    return renderStructuredReply(normalized, payload);
+  }
+  if (normalized?.kind === 'text') {
+    return renderTextReply(normalized);
+  }
+  if (normalized?.kind === 'object') {
+    return renderObjectReply(normalized);
+  }
+  if (typeof reply === 'string') {
+    return `<div>${escapeHtml(reply)}</div>`;
+  }
+  return `<div class="json-block">${escapeHtml(JSON.stringify(reply, null, 2))}</div>`;
+}
+
+function normalizeReply(reply, payload = {}) {
+  if (!reply) return null;
+  const openclaw = payload.openclaw || {};
+  const baseProgress = Array.isArray(openclaw.progress) ? openclaw.progress.filter(Boolean) : [];
+  const baseMeta = openclaw.meta && typeof openclaw.meta === 'object' ? openclaw.meta : null;
+  const baseDebug = openclaw.debug && typeof openclaw.debug === 'object' ? openclaw.debug : {};
+
+  if (typeof reply === 'string') {
+    return normalizeTextReply(reply, reply, { progress: baseProgress, meta: baseMeta, debug: baseDebug });
+  }
+
+  if (reply && Array.isArray(reply.result?.payloads)) {
+    const payloadTexts = reply.result.payloads
+      .map(item => typeof item?.text === 'string' ? item.text.trim() : '')
+      .filter(Boolean);
+    const finalText = payloadTexts[payloadTexts.length - 1] || '';
+    const normalized = normalizeTextReply(finalText, reply, {
+      progress: baseProgress.length ? baseProgress : payloadTexts.slice(0, -1),
+      meta: baseMeta || reply.meta || null,
+      debug: baseDebug,
+    }) || { kind: 'object', rawReply: reply, progress: baseProgress, meta: baseMeta, debug: baseDebug };
+    normalized.progress = baseProgress.length ? baseProgress : payloadTexts.slice(0, -1);
+    normalized.meta = baseMeta || reply.meta || null;
+    normalized.debug = baseDebug;
+    normalized.rawReply = reply;
+    return normalized;
+  }
+
+  if (reply && typeof reply === 'object' && (reply.skill_id || reply.analysis || reply.actions || reply.ui_summary)) {
+    return {
+      kind: 'structured',
+      structured: reply,
+      narrative: '',
+      progress: baseProgress,
+      meta: baseMeta,
+      debug: baseDebug,
+      rawReply: reply,
+    };
+  }
+
+  return {
+    kind: 'object',
+    rawReply: reply,
+    progress: baseProgress,
+    meta: baseMeta,
+    debug: baseDebug,
+  };
+}
+
+function normalizeTextReply(text, rawReply, context = {}) {
+  const { parsedJson, narrative } = parseReplyText(text);
+  if (parsedJson && typeof parsedJson === 'object') {
+    return {
+      kind: 'structured',
+      structured: parsedJson,
+      narrative,
+      progress: Array.isArray(context.progress) ? context.progress : [],
+      meta: context.meta || null,
+      debug: context.debug || {},
+      rawReply,
+    };
+  }
+  if (text && text.trim()) {
+    return {
+      kind: 'text',
+      narrative: text.trim(),
+      progress: Array.isArray(context.progress) ? context.progress : [],
+      meta: context.meta || null,
+      debug: context.debug || {},
+      rawReply,
+    };
+  }
+  return null;
+}
+
+function parseReplyText(text) {
+  const trimmed = String(text || '').trim();
+  const fenced = trimmed.match(/```json\s*([\s\S]*?)```/i) || trimmed.match(/```\s*([\s\S]*?)```/);
+  let parsedJson = null;
+
+  if (fenced?.[1]) {
+    parsedJson = tryParseJson(fenced[1].trim());
+  } else if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    parsedJson = tryParseJson(trimmed);
+  }
+
+  const narrative = fenced ? trimmed.replace(fenced[0], '').trim() : (parsedJson ? '' : trimmed);
+  return { parsedJson, narrative };
+}
+
+function tryParseJson(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function renderStructuredReply(normalized, payload = {}) {
+  const structured = normalized.structured || {};
+  const analysis = structured.analysis || {};
+  const shop = analysis.shop || {};
+  const selectedSkills = Array.isArray(structured.selected_skills) ? structured.selected_skills : [];
+  const summary = structured.ui_summary || analysis.style_summary || normalized.narrative || '';
+  const narrative = normalized.narrative && normalized.narrative !== summary ? normalized.narrative : '';
+  const dataSources = Array.isArray(structured.used_data_sources) ? structured.used_data_sources : [];
+  const progress = Array.isArray(normalized.progress) ? normalized.progress.filter(Boolean) : [];
+  const debug = normalized.debug && typeof normalized.debug === 'object' ? normalized.debug : {};
+  const primarySkillId = resolvePrimarySkillId(structured, payload);
+  const visualPanels = buildSkillSpecificPanels(primarySkillId, structured, analysis, payload);
+
+  return `
+    <div class="reply-stack">
+      ${renderHeroPanel(primarySkillId, structured, analysis, payload, summary, selectedSkills)}
+      ${selectedSkills.length ? `
+        <div class="result-card">
+          <h4>已调度技能</h4>
+          <div class="tag-row">
+            ${selectedSkills.map(item => `<span class="tag">${escapeHtml(formatSkillLabel(item))}</span>`).join('')}
+          </div>
+        </div>
+      ` : ''}
+      ${visualPanels.html}
+      ${renderShopCard(shop)}
+      ${analysis.style_summary && analysis.style_summary !== summary ? `
+        <div class="result-card">
+          <h4>店铺画像</h4>
+          <div class="reply-text">${escapeHtml(analysis.style_summary)}</div>
+        </div>
+      ` : ''}
+      ${renderMetricsCard('本期指标', analysis.metrics)}
+      ${renderMetricsCard('上期对比', analysis.previous_metrics)}
+      ${renderMetricsCard('变化情况', analysis.deltas)}
+      ${dataSources.length ? `
+        <div class="result-card">
+          <h4>使用数据</h4>
+          <div class="tag-row">
+            ${dataSources.map(item => `<span class="tag">${escapeHtml(item)}</span>`).join('')}
+          </div>
+        </div>
+      ` : ''}
+      ${renderBulletCard('优势', analysis.strengths)}
+      ${renderBulletCard('风险', analysis.risks)}
+      ${renderBulletCard('预警', analysis.alerts)}
+      ${renderBulletCard('建议方向', analysis.recommended_direction)}
+      ${visualPanels.hide.styleMix ? '' : renderStyleMixCard(analysis.style_mix)}
+      ${visualPanels.hide.peerGroup ? '' : renderPeerGroupCard(analysis.peer_group)}
+      ${visualPanels.hide.hotCandidates ? '' : renderStyleCandidateCard('爆款候选', analysis.hot_candidates)}
+      ${visualPanels.hide.coldCandidates ? '' : renderStyleCandidateCard('冷门候选', analysis.cold_candidates)}
+      ${renderBulletCard('Top 风格', analysis.top_categories)}
+      ${renderBulletCard('Top 款式', analysis.top_styles)}
+      ${visualPanels.hide.skillResults ? '' : renderGenericSkillResults(structured.skill_results)}
+      ${structured.workflow_suggestion ? `
+        <div class="result-card">
+          <h4>流程建议</h4>
+          <div class="reply-text">${escapeHtml(formatDisplayText(typeof structured.workflow_suggestion === 'string' ? structured.workflow_suggestion : JSON.stringify(structured.workflow_suggestion, null, 2)))}</div>
+        </div>
+      ` : ''}
+      ${narrative ? `
+        <div class="result-card">
+          <h4>补充说明</h4>
+          <div class="reply-text">${escapeHtml(narrative)}</div>
+        </div>
+      ` : ''}
+      ${renderExecutionCard(normalized.meta, debug)}
+      ${renderProgressCard(progress)}
+    </div>
+  `;
+}
+
+function renderTextReply(normalized) {
+  const progress = Array.isArray(normalized?.progress) ? normalized.progress.filter(Boolean) : [];
+  const debug = normalized?.debug && typeof normalized.debug === 'object' ? normalized.debug : {};
+  return `
+    <div class="reply-stack">
+      <div class="result-card">
+        <h4>结果说明</h4>
+        <div class="reply-text">${escapeHtml(normalized?.narrative || '')}</div>
+      </div>
+      ${renderExecutionCard(normalized?.meta, debug)}
+      ${renderProgressCard(progress)}
+    </div>
+  `;
+}
+
+function renderObjectReply(normalized) {
+  const progress = Array.isArray(normalized?.progress) ? normalized.progress.filter(Boolean) : [];
+  const debug = normalized?.debug && typeof normalized.debug === 'object' ? normalized.debug : {};
+  return `
+    <div class="reply-stack">
+      <div class="result-card">
+        <h4>结果说明</h4>
+        <div class="reply-text">已收到结构化结果，但当前这条回复还没有命中展示模板。我可以继续把这类结果单独适配得更像商家报表。</div>
+      </div>
+      ${renderExecutionCard(normalized?.meta, debug)}
+      ${renderProgressCard(progress)}
+    </div>
+  `;
+}
+
+function renderCreatedSkill(payload) {
+  const skill = payload.created_skill || payload.skill || {};
+  return `
+    <div class="reply-stack">
+      <div class="result-card">
+        <h4>新 SKILL 已保存</h4>
+        <div class="reply-text">${escapeHtml(skill.name || '未命名技能')}</div>
+        <div class="tag-row">
+          <span class="tag">预计 ${escapeHtml(formatEta(skill.estimated_seconds || 60))}</span>
+          ${Array.isArray(skill.actions) ? skill.actions.slice(0, 4).map(item => `<span class="tag">${escapeHtml(formatActionLabel(item))}</span>`).join('') : ''}
+        </div>
+      </div>
+      ${skill.desc ? `
+        <div class="result-card">
+          <h4>用途说明</h4>
+          <div class="reply-text">${escapeHtml(skill.desc)}</div>
+        </div>
+      ` : ''}
+      ${skill.message ? `
+        <div class="result-card">
+          <h4>执行口令</h4>
+          <div class="reply-text">${escapeHtml(skill.message)}</div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderTimingCard(payload) {
+  const expected = payload.__expectedSeconds || null;
+  const endToEndMs = payload.__actualDurationMs || null;
+  const modelMs = payload.openclaw?.meta?.durationMs || null;
+  return `
+    <div class="result-card">
+      <h4>耗时信息</h4>
+      <div class="kv"><span>预计耗时</span><b>${escapeHtml(expected ? formatEta(expected) : '未提供')}</b></div>
+      <div class="kv"><span>页面等待</span><b>${escapeHtml(endToEndMs ? formatActualDuration(endToEndMs) : '未返回')}</b></div>
+      <div class="kv"><span>模型执行</span><b>${escapeHtml(modelMs ? formatActualDuration(modelMs) : '未返回')}</b></div>
+    </div>
+  `;
+}
+
+function renderExecutionCard(meta, debug) {
+  const rows = [
+    ['运行状态', formatStatusValue(debug?.status) || null],
+    ['运行 ID', debug?.run_id || null],
+    ['OpenClaw 耗时', meta?.durationMs ? formatActualDuration(meta.durationMs) : null]
+  ].filter(([, value]) => value !== undefined && value !== null && value !== '');
+  if (!rows.length) return '';
+  return `
+    <div class="result-card">
+      <h4>执行信息</h4>
+      ${rows.map(([label, value]) => `
+        <div class="kv">
+          <span>${escapeHtml(label)}</span>
+          <b>${escapeHtml(String(value))}</b>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function resolvePrimarySkillId(structured, payload = {}) {
+  return structured.skill_id || payload.skill_id || (Array.isArray(structured.selected_skills) ? structured.selected_skills[0] : '') || '';
+}
+
+function buildSkillSpecificPanels(primarySkillId, structured, analysis, payload) {
+  const hide = {
+    styleMix: false,
+    peerGroup: false,
+    hotCandidates: false,
+    coldCandidates: false,
+    skillResults: false,
+  };
+
+  if (primarySkillId === 'merchant_style_profile') {
+    hide.styleMix = true;
+    return {
+      hide,
+      html: [
+        renderSnapshotBoard(buildProfileStats(analysis, payload)),
+        renderCategoryMixPanel(analysis.style_mix, '风格构成'),
+        renderStyleGallery(analysis.top_related_styles || analysis.style_mix, '代表款式观察', 'style'),
+      ].join('')
+    };
+  }
+
+  if (primarySkillId === 'periodic_ops_report') {
+    return {
+      hide,
+      html: [
+        renderSnapshotBoard(buildOpsStats(analysis)),
+        renderDeltaPanel(analysis.metrics, analysis.previous_metrics, analysis.deltas),
+        renderNarrativePairPanel(
+          '经营焦点',
+          `本期以 ${formatTopList(analysis.top_categories)} 为主风格，重点款式集中在 ${formatTopList(analysis.top_styles)}。`,
+          '提醒与动作',
+          renderAlertSummary(analysis.alerts, analysis.actions)
+        )
+      ].join('')
+    };
+  }
+
+  if (primarySkillId === 'same_style_competitor_analysis') {
+    hide.peerGroup = true;
+    return {
+      hide,
+      html: [
+        renderSnapshotBoard(buildCompetitorStats(structured, analysis)),
+        renderPeerGallery(analysis.peer_group || structured.peer_group || []),
+        renderNarrativePairPanel(
+          '优势看点',
+          formatListForNarrative(structured.advantages || analysis.advantages),
+          '差距与机会',
+          `${formatListForNarrative(structured.gaps || analysis.gaps)}${(structured.opportunities || analysis.opportunities)?.length ? `；机会：${formatListForNarrative(structured.opportunities || analysis.opportunities)}` : ''}`
+        )
+      ].join('')
+    };
+  }
+
+  if (primarySkillId === 'hot_style_launch') {
+    hide.hotCandidates = true;
+    return {
+      hide,
+      html: [
+        renderSnapshotBoard(buildHotStats(analysis, structured)),
+        renderCandidateGallery(analysis.hot_candidates || structured.hot_candidates || [], '本周上线候选', 'hot'),
+      ].join('')
+    };
+  }
+
+  if (primarySkillId === 'cold_style_retire') {
+    hide.coldCandidates = true;
+    return {
+      hide,
+      html: [
+        renderSnapshotBoard(buildColdStats(analysis, structured)),
+        renderCandidateGallery(analysis.cold_candidates || structured.cold_candidates || [], '低表现款式观察', 'cold'),
+      ].join('')
+    };
+  }
+
+  if (primarySkillId === 'automation_queue') {
+    return {
+      hide,
+      html: [
+        renderSnapshotBoard(buildQueueStats(structured, payload)),
+        renderRoadmapPanel(extractActions(payload), '本周动作路线图'),
+      ].join('')
+    };
+  }
+
+  if (structured.skill_results && typeof structured.skill_results === 'object') {
+    hide.skillResults = true;
+    return {
+      hide,
+      html: [
+        renderSnapshotBoard(buildDispatchStats(structured, payload)),
+        renderSkillGallery(structured.skill_results),
+        renderRoadmapPanel(extractActions(payload), '推荐执行顺序'),
+      ].join('')
+    };
+  }
+
+  return { hide, html: '' };
+}
+
+function renderHeroPanel(primarySkillId, structured, analysis, payload, summary, selectedSkills) {
+  const stats = buildHeroStats(primarySkillId, structured, analysis, payload);
+  const chips = buildHeroChips(primarySkillId, structured, analysis, payload, selectedSkills);
+  const title = primarySkillId ? formatSkillLabel(primarySkillId) : (selectedSkills.length ? '多技能联动分析' : '经营结果总览');
+  if (!summary && !stats.length && !chips.length) return '';
+  return `
+    <div class="result-card hero-card">
+      <div class="hero-banner">
+        <div class="hero-copy">
+          <div class="hero-eyebrow">${escapeHtml(title)}</div>
+          <div class="hero-summary">${escapeHtml(summary || '已生成一版可执行的经营结论。')}</div>
+          ${chips.length ? `<div class="tag-row">${chips.map(item => `<span class="tag">${escapeHtml(item)}</span>`).join('')}</div>` : ''}
+        </div>
+        ${stats.length ? `
+          <div class="hero-side">
+            ${stats.slice(0, 3).map(item => `
+              <div class="hero-kpi">
+                <span>${escapeHtml(item.label)}</span>
+                <b>${escapeHtml(item.value)}</b>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function renderSnapshotBoard(items) {
+  if (!Array.isArray(items) || !items.length) return '';
+  return `
+    <div class="result-card">
+      <h4>一眼看板</h4>
+      <div class="stat-grid">
+        ${items.slice(0, 4).map(item => `
+          <div class="stat-tile">
+            <div class="stat-label">${escapeHtml(item.label)}</div>
+            <div class="stat-value">${escapeHtml(item.value)}</div>
+            ${item.note ? `<div class="stat-note">${escapeHtml(item.note)}</div>` : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderCategoryMixPanel(items, title) {
+  if (!Array.isArray(items) || !items.length) return '';
+  const rows = items.slice(0, 5).map(item => {
+    const ratio = normalizeVisualPercent(item.ratio != null ? item.ratio * 100 : item.count || 0, 100);
+    return `
+      <div class="visual-row">
+        <div class="visual-head">
+          <span class="visual-title">${escapeHtml(item.name || item.category || '未命名')}</span>
+          <span class="visual-badge">${escapeHtml(item.ratio != null ? `${Math.round(item.ratio * 100)}%` : `${item.count || 0} 次`)}</span>
+        </div>
+        <div class="visual-meta">风格占比与门店主打法的关系会直接影响后续上新、曝光和预约转化。</div>
+        <div class="mini-bar"><div class="mini-bar-fill" style="width:${ratio}%"></div></div>
+      </div>
+    `;
+  }).join('');
+  return `
+    <div class="result-card">
+      <h4>${escapeHtml(title)}</h4>
+      <div class="visual-list">${rows}</div>
+    </div>
+  `;
+}
+
+function renderStyleGallery(items, title, mode = 'style') {
+  if (!Array.isArray(items) || !items.length) return '';
+  return `
+    <div class="result-card">
+      <h4>${escapeHtml(title)}</h4>
+      <div class="gallery-grid">
+        ${items.slice(0, 4).map(item => {
+          const metricValue = item.booking_rate || item.like_rate || (item.ratio != null ? `${Math.round(item.ratio * 100)}%` : `${item.tryons || item.count || 0}`);
+          const scoreSource = item.booking_rate ? parsePercent(item.booking_rate) : (item.like_rate ? parsePercent(item.like_rate) : (item.ratio != null ? item.ratio * 100 : 0));
+          return `
+            <div class="gallery-card">
+              <div class="visual-head">
+                <span class="visual-title">${escapeHtml(item.name || item.style_id || item.category || '未命名')}</span>
+                <span class="visual-badge">${escapeHtml(metricValue)}</span>
+              </div>
+              <div class="visual-meta">${escapeHtml(mode === 'style'
+                ? buildStyleMetricLine(item)
+                : formatDisplayText(item.note || item.reason || '可作为重点观察对象。'))}</div>
+              <div class="mini-bar"><div class="mini-bar-fill" style="width:${normalizeVisualPercent(scoreSource, 100)}%"></div></div>
+              ${item.note ? `<div class="story-note">${escapeHtml(formatDisplayText(item.note))}</div>` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderCandidateGallery(items, title, mode) {
+  if (!Array.isArray(items) || !items.length) return '';
+  return `
+    <div class="result-card">
+      <h4>${escapeHtml(title)}</h4>
+      <div class="gallery-grid">
+        ${items.slice(0, 4).map(item => {
+          const score = mode === 'cold' ? item.risk_score : item.score;
+          const detail = mode === 'cold'
+            ? `建议：${formatActionLabel(item.suggested_action)}`
+            : `推荐动作：${Array.isArray(item.actions) ? item.actions.slice(0, 2).map(formatActionLabel).join('、') : '优先上线'}`;
+          return `
+            <div class="gallery-card">
+              <div class="visual-head">
+                <span class="visual-title">${escapeHtml(item.style_id || item.name || '未命名')}</span>
+                <span class="visual-badge">${escapeHtml(mode === 'cold' ? `风险 ${score || 0}` : `热度 ${score || 0}`)}</span>
+              </div>
+              <div class="visual-meta">${escapeHtml(buildCandidateMetricLine(item, mode))}</div>
+              <div class="mini-bar"><div class="mini-bar-fill" style="width:${normalizeVisualPercent(score || 0, mode === 'cold' ? 100 : 120)}%"></div></div>
+              <div class="story-note">${escapeHtml(formatDisplayText(item.note || item.reason || detail))}</div>
+              <div class="tag-row">
+                <span class="tag">${escapeHtml(detail)}</span>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderPeerGallery(items) {
+  if (!Array.isArray(items) || !items.length) return '';
+  return `
+    <div class="result-card">
+      <h4>同风格门店对比</h4>
+      <div class="gallery-grid">
+        ${items.slice(0, 4).map(item => `
+          <div class="gallery-card">
+            <div class="visual-head">
+              <span class="visual-title">${escapeHtml(item.shop?.name || item.shop?.id || '未知门店')}</span>
+              <span class="visual-badge">${escapeHtml(item.style_match != null ? `匹配度 ${Math.round(item.style_match * 100)}%` : '同风格') }</span>
+            </div>
+            <div class="story-note">${escapeHtml(`预约 ${item.books || 0} · 预约率 ${Math.round((item.booking_rate || 0) * 100)}% · 试戴 ${item.tryons || 0}`)}</div>
+            <div class="mini-bar"><div class="mini-bar-fill" style="width:${normalizeVisualPercent((item.booking_rate || 0) * 100, 30)}%"></div></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderDeltaPanel(metrics, previousMetrics, deltas) {
+  const current = metrics && typeof metrics === 'object' ? metrics : {};
+  const previous = previousMetrics && typeof previousMetrics === 'object' ? previousMetrics : {};
+  const deltaMap = deltas && typeof deltas === 'object' ? deltas : {};
+  const keys = ['tryons', 'likes', 'books', 'shop_books'].filter(key => current[key] != null || previous[key] != null || deltaMap[key] != null);
+  if (!keys.length) return '';
+  return `
+    <div class="result-card">
+      <h4>周期变化看板</h4>
+      <div class="story-grid">
+        ${keys.map(key => `
+          <div class="story-card">
+            <h5>${escapeHtml(localizeFieldLabel(key))}</h5>
+            <div class="story-note">本期 ${escapeHtml(formatMetricValue(current[key] ?? 0))}，上期 ${escapeHtml(formatMetricValue(previous[key] ?? 0))}</div>
+            <div class="tag-row">
+              <span class="tag">${escapeHtml(`变化 ${formatDeltaValue(deltaMap[key])}`)}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderNarrativePairPanel(leftTitle, leftText, rightTitle, rightText) {
+  if (!leftText && !rightText) return '';
+  return `
+    <div class="result-card">
+      <h4>经营解读</h4>
+      <div class="story-grid">
+        <div class="story-card">
+          <h5>${escapeHtml(leftTitle)}</h5>
+          <div class="story-note">${escapeHtml(formatDisplayText(leftText || '暂无补充说明。'))}</div>
+        </div>
+        <div class="story-card">
+          <h5>${escapeHtml(rightTitle)}</h5>
+          <div class="story-note">${escapeHtml(formatDisplayText(rightText || '暂无补充说明。'))}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderRoadmapPanel(actions, title) {
+  if (!Array.isArray(actions) || !actions.length) return '';
+  return `
+    <div class="result-card">
+      <h4>${escapeHtml(title)}</h4>
+      <div class="roadmap">
+        ${actions.slice(0, 6).map((action, index) => `
+          <div class="roadmap-item">
+            <span class="roadmap-stage">${escapeHtml(index < 2 ? '立即执行' : index < 4 ? '本周推进' : '继续跟进')}</span>
+            <div class="roadmap-main">
+              <div class="roadmap-title">${escapeHtml(formatActionLabel(action.type || action.suggested_action || '建议动作'))}</div>
+              <div class="roadmap-desc">${escapeHtml(formatActionReason(action))}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderSkillGallery(skillResults) {
+  if (!skillResults || typeof skillResults !== 'object' || Array.isArray(skillResults)) return '';
+  const cards = Object.entries(skillResults).slice(0, 6).map(([skillId, value]) => {
+    if (!value || typeof value !== 'object') return '';
+    const highlights = buildMiniHighlights(skillId, value);
+    return `
+      <div class="gallery-card">
+        <div class="visual-head">
+          <span class="visual-title">${escapeHtml(formatSkillLabel(skillId))}</span>
+          <span class="visual-badge">${escapeHtml(highlights[0] || '已生成')}</span>
+        </div>
+        <div class="story-note">${escapeHtml(summarizeSkillResult(value) || '已生成该技能的结构化结论。')}</div>
+        ${highlights.length > 1 ? `<div class="tag-row">${highlights.slice(1, 4).map(item => `<span class="tag">${escapeHtml(item)}</span>`).join('')}</div>` : ''}
+      </div>
+    `;
+  }).filter(Boolean).join('');
+  if (!cards) return '';
+  return `
+    <div class="result-card">
+      <h4>分技能看板</h4>
+      <div class="gallery-grid">${cards}</div>
+    </div>
+  `;
+}
+
+async function persistHistoryRecord({ type, title, userMessage, skillId, payload }) {
+  const recordPayload = sanitizePayloadForHistory(payload);
+  try {
+    const saved = await postJson('/api/merchant/history', {
+      type,
+      title,
+      summary: summarizePayloadForHistory(recordPayload),
+      user_message: userMessage,
+      skill_id: skillId || '',
+      shop_id: shopSelect.value,
+      shop_name: merchantSession?.shop_name || SHOP_LABELS[shopSelect.value] || shopSelect.options[shopSelect.selectedIndex]?.text || shopSelect.value,
+      period_days: Number(periodSelect.value),
+      payload: recordPayload,
+    });
+    if (saved.record) {
+      upsertHistoryRecord(saved.record);
+    }
+  } catch (error) {
+    console.warn('save merchant history failed', error);
+  }
+}
+
+function sanitizePayloadForHistory(payload) {
+  if (Array.isArray(payload)) {
+    return payload.map(item => sanitizePayloadForHistory(item));
+  }
+  if (payload && typeof payload === 'object') {
+    const next = {};
+    Object.entries(payload).forEach(([key, value]) => {
+      if (key === 'prompt' || key === 'registry') return;
+      next[key] = sanitizePayloadForHistory(value);
+    });
+    return next;
+  }
+  return payload;
+}
+
+function summarizePayloadForHistory(payload) {
+  if (!payload || typeof payload !== 'object') return '';
+  if (payload.created_skill?.desc) return payload.created_skill.desc;
+  const normalized = normalizeReply(payload.openclaw?.reply, payload);
+  if (normalized?.kind === 'structured') {
+    return normalized.structured?.ui_summary
+      || normalized.structured?.analysis?.style_summary
+      || normalized.narrative
+      || '';
+  }
+  if (normalized?.kind === 'text') {
+    return normalized.narrative || '';
+  }
+  return '';
+}
+
+function upsertHistoryRecord(record) {
+  const index = historyRecords.findIndex(item => item.id === record.id);
+  if (index >= 0) {
+    historyRecords.splice(index, 1, record);
+  } else {
+    historyRecords.unshift(record);
+  }
+  historyRecords.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+  historyRecords = historyRecords.slice(0, 24);
+  renderHistory();
+}
+
+function openHistoryRecord(historyId) {
+  if (!merchantSession) {
+    showAuthGate();
+    return;
+  }
+  const record = historyRecords.find(item => String(item.id || '') === String(historyId || ''));
+  if (!record) return;
+  clearEmpty();
+  messages.innerHTML = '';
+  if (record.shop_id && SHOP_LABELS[record.shop_id]) {
+    shopSelect.value = record.shop_id;
+  }
+  if (record.period_days) {
+    periodSelect.value = String(record.period_days);
+  }
+  currentSkillId = record.skill_id || null;
+  lastEstimateSeconds = record.payload?.__expectedSeconds || 60;
+  syncTopbar();
+  setActiveSkill(record.skill_id || null);
+  const subtitle = record.summary || '已保存的商家端运行结果';
+  $('#sessionTitle').textContent = record.title || '历史记录';
+  $('#sessionSub').textContent = truncateText(subtitle, 80);
+  const timeLabel = formatTimestamp(record.created_at);
+  addUserMessage(record.user_message || `查看记录：${record.title || '历史记录'}`, { timeLabel, title: '已保存输入' });
+  const node = addAssistantMessage(record.title || '历史记录', '', { timeLabel });
+  node.querySelector('.bubble-body').innerHTML = renderResult(record.payload || {});
+  document.querySelectorAll('.history-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.historyId === historyId);
+  });
+  scrollBottom();
+}
+
+function setActiveSkill(skillId) {
+  document.querySelectorAll('.skill-item').forEach(item => {
+    item.classList.toggle('active', !!skillId && item.dataset.skillId === skillId);
+  });
+}
+
+function renderShopCard(shop) {
+  if (!shop || !Object.keys(shop).length) return '';
+  const rows = [
+    ['门店', shop.name || shop.id],
+    ['风格', shop.style ? `${shop.style}${shop.primary_category_name ? ` · ${shop.primary_category_name}` : ''}` : shop.primary_category_name],
+    ['评分', shop.rating],
+    ['客单价', shop.price_avg],
+    ['试戴', shop.tryons],
+    ['喜欢', shop.likes],
+    ['预约', shop.books],
+    ['喜欢率', shop.like_rate_pct != null ? `${shop.like_rate_pct}%` : null],
+    ['预约率', shop.booking_rate_pct != null ? `${shop.booking_rate_pct}%` : null],
+  ].filter(([, value]) => value !== undefined && value !== null && value !== '');
+
+  if (!rows.length) return '';
+  return `
+    <div class="result-card">
+      <h4>关键指标</h4>
+      ${rows.map(([label, value]) => `
+        <div class="kv">
+          <span>${escapeHtml(label)}</span>
+          <b>${escapeHtml(String(value))}</b>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderMetricsCard(title, obj) {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj) || !Object.keys(obj).length) return '';
+  return `
+    <div class="result-card">
+      <h4>${escapeHtml(title)}</h4>
+      ${Object.entries(obj).slice(0, 8).map(([key, value]) => `
+        <div class="kv">
+          <span>${escapeHtml(localizeFieldLabel(key))}</span>
+          <b>${escapeHtml(formatMetricValue(value))}</b>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderBulletCard(title, items) {
+  if (!Array.isArray(items) || !items.length) return '';
+  return `
+    <div class="result-card">
+      <h4>${escapeHtml(title)}</h4>
+      <ul class="bullet-list">
+        ${items.map(item => `<li>${escapeHtml(formatListItem(item))}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderStyleMixCard(items) {
+  if (!Array.isArray(items) || !items.length) return '';
+  return `
+    <div class="result-card">
+      <h4>重点款式</h4>
+      <ul class="bullet-list">
+        ${items.slice(0, 5).map(item => {
+          const name = item.name || item.style_id || item.category || '未命名';
+          const metrics = [
+            item.tryons != null ? `试戴 ${item.tryons}` : '',
+            item.likes != null ? `喜欢 ${item.likes}` : '',
+            item.books != null ? `预约 ${item.books}` : '',
+            item.like_rate ? `好评 ${item.like_rate}` : '',
+          ].filter(Boolean).join(' · ');
+          const note = item.note || '';
+          return `<li>${escapeHtml(name)}${metrics ? `：${escapeHtml(metrics)}` : ''}${note ? `；${escapeHtml(note)}` : ''}</li>`;
+        }).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderPeerGroupCard(items) {
+  if (!Array.isArray(items) || !items.length) return '';
+  return `
+    <div class="result-card">
+      <h4>同风格门店</h4>
+      <ul class="bullet-list">
+        ${items.slice(0, 4).map(item => {
+          const shop = item.shop || {};
+          const bits = [
+            shop.name || shop.id || '未知门店',
+            item.booking_rate != null ? `预约率 ${item.booking_rate}` : '',
+            item.books != null ? `预约 ${item.books}` : '',
+            item.style_match != null ? `匹配度 ${item.style_match}` : ''
+          ].filter(Boolean).join(' · ');
+          return `<li>${escapeHtml(bits)}</li>`;
+        }).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderStyleCandidateCard(title, items) {
+  if (!Array.isArray(items) || !items.length) return '';
+  return `
+    <div class="result-card">
+      <h4>${escapeHtml(title)}</h4>
+      <ul class="bullet-list">
+        ${items.slice(0, 5).map(item => {
+          const name = item.name || item.style_id || item.category || '未命名';
+          const score = item.score != null ? `分数 ${item.score}` : (item.risk_score != null ? `风险 ${item.risk_score}` : '');
+          const reason = formatDisplayText(item.note || item.reason || formatActionLabel(item.suggested_action) || '');
+          return `<li>${escapeHtml(name)}${score ? `：${escapeHtml(score)}` : ''}${reason ? `；${escapeHtml(String(reason))}` : ''}</li>`;
+        }).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderGenericSkillResults(skillResults) {
+  if (!skillResults || typeof skillResults !== 'object' || Array.isArray(skillResults) || !Object.keys(skillResults).length) return '';
+  const cards = Object.entries(skillResults)
+    .slice(0, 6)
+    .map(([key, value]) => {
+      const summary = summarizeSkillResult(value);
+      if (!summary) return '';
+      return `
+        <div class="action-item">
+          <span>
+            <span class="action-title">${escapeHtml(getSkillName(key))}</span>
+            <span class="action-reason">${escapeHtml(formatDisplayText(summary))}</span>
+          </span>
+        </div>
+      `;
+    })
+    .filter(Boolean)
+    .join('');
+  if (cards) {
+    return `
+      <div class="result-card">
+        <h4>分技能结论</h4>
+        <div class="action-list">${cards}</div>
+      </div>
+    `;
+  }
+  return `
+    <div class="result-card">
+      <h4>分技能结论</h4>
+      <div class="reply-text">已生成分技能结果，但当前没有可直接展示的摘要。</div>
+    </div>
+  `;
+}
+
+function renderActions(actions) {
+  return `
+    <div class="result-card" style="margin-top:10px;">
+      <h4>动作队列</h4>
+      <div class="action-list">
+        ${actions.slice(0, 8).map(action => `
+          <div class="action-item">
+            <span>
+              <span class="action-title">${escapeHtml(formatActionLabel(action.type || action.suggested_action || '建议动作'))}</span>
+              <span class="action-reason">${escapeHtml(formatActionReason(action))}</span>
+            </span>
+            <button class="mini-btn" type="button">确认</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderFallback(fallback) {
+  if (!fallback || !Object.keys(fallback).length) return '';
+  const summary = summarizeFallback(fallback);
+  const chips = collectFallbackChips(fallback);
+  return `
+    <div class="result-card" style="margin-top:10px;">
+      <h4>本地兜底结果</h4>
+      <div class="reply-text">${escapeHtml(summary)}</div>
+      ${chips.length ? `
+        <div class="tag-row">
+          ${chips.map(item => `<span class="tag">${escapeHtml(item)}</span>`).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderProgressCard(progress) {
+  const localizedProgress = localizeProgressList(progress);
+  if (!localizedProgress.length) return '';
+  return `
+    <div class="result-card">
+      <h4>运行过程</h4>
+      <ul class="bullet-list">
+        ${localizedProgress.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function summarizeSkillResult(value) {
+  if (!value || typeof value !== 'object') return '';
+  return formatDisplayText(value.ui_summary
+    || value.summary
+    || value.trend_summary
+    || value.style_summary
+    || value.competitive_position
+    || value.analysis?.style_summary
+    || value.analysis?.ui_summary
+    || '');
+}
+
+function summarizeFallback(fallback) {
+  if (!fallback || typeof fallback !== 'object') return '已生成本地兜底结果。';
+  return formatDisplayText(fallback.summary
+    || fallback.trend_summary
+    || fallback.style_summary
+    || fallback.desc
+    || (fallback.skills ? '已根据本地快照整理出一套可用的兜底分析结果。' : '已生成本地兜底结果。'));
+}
+
+function collectFallbackChips(fallback) {
+  const chips = [];
+  if (Array.isArray(fallback.hot_candidates) && fallback.hot_candidates.length) {
+    chips.push(`爆款候选 ${fallback.hot_candidates.length}`);
+  }
+  if (Array.isArray(fallback.cold_candidates) && fallback.cold_candidates.length) {
+    chips.push(`冷门候选 ${fallback.cold_candidates.length}`);
+  }
+  if (Array.isArray(fallback.items) && fallback.items.length) {
+    chips.push(`动作 ${fallback.items.length}`);
+  }
+  if (fallback.skills && typeof fallback.skills === 'object') {
+    chips.push(`本地技能 ${Object.keys(fallback.skills).length}`);
+  }
+  return chips.slice(0, 4);
+}
+
+function extractActions(payload) {
+  const actions = [];
+  const normalizedReply = normalizeReply(payload.openclaw?.reply, payload);
+  const remoteActions = normalizedReply?.structured && Array.isArray(normalizedReply.structured.actions)
+    ? normalizedReply.structured.actions
+    : [];
+
+  remoteActions.forEach(action => {
+    actions.push({
+      type: action.type || '建议动作',
+      target: action.target || '',
+      params: action && typeof action.params === 'object' ? action.params : null,
+      reason: action.reason || action.target || '等待确认'
+    });
+  });
+
+  const fallback = payload.local_fallback || {};
+  if (Array.isArray(fallback.items)) actions.push(...fallback.items);
+  if (Array.isArray(fallback.actions)) actions.push(...fallback.actions);
+  if (fallback.skill === 'hot_style_launch') {
+    (fallback.hot_candidates || []).forEach(item => actions.push({
+      type: '上线候选',
+      target: item.style_id,
+      reason: `分数 ${item.score}`
+    }));
+  }
+  if (fallback.skill === 'cold_style_retire') {
+    (fallback.cold_candidates || []).forEach(item => actions.push({
+      type: item.suggested_action,
+      target: item.style_id,
+      reason: `风险分 ${item.risk_score}`
+    }));
+  }
+  const agentFallback = payload.local_fallback && payload.local_fallback.skills;
+  if (agentFallback && agentFallback.automation_queue && Array.isArray(agentFallback.automation_queue.items)) {
+    actions.push(...agentFallback.automation_queue.items);
+  }
+  return actions;
+}
+
+async function postJson(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+async function getJson(url) {
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+function formatActualDuration(ms) {
+  const seconds = Math.max(1, Math.round(ms / 1000));
+  return formatEta(seconds);
+}
+
+function formatMetricValue(value) {
+  if (value == null) return '0';
+  if (typeof value === 'object') return formatDisplayText(JSON.stringify(value));
+  return formatDisplayText(String(value));
+}
+
+function humanizeKey(key) {
+  return String(key || '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, ch => ch.toUpperCase());
+}
+
+function formatListItem(item) {
+  if (typeof item === 'string') return formatDisplayText(item);
+  if (!item || typeof item !== 'object') return String(item ?? '');
+  const pairs = Object.entries(item)
+    .slice(0, 4)
+    .map(([key, value]) => `${localizeFieldLabel(key)}：${formatMetricValue(value)}`);
+  return pairs.join(' · ');
+}
+
+function buildHeroStats(primarySkillId, structured, analysis, payload) {
+  if (primarySkillId === 'merchant_style_profile') {
+    return buildProfileStats(analysis, payload);
+  }
+  if (primarySkillId === 'periodic_ops_report') {
+    return buildOpsStats(analysis);
+  }
+  if (primarySkillId === 'same_style_competitor_analysis') {
+    return buildCompetitorStats(structured, analysis);
+  }
+  if (primarySkillId === 'hot_style_launch') {
+    return buildHotStats(analysis, structured);
+  }
+  if (primarySkillId === 'cold_style_retire') {
+    return buildColdStats(analysis, structured);
+  }
+  if (primarySkillId === 'automation_queue') {
+    return buildQueueStats(structured, payload);
+  }
+  return buildDispatchStats(structured, payload);
+}
+
+function buildHeroChips(primarySkillId, structured, analysis, payload, selectedSkills) {
+  const chips = [];
+  const actions = extractActions(payload);
+  if (selectedSkills?.length) chips.push(`${selectedSkills.length} 个技能联动`);
+  if (actions.length) chips.push(`${actions.length} 条动作待执行`);
+  if (Array.isArray(structured.used_data_sources) && structured.used_data_sources.length) {
+    chips.push(`${structured.used_data_sources.length} 类数据参与判断`);
+  }
+  if (primarySkillId === 'merchant_style_profile' && analysis?.primary_category_name) {
+    chips.push(`主风格 ${analysis.primary_category_name}`);
+  }
+  if (primarySkillId === 'hot_style_launch') {
+    const count = (analysis.hot_candidates || structured.hot_candidates || []).length;
+    if (count) chips.push(`${count} 个上新候选`);
+  }
+  if (primarySkillId === 'cold_style_retire') {
+    const count = (analysis.cold_candidates || structured.cold_candidates || []).length;
+    if (count) chips.push(`${count} 个低表现款式`);
+  }
+  return chips.slice(0, 4);
+}
+
+function buildProfileStats(analysis, payload) {
+  const shop = analysis?.shop || payload?.shop || {};
+  return [
+    { label: '门店评分', value: shop.rating != null ? String(shop.rating) : '未提供', note: '当前门店基础口碑' },
+    { label: '试戴量', value: shop.tryons != null ? String(shop.tryons) : '未提供', note: '当前样本规模' },
+    { label: '好评率', value: shop.like_rate_pct != null ? `${shop.like_rate_pct}%` : '未提供', note: '用户即时偏好' },
+    { label: '预约率', value: shop.booking_rate_pct != null ? `${shop.booking_rate_pct}%` : '未提供', note: '最终转化表现' },
+  ];
+}
+
+function buildOpsStats(analysis) {
+  const metrics = analysis?.metrics || {};
+  return [
+    { label: '试戴', value: formatMetricValue(metrics.tryons ?? 0), note: '当前周期试戴总量' },
+    { label: '喜欢', value: formatMetricValue(metrics.likes ?? 0), note: '用户正反馈数量' },
+    { label: '预约', value: formatMetricValue(metrics.books ?? 0), note: '整体预约规模' },
+    { label: '到店预约', value: formatMetricValue(metrics.shop_books ?? 0), note: '本店真实转化' },
+  ];
+}
+
+function buildCompetitorStats(structured, analysis) {
+  const shop = structured?.current_shop || analysis?.current_shop || {};
+  const peerGroup = structured?.peer_group || analysis?.peer_group || [];
+  const gaps = structured?.gaps || analysis?.gaps || [];
+  return [
+    { label: '预约率', value: shop.booking_rate != null ? `${Math.round(shop.booking_rate * 100)}%` : '未提供', note: '当前门店在同风格中的转化' },
+    { label: '竞品样本', value: String(peerGroup.length), note: '参与对比的同风格门店' },
+    { label: '优势点', value: String((structured?.advantages || analysis?.advantages || []).length), note: '已经具备的竞争点' },
+    { label: '差距点', value: String(gaps.length), note: '需要重点补齐的短板' },
+  ];
+}
+
+function buildHotStats(analysis, structured) {
+  const items = analysis?.hot_candidates || structured?.hot_candidates || [];
+  const top = items[0] || {};
+  return [
+    { label: '候选数', value: String(items.length), note: '当前可上新的潜力款式' },
+    { label: '最高热度', value: top.score != null ? String(top.score) : '未提供', note: '首推款综合得分' },
+    { label: '趋势方向', value: top.external_trend?.growth_rate != null ? `${Math.round(top.external_trend.growth_rate * 100)}%` : '未提供', note: '外部热度增长' },
+    { label: '首推款', value: top.style_id || '未提供', note: '建议优先上线对象' },
+  ];
+}
+
+function buildColdStats(analysis, structured) {
+  const items = analysis?.cold_candidates || structured?.cold_candidates || [];
+  const top = items[0] || {};
+  return [
+    { label: '观察数', value: String(items.length), note: '需要处理的低表现款式' },
+    { label: '最高风险', value: top.risk_score != null ? String(top.risk_score) : '未提供', note: '风险最高款式分值' },
+    { label: '首个建议', value: top.suggested_action ? formatActionLabel(top.suggested_action) : '未提供', note: '优先处理动作' },
+    { label: '重点款', value: top.style_id || '未提供', note: '最先介入的款式' },
+  ];
+}
+
+function buildQueueStats(structured, payload) {
+  const actions = extractActions(payload);
+  const ready = actions.filter(item => String(item.status || '').trim() === 'ready').length;
+  return [
+    { label: '动作总数', value: String(actions.length), note: '本周可执行动作' },
+    { label: '立即执行', value: String(Math.min(2, actions.length)), note: '建议先做的动作' },
+    { label: '待确认', value: String(actions.filter(item => String(item.status || '').includes('pending')).length), note: '需要人为确认' },
+    { label: '已就绪', value: String(ready), note: '可直接推进' },
+  ];
+}
+
+function buildDispatchStats(structured, payload) {
+  const skills = Array.isArray(structured?.selected_skills) ? structured.selected_skills : [];
+  const actions = extractActions(payload);
+  return [
+    { label: '调度技能', value: String(skills.length || 1), note: '这次联动执行的技能数' },
+    { label: '动作建议', value: String(actions.length), note: '输出的可执行动作' },
+    { label: '分技能结果', value: String(structured?.skill_results ? Object.keys(structured.skill_results).length : 0), note: '已经生成的子结果数' },
+    { label: '分析周期', value: `${payload?.period_days || 14} 天`, note: '当前看板对应周期' },
+  ];
+}
+
+function buildStyleMetricLine(item) {
+  const metrics = [
+    item.tryons != null ? `试戴 ${item.tryons}` : '',
+    item.likes != null ? `喜欢 ${item.likes}` : '',
+    item.books != null ? `预约 ${item.books}` : '',
+    item.like_rate ? `好评 ${item.like_rate}` : '',
+    item.booking_rate ? `预约率 ${item.booking_rate}` : '',
+  ].filter(Boolean);
+  return metrics.join(' · ') || '当前没有更多指标。';
+}
+
+function buildCandidateMetricLine(item, mode) {
+  const metrics = item.metrics || {};
+  const head = [
+    metrics.tryons != null ? `试戴 ${metrics.tryons}` : '',
+    metrics.likes != null ? `喜欢 ${metrics.likes}` : '',
+    metrics.books != null ? `预约 ${metrics.books}` : '',
+  ].filter(Boolean).join(' · ');
+  if (mode === 'cold') {
+    return `${head || '基础表现偏弱'}${item.suggested_action ? ` · ${formatActionLabel(item.suggested_action)}` : ''}`;
+  }
+  const growth = item.external_trend?.growth_rate != null ? `趋势 ${Math.round(item.external_trend.growth_rate * 100)}%` : '';
+  return [head, growth].filter(Boolean).join(' · ') || '适合进一步评估是否上线。';
+}
+
+function renderAlertSummary(alerts, actions) {
+  const alertText = Array.isArray(alerts) && alerts.length
+    ? alerts.map(item => formatDisplayText(item.message || item)).join('；')
+    : '当前没有明显异常，建议继续跟踪核心转化指标。';
+  const actionText = Array.isArray(actions) && actions.length
+    ? `建议动作包括：${actions.slice(0, 3).map(item => formatActionLabel(item.type || item)).join('、')}`
+    : '当前没有明确动作要求。';
+  return `${alertText}；${actionText}`;
+}
+
+function formatTopList(items) {
+  if (!Array.isArray(items) || !items.length) return '当前暂无明显集中项';
+  return items.slice(0, 3).map(item => {
+    if (typeof item === 'string') return item;
+    return item.name || item.style_id || item.category || formatListItem(item);
+  }).join('、');
+}
+
+function formatListForNarrative(items) {
+  if (!Array.isArray(items) || !items.length) return '当前暂无明显信号';
+  return items.slice(0, 4).map(item => typeof item === 'string' ? formatDisplayText(item) : formatListItem(item)).join('；');
+}
+
+function formatDeltaValue(value) {
+  if (value == null) return '未提供';
+  if (typeof value === 'number') return value > 0 ? `+${value}` : String(value);
+  if (typeof value === 'object') {
+    if (value.ratio != null) {
+      const ratio = Math.round(value.ratio * 100);
+      return ratio > 0 ? `+${ratio}%` : `${ratio}%`;
+    }
+    if (value.absolute != null) {
+      return value.absolute > 0 ? `+${value.absolute}` : String(value.absolute);
+    }
+  }
+  return formatDisplayText(JSON.stringify(value));
+}
+
+function normalizeVisualPercent(value, max = 100) {
+  const numeric = Number(value || 0);
+  if (!Number.isFinite(numeric)) return 0;
+  return Math.max(8, Math.min(100, Math.round((numeric / Math.max(max, 1)) * 100)));
+}
+
+function parsePercent(value) {
+  if (typeof value === 'number') return value;
+  const matched = String(value || '').match(/-?\d+(\.\d+)?/);
+  return matched ? Number(matched[0]) : 0;
+}
+
+function buildMiniHighlights(skillId, value) {
+  const items = [];
+  if (value.ui_summary) items.push('结论已生成');
+  if (Array.isArray(value.hot_candidates) && value.hot_candidates.length) items.push(`${value.hot_candidates.length} 个上新候选`);
+  if (Array.isArray(value.cold_candidates) && value.cold_candidates.length) items.push(`${value.cold_candidates.length} 个低表现款`);
+  if (Array.isArray(value.peer_group) && value.peer_group.length) items.push(`${value.peer_group.length} 家对比门店`);
+  if (value.metrics?.tryons != null) items.push(`试戴 ${value.metrics.tryons}`);
+  if (Array.isArray(value.actions) && value.actions.length) items.push(`${value.actions.length} 条动作`);
+  if (!items.length) items.push(formatSkillLabel(skillId));
+  return items;
+}
+
+function setBusy(value) {
+  busy = value;
+  sendBtn.disabled = value;
+  document.querySelectorAll('.skill-item, .history-item, .quick-card, .new-skill').forEach(btn => {
+    btn.disabled = value;
+  });
+}
+
+function clearEmpty() {
+  if (emptyState) emptyState.remove();
+}
+
+function scrollBottom() {
+  requestAnimationFrame(() => {
+    messages.scrollTop = messages.scrollHeight;
+  });
+}
+
+function hasChinese(text) {
+  return /[\u4e00-\u9fff]/.test(String(text || ''));
+}
+
+function localizeFieldLabel(key) {
+  return FIELD_LABELS[key] || humanizeKey(key);
+}
+
+function formatSkillLabel(skillId) {
+  if (!skillId) return '商家自由会话';
+  return getSkillName(skillId);
+}
+
+function formatActionLabel(value) {
+  if (!value) return '建议动作';
+  const key = String(value).trim();
+  return ACTION_LABELS[key] || formatDisplayText(key);
+}
+
+function formatValueLabel(value) {
+  if (value == null || value === '') return '';
+  const key = String(value).trim();
+  return VALUE_LABELS[key] || ACTION_LABELS[key] || key;
+}
+
+function formatStatusValue(value) {
+  return formatValueLabel(value);
+}
+
+function formatDisplayText(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return '';
+  const mapped = {
+    'Local fallback profile. OpenClaw should generate merchant-facing Chinese copy.': '已生成本地兜底画像，可作为当前门店的基础分析结果。',
+    '3 local fallback action items generated.': '已生成 3 条本地兜底动作建议。',
+    'waiting for confirmation': '等待确认',
+    'pending review': '待复核',
+    'local_cold_risk_score': '本地冷门风险评分偏高',
+    'local_hot_score': '本地爆款潜力评分较高'
+  }[text];
+  if (mapped) return mapped;
+  return text
+    .replace(/\bSKILLS\b/g, '技能')
+    .replace(/\bSKILL\b/g, '技能')
+    .replace(/\bOpenClaw\b/g, 'OpenClaw');
+}
+
+function formatActionReason(action) {
+  if (action && action.params && typeof action.params === 'object' && Object.keys(action.params).length) {
+    return Object.entries(action.params)
+      .map(([key, value]) => `${localizeFieldLabel(key)}：${formatFieldValue(key, value)}`)
+      .join(' · ');
+  }
+  return formatDisplayText(action?.reason || action?.target || '等待确认');
+}
+
+function formatFieldValue(key, value) {
+  if (key === 'shop_id') {
+    return SHOP_LABELS[String(value).trim()] || String(value ?? '');
+  }
+  if (key === 'featured_styles') {
+    return String(value ?? '').split(',').map(item => item.trim()).filter(Boolean).join('、');
+  }
+  return formatActionValue(value);
+}
+
+function formatActionValue(value) {
+  if (Array.isArray(value)) {
+    return value.map(item => formatActionValue(item)).join('、');
+  }
+  if (value && typeof value === 'object') {
+    return Object.entries(value)
+      .map(([key, item]) => `${localizeFieldLabel(key)}：${formatActionValue(item)}`)
+      .join(' · ');
+  }
+  const raw = String(value ?? '');
+  if (raw.includes(',') && raw.includes('nail_')) {
+    return raw.split(',').map(item => item.trim()).filter(Boolean).join('、');
+  }
+  return formatValueLabel(raw);
+}
+
+function localizeProgressList(progress) {
+  if (!Array.isArray(progress)) return [];
+  const localized = progress
+    .map((item, index) => localizeProgressItem(item, index))
+    .filter(Boolean);
+  return [...new Set(localized)];
+}
+
+function localizeProgressItem(item, index) {
+  const text = String(item || '').trim();
+  if (!text) return '';
+  const rules = [
+    [/this merchant wants/i, '正在识别本次诉求，并匹配对应技能组合。'],
+    [/that maps to/i, '正在把目标映射到合适的技能与动作链路。'],
+    [/query the data fresh/i, '正在读取门店、行为、趋势和广场数据。'],
+    [/check exactly which growth rates/i, '正在校验增长率与近 14 天关键指标。'],
+    [/compute 14-day deltas/i, '正在计算近 14 天变化并整理结果。'],
+    [/full picture/i, '正在汇总全部分析结果并生成建议。'],
+    [/producing/i, '正在生成最终商家结论。'],
+    [/same dataset, same analysis/i, '正在复用已读取的数据并重新组织输出。'],
+  ];
+  const matched = rules.find(([pattern]) => pattern.test(text));
+  if (matched) return matched[1];
+  if (hasChinese(text)) return formatDisplayText(text);
+  return GENERIC_PROGRESS_STEPS[Math.min(index, GENERIC_PROGRESS_STEPS.length - 1)];
+}
+
+function getSkillName(skillId) {
+  const skill = getSkillById(skillId);
+  return skill ? skill.name : '商家自由会话';
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+}
+
+init();
+</script>
+</body>
+</html>
