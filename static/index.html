@@ -2199,9 +2199,27 @@
           ${data.target_category_name ? `<span>STYLE <b>${escapeHtml(data.target_category_name)}</b></span>` : ''}
         </div>
       `;
-      // 插在选中 card 之后；grid-column: 1 / -1 让它跨满整行
-      card.after(detail);
+      // 插到「选中卡所在那一行的最后一张 card」之后 —— 用 offsetTop 判同行，
+      // 这样选中卡同行的其他 card 不会被挤到下一行
+      const sameRowEnd = findRowEnd(card);
+      sameRowEnd.after(detail);
     } catch {}
+  }
+
+  // 找到 card 所在 grid 行的最后一张可见 .style-card（包括 card 自己）
+  function findRowEnd(card) {
+    const grid = card.parentElement;
+    if (!grid) return card;
+    const cards = Array.from(grid.querySelectorAll('.style-card'))
+      .filter(c => c.offsetParent !== null); // 排除被 filter 隐藏的
+    const baseTop = card.offsetTop;
+    const startIdx = cards.indexOf(card);
+    let last = card;
+    for (let i = startIdx + 1; i < cards.length; i++) {
+      if (cards[i].offsetTop === baseTop) last = cards[i];
+      else break;
+    }
+    return last;
   }
 
   // 工具：远程图 URL → dataURL（灵感图试戴时复用 tryon 现有 custom_style_image 入参）
