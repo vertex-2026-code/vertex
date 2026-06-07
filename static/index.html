@@ -2170,6 +2170,9 @@
     const myToken = ++styleDetailToken;
     const grid = $('#styles-grid');
     if (!grid || !card) return;
+    // 灵感图（自定义款）阶段 AI 还没分析风格，不展示门店详情，避免误导
+    // 试戴完成后再走真正的「找门店」流程
+    if (styleId === '__custom__') return;
     try {
       const url = `/api/shops/for_style?style_id=${encodeURIComponent(styleId)}` +
                   (userId ? `&user_id=${encodeURIComponent(userId)}` : '');
