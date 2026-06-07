@@ -811,17 +811,15 @@
     <!-- 筛选栏 -->
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;
       background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px">
-      <span style="font-family:var(--font-mono);font-size:10px;color:var(--t-tertiary);text-transform:uppercase;letter-spacing:0.14em;margin-right:4px">商家数据看台</span>
-      <select id="gmv-city" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 10px;font-size:12px;font-family:var(--font-body)" onchange="loadGmvDashboard()">
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--t-tertiary);text-transform:uppercase;letter-spacing:0.14em;margin-right:4px">运营数据看板</span>
+      <input type="text" id="merchant-search" placeholder="搜索门店名…" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 10px;font-size:12px;font-family:var(--font-body);width:140px" oninput="loadMerchantList()">
+      <select id="gmv-city" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 10px;font-size:12px;font-family:var(--font-body)" onchange="loadGmvDashboard();loadMerchantList()">
         <option value="">全部城市</option>
       </select>
-      <input type="date" id="gmv-from" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 8px;font-size:12px;font-family:var(--font-body)" onchange="loadGmvDashboard()">
-      <span style="color:var(--t-tertiary);font-size:12px">→</span>
-      <input type="date" id="gmv-to" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 8px;font-size:12px;font-family:var(--font-body)" onchange="loadGmvDashboard()">
-      <select id="gmv-style" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 10px;font-size:12px;font-family:var(--font-body);min-width:140px" onchange="loadGmvDashboard()">
-        <option value="">全部款式</option>
+      <select id="gmv-style" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 10px;font-size:12px;font-family:var(--font-body);min-width:120px" onchange="loadGmvDashboard()">
+        <option value="">全部风格</option>
       </select>
-      <span style="font-size:11px;color:var(--t-tertiary);margin-left:auto" id="gmv-period-label">最近 30 天</span>
+      <button onclick="toggleMerchantPanel()" style="background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--t-secondary);padding:4px 12px;font-size:11px;cursor:pointer;font-family:var(--font-body);margin-left:auto">商家列表 ▾</button>
     </div>
 
     <!-- KPI 卡片行 -->
@@ -839,6 +837,17 @@
         <div><span class="panel-eyebrow">Multi-Metric Trend</span><h2 class="panel-title">GMV 趋势 · 五维同屏</h2></div>
       </div>
       <div style="height:280px"><canvas id="gmvDashChart"></canvas></div>
+    </div>
+
+    <!-- 商家列表（可折叠） -->
+    <div id="merchant-panel" style="display:none;margin-top:10px">
+      <div class="panel">
+        <div class="panel-head">
+          <div><span class="panel-eyebrow">Merchant List</span><h2 class="panel-title">商家列表</h2></div>
+          <span style="font-size:11px;color:var(--t-tertiary)" id="merchant-count"></span>
+        </div>
+        <div id="merchant-list" style="max-height:360px;overflow-y:auto"></div>
+      </div>
     </div>
   </section>
 
@@ -1078,27 +1087,7 @@ async function loadGmvDashboard() {
 
     $('#dk-cvr').innerHTML = d.avg_cvr.toFixed(2) + '%';
 
-    if (d.top_styles?.length) {
-      const sel = $('#gmv-style');
-      if (sel && sel.options.length <= 1) {
-        d.top_styles.forEach(([sid, name]) => {
-          const opt = document.createElement('option');
-          opt.value = sid; opt.textContent = name || sid;
-          sel.appendChild(opt);
-        });
-      }
-    }
-
-    if (d.cities?.length) {
-      const sel = $('#gmv-city');
-      if (sel && sel.options.length <= 1) {
-        d.cities.forEach(c => {
-          const opt = document.createElement('option');
-          opt.value = c; opt.textContent = c;
-          sel.appendChild(opt);
-        });
-      }
-    }
+    // 城市/风格下拉由 merchant_list API 填充
 
     // Chart
     if (d.daily?.length) {
@@ -1154,13 +1143,61 @@ async function loadGmvDashboard() {
       });
     }
 
-    const days = d.daily?.length || 0;
-    const el = $('#gmv-period-label');
-    if (el && days) el.textContent = `${d.daily[0]?.date?.slice(5) || ''} → ${d.daily[days-1]?.date?.slice(5) || ''} (${days}天)`;
   } catch(e) { console.log('GMV dashboard:', e); }
 }
 
 loadGmvDashboard();
+
+/* ===== 商家列表 ===== */
+function toggleMerchantPanel() {
+  const p = $('#merchant-panel');
+  if (p) {
+    const vis = p.style.display === 'none';
+    p.style.display = vis ? 'block' : 'none';
+    if (vis) loadMerchantList();
+  }
+}
+
+async function loadMerchantList() {
+  const params = new URLSearchParams();
+  const search = ($('#merchant-search')?.value || '').trim();
+  const city = $('#gmv-city')?.value || '';
+  const style = $('#gmv-style')?.value || '';
+  if (search) params.set('search', search);
+  if (city) params.set('city', city);
+  if (style) params.set('style', style);
+  const qs = params.toString();
+  try {
+    const r = await fetch('/api/admin/merchant_list' + (qs ? '?' + qs : ''));
+    const d = await r.json();
+    const el = $('#merchant-count');
+    if (el && d.total != null) el.textContent = '共 ' + d.total + ' 家';
+    if (d.styles?.length) {
+      const sel = $('#gmv-style');
+      if (sel && sel.children.length <= 1) d.styles.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
+    }
+    if (d.cities?.length) {
+      const sel = $('#gmv-city');
+      if (sel && sel.children.length <= 1) d.cities.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+    }
+    const list = $('#merchant-list');
+    if (!list) return;
+    if (!d.merchants?.length) { list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--t-tertiary)">无匹配商家</div>'; return; }
+    list.innerHTML = d.merchants.map(m => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--hairline);cursor:pointer"
+           onmouseenter="this.style.background='var(--hover)'" onmouseleave="this.style.background=''"
+           onclick="chatInput.value='分析门店 ${m.shop_id} ${m.shop_name} 的GMV和运营数据';sendChat()">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:500;color:var(--t-primary)">${m.shop_name}</div>
+          <div style="font-size:10px;color:var(--t-tertiary);margin-top:2px">${m.city}·${m.district} | ${m.style} ${m.style_name} | 单价¥${m.avg_ticket}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:13px;font-family:var(--font-mono);color:var(--accent)">¥${F(m.period_gmv)}</div>
+          <div style="font-size:10px;color:var(--t-tertiary)">★★★ ${m.rating} · ${m.review_count||0}评</div>
+        </div>
+      </div>`).join('');
+  } catch(e) { console.log('merchant list:', e); }
+}
 
 /* ===== AI 对话 ===== */
 const chatMessages = $('#chat-messages');

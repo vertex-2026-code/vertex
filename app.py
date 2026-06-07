@@ -1644,6 +1644,60 @@ def gmv_dashboard():
     })
 
 
+# ============ 商家列表 API ============
+
+@app.route('/api/admin/merchant_list')
+def merchant_list():
+    db = get_db()
+    search = request.args.get("search", "").strip()
+    city = request.args.get("city", "").strip()
+    style = request.args.get("style", "").strip()
+
+    where = ""
+    params = []
+    if search:
+        where += " AND (p.shop_name LIKE ? OR p.shop_id LIKE ?)"
+        params.extend([f"%{search}%", f"%{search}%"])
+    if city:
+        where += " AND p.city = ?"
+        params.append(city)
+    if style:
+        where += " AND p.style = ?"
+        params.append(style)
+
+    sql = f"""
+        SELECT p.shop_id, p.shop_name, p.city, p.district, p.style, p.style_name,
+               p.rating, p.review_count, p.avg_ticket, p.monthly_revenue,
+               p.hero_sku_name, p.owner_name,
+               COALESCE(s.total_rev, 0) AS period_gmv
+        FROM merchant_profiles p
+        LEFT JOIN (
+            SELECT shop_id, SUM(revenue) AS total_rev
+            FROM merchant_shop_daily_metrics
+            GROUP BY shop_id
+        ) s ON p.shop_id = s.shop_id
+        WHERE 1=1 {where}
+        ORDER BY period_gmv DESC LIMIT 50
+    """
+    rows = db.execute(sql, params).fetchall()
+
+    merchants = []
+    for r in rows:
+        merchants.append({
+            "shop_id": r[0], "shop_name": r[1], "city": r[2], "district": r[3],
+            "style": r[4], "style_name": r[5], "rating": r[6], "review_count": r[7],
+            "avg_ticket": r[8], "monthly_revenue": r[9],
+            "hero_sku": r[10], "owner": r[11], "period_gmv": int(r[12] or 0),
+        })
+
+    cities = [r[0] for r in db.execute(
+        "SELECT DISTINCT city FROM merchant_profiles ORDER BY city").fetchall()]
+    styles = [r[0] for r in db.execute(
+        "SELECT DISTINCT style FROM merchant_profiles ORDER BY style").fetchall()]
+
+    return jsonify({"merchants": merchants, "cities": cities, "styles": styles, "total": len(merchants)})
+
+
 # ============ Skills API ============
 
 @app.route('/api/admin/skills/<skill_name>')
