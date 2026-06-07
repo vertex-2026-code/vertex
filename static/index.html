@@ -669,6 +669,12 @@
     pointer-events: none;
   }
   .style-card.inspiration.mine::after { content: 'MINE'; }
+  /* 灵感卡的"选中"视觉去掉——MINE 角标已经表达了归属，不再用 .selected 的发光边框 + scale */
+  .style-card.inspiration.selected {
+    border-color: var(--stage-line);
+    box-shadow: none;
+    transform: none;
+  }
 
   .custom-tile {
     aspect-ratio: 1 / 1;
