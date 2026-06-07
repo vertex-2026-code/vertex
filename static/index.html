@@ -1649,7 +1649,7 @@
     <span class="ai-drawer-eyebrow">AI</span>
     <h3>✦ 深度风格画像</h3>
     <button id="ai-drawer-min" class="ai-drawer-min" type="button" aria-label="折叠" title="折叠">—</button>
-    <button id="ai-drawer-close" class="ai-drawer-close" type="button" aria-label="关闭" title="关闭">×</button>
+    <button id="ai-drawer-refresh" class="ai-drawer-close" type="button" aria-label="重新分析" title="重新分析">↻</button>
   </div>
   <div id="ai-drawer-body" class="ai-drawer-body"></div>
 </aside>
@@ -2413,18 +2413,30 @@
   const aiDrawer = $('#ai-drawer');
   const aiBody = $('#ai-drawer-body');
 
+  // 已分析过的结果缓存在 DOM 里；用 hasAiResult 标记，切换用户时失效
+  let hasAiResult = false;
+  let cachedAiUid = '';
+  let aiAnalyzing = false;
+
   function openAiDrawer() {
     aiDrawer.classList.remove('minimized');
     aiDrawer.classList.add('open');
   }
-  function closeAiDrawer() {
-    aiDrawer.classList.remove('open');
-    aiDrawer.classList.remove('minimized');
+  function minimizeAiDrawer() {
+    aiDrawer.classList.add('open');
+    aiDrawer.classList.add('minimized');
   }
   function toggleAiMin() {
     aiDrawer.classList.toggle('minimized');
   }
-  $('#ai-drawer-close').addEventListener('click', e => { e.stopPropagation(); closeAiDrawer(); });
+  $('#ai-drawer-refresh').addEventListener('click', e => {
+    e.stopPropagation();
+    if (aiAnalyzing) return;
+    // 强制重新分析：清缓存，触发顶部按钮的分析流程
+    hasAiResult = false;
+    cachedAiUid = '';
+    runAiAnalysis();
+  });
   $('#ai-drawer-min').addEventListener('click', e => { e.stopPropagation(); toggleAiMin(); });
   // 点 header 也能展开（折叠状态下方便恢复）
   $('#ai-drawer-head').addEventListener('click', () => {
@@ -2502,7 +2514,8 @@
     `;
   }
 
-  // 点击 AI 推荐卡 → 关掉抽屉 + 跳到对应款式（复用 recommend-card 的逻辑）
+  // 点击 AI 推荐卡 → 抽屉最小化（保留内容）+ 跳到对应款式
+  // 这样用户回头点 "让 AI 看看我" 能立即看到结果，不用重跑 4 分钟
   aiBody.addEventListener('click', e => {
     const item = e.target.closest('.ai-rec-item');
     if (!item) return;
@@ -2518,11 +2531,11 @@
     selectedStyle = sid;
     customStyleImage = null;
     checkReady();
-    closeAiDrawer();
+    minimizeAiDrawer();
     target.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 
-  aiBtn.addEventListener('click', async () => {
+  async function runAiAnalysis() {
     const uid = (userId || '').trim();
     if (!uid) {
       aiBody.innerHTML = `<div class="ai-error">请先在登录页输入名字，再让 AI 分析。</div>`;
@@ -2532,6 +2545,7 @@
     openAiDrawer();
     aiBody.innerHTML = aiLoadingHTML('AI 正在加载 user-style-analyst skill…');
     aiBtn.disabled = true;
+    aiAnalyzing = true;
     const stageTimers = [
       setTimeout(() => { aiBody.innerHTML = aiLoadingHTML('正在查站内试戴 + 收藏记录…'); }, 8000),
       setTimeout(() => { aiBody.innerHTML = aiLoadingHTML('拉外部社区趋势 (小红书 / 抖音)…'); }, 25000),
@@ -2553,12 +2567,16 @@
       const structured = renderParsed(d.parsed);
       if (structured) {
         aiBody.innerHTML = structured;
+        hasAiResult = true;
+        cachedAiUid = uid;
       } else if (d.reply) {
         aiBody.innerHTML = `
           <div class="ai-section">
             <div class="ai-section-title">AI 原始输出</div>
             <div class="ai-raw-fallback">${d.reply.replace(/</g,'&lt;')}</div>
           </div>`;
+        hasAiResult = true;
+        cachedAiUid = uid;
       } else {
         aiBody.innerHTML = `<div class="ai-error">AI 没有返回内容</div>`;
       }
@@ -2566,7 +2584,19 @@
       aiBody.innerHTML = `<div class="ai-error">网络错误：${e.message || e}</div>`;
     } finally {
       aiBtn.disabled = false;
+      aiAnalyzing = false;
     }
+  }
+
+  aiBtn.addEventListener('click', () => {
+    const uid = (userId || '').trim();
+    // 已分析过、且仍是当前用户 → 直接展开抽屉（不重跑）
+    // 重新分析走头部 ↻ 按钮
+    if (hasAiResult && cachedAiUid === uid) {
+      openAiDrawer();
+      return;
+    }
+    runAiAnalysis();
   });
 </script>
 </body>
