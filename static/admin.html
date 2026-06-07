@@ -970,6 +970,8 @@
 
 <script>
 const $ = q => document.querySelector(q);
+const F = n => n == null ? '0' : Math.round(Number(n) || 0).toLocaleString('en-US');
+const fmtNum = F;
 
 const CAT_COLORS = { A:'#e8cdb0', B:'#cf9aa6', C:'#d4ab7c', D:'#9a7d8c', E:'#c98f76' };
 const SHOP_NAMES = {
@@ -1269,7 +1271,17 @@ async function loadMerchantList(){
   try{var r=await fetch('/api/admin/merchant_list'+(p.toString()?'?'+p.toString():''));var d=await r.json();var el=document.getElementById('merchant-count');if(el&&d.total!=null)el.textContent='共 '+d.total+' 家';
     var list=document.getElementById('merchant-list');if(!list)return;
     if(!d.merchants?.length){list.innerHTML='<div style=\"text-align:center;padding:20px;color:var(--t-tertiary)\">无匹配商家</div>';return}
-    list.innerHTML=d.merchants.map(function(m){return '<div style=\"display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--hairline);cursor:pointer\" onmouseenter=\"this.style.background=\\'var(--hover)\\'\" onmouseleave=\"this.style.background=\\'\\'\" onclick=\"document.getElementById(\\'chat-input\\').value=\\'分析门店 '+m.shop_id+' '+m.shop_name+' 的GMV和运营数据\\';sendChat()\"><div style=\"flex:1;min-width:0\"><div style=\"font-size:13px;font-weight:500;color:var(--t-primary)\">'+m.shop_name+'</div><div style=\"font-size:10px;color:var(--t-tertiary);margin-top:2px\">'+m.city+'·'+m.district+' | '+m.style_name+' | 单价¥'+m.avg_ticket+'</div></div><div style=\"text-align:right;flex-shrink:0\"><div style=\"font-size:13px;font-family:var(--font-mono);color:var(--accent)\">¥'+F(m.period_gmv)+'</div><div style=\"font-size:10px;color:var(--t-tertiary)\">★★★ '+m.rating+' · '+(m.review_count||0)+'评</div></div></div>'}).join('')}catch(e){console.log(e)}}
+    list.innerHTML='';
+    d.merchants.forEach(function(m){
+      var prompt='分析门店 '+m.shop_id+' '+m.shop_name+' 的GMV和运营数据';
+      var div=document.createElement('div');
+      div.style.cssText='display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--hairline);cursor:pointer';
+      div.onmouseenter=function(){this.style.background='var(--hover)'};
+      div.onmouseleave=function(){this.style.background=''};
+      div.onclick=function(){document.getElementById('chat-input').value=prompt;sendChat()};
+      div.innerHTML='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:var(--t-primary)">'+m.shop_name+'</div><div style="font-size:10px;color:var(--t-tertiary);margin-top:2px">'+m.city+'·'+m.district+' | '+m.style_name+' | 单价¥'+m.avg_ticket+'</div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:13px;font-family:var(--font-mono);color:var(--accent)">¥'+F(m.period_gmv)+'</div><div style="font-size:10px;color:var(--t-tertiary)">★★★ '+m.rating+' · '+(m.review_count||0)+'评</div></div>';
+      list.appendChild(div);
+    });}catch(e){console.log(e)}}
 
 /* ===== AI 对话 ===== */
 var chatMessages=document.getElementById('chat-messages');
@@ -1345,7 +1357,6 @@ async function triggerSkill(chip){
   try{var r=await fetch(url);var data=await r.json();if(data.error)throw new Error(data.error);loadingDiv.innerHTML=formatSkillResult(skill,data)}catch(e){loadingDiv.innerHTML='<p style=\"color:#e0a07e\">查询失败: '+e.message+'</p>'}
   chip.classList.remove('loading')}
 
-document.querySelectorAll('.skill-chip').forEach(function(chip){chip.addEventListener('click',function(){triggerSkill(chip)})});
 </script>
 </body>
 </html>
