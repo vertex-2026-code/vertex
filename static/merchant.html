@@ -93,8 +93,38 @@
     opacity: 0.26;
   }
 
+  /* ===== 全局卡片顶部 1px 香槟金高光线（admin/index 同源标志元素）===== */
+  .dashboard-shell,
+  .overview-card, .focus-card, .funnel-card, .chart-card,
+  .history-preview-card, .gallery-card, .hero-card,
+  .kpi-card, .stat-tile, .quick-card, .list-card,
+  .today-advice-shell, .result-card, .story-card,
+  .peer-public-card, .account-card, .manager-detail-card,
+  .manager-panel, .manager-style-card, .auth-card, .auth-gate,
+  .empty-state {
+    position: relative;
+    overflow: hidden;
+  }
+  .dashboard-shell::before,
+  .overview-card::before, .focus-card::before, .funnel-card::before, .chart-card::before,
+  .history-preview-card::before, .gallery-card::before, .hero-card::before,
+  .kpi-card::before, .stat-tile::before, .quick-card::before, .list-card::before,
+  .today-advice-shell::before, .result-card::before, .story-card::before,
+  .peer-public-card::before, .account-card::before, .manager-detail-card::before,
+  .manager-panel::before, .manager-style-card::before, .auth-card::before, .auth-gate::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent,
+      color-mix(in srgb, var(--accent) 36%, transparent) 50%, transparent);
+    pointer-events: none;
+    z-index: 1;
+  }
+
   * { box-sizing: border-box; }
   html, body { height: 100%; }
+  html { background: var(--bg); }
   body {
     margin: 0;
     color: var(--text);
@@ -103,7 +133,7 @@
     letter-spacing: 0.005em;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    background: var(--bg);
+    background: transparent;
     overflow: hidden;
   }
 

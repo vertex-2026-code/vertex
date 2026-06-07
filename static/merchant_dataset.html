@@ -52,6 +52,7 @@
   }
 
   * { box-sizing: border-box; }
+  html { background: var(--bg); }
   body {
     margin: 0;
     color: var(--text);
@@ -60,7 +61,7 @@
     letter-spacing: 0.005em;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    background: var(--bg);
+    background: transparent;
   }
 
   /* ===== Backdrop：三层 fixed ===== */
@@ -88,6 +89,23 @@
     background-size: 440px 440px;
     mix-blend-mode: color-dodge;
     opacity: 0.26;
+  }
+
+  /* ===== 全局卡片顶部 1px 香槟金高光线 ===== */
+  .card, .panel, .summary-card, .metric-tile, .table-card {
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before, .panel::before, .summary-card::before,
+  .metric-tile::before, .table-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent,
+      color-mix(in srgb, var(--accent) 36%, transparent) 50%, transparent);
+    pointer-events: none;
+    z-index: 1;
   }
 
   button, input, select { font: inherit; }
