@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>甲趣商家 SKILLS 工作台</title>
+<title>甲趣商家经营台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Noto+Serif+SC:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #151012;
@@ -15,12 +18,20 @@
     --faint: rgba(241, 220, 207, 0.42);
     --accent: #d4ab7c;
     --rose: #c0808f;
+    --ai-accent: #c7939f;
+    --ai-accent-deep: #aa6f7d;
+    --ai-text: #f6d9df;
+    --ai-border: rgba(199, 147, 159, 0.34);
+    --ai-surface: rgba(199, 147, 159, 0.12);
+    --ai-surface-strong: rgba(199, 147, 159, 0.2);
     --green: #9fd0b5;
     --red: #e2a08e;
     --shadow: rgba(0, 0, 0, 0.28);
     --sidebar: 292px;
     --radius: 8px;
-    font-family: "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Fraunces", "Noto Serif SC", "Songti SC", "PingFang SC", serif;
+    --font-body: "Fraunces", "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
+    --font-mono: "DM Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
   }
 
   * { box-sizing: border-box; }
@@ -28,6 +39,11 @@
   body {
     margin: 0;
     color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.55;
+    letter-spacing: 0.005em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
     background:
       radial-gradient(900px 520px at 100% 0%, rgba(212, 171, 124, 0.13), transparent 60%),
       radial-gradient(700px 440px at 0% 100%, rgba(192, 128, 143, 0.12), transparent 62%),
@@ -49,6 +65,16 @@
     grid-template-columns: var(--sidebar) 1fr;
     height: 100vh;
     min-height: 640px;
+  }
+
+  body.auth-locked .app {
+    grid-template-columns: 1fr;
+  }
+
+  body.auth-locked .sidebar,
+  body.auth-locked .topbar,
+  body.auth-locked .assistant-fab {
+    display: none;
   }
 
   .sidebar {
@@ -73,16 +99,15 @@
 
   .brand h1 {
     margin: 0;
-    font-size: 20px;
+    font-family: var(--font-display);
+    font-size: 24px;
     letter-spacing: 0;
-    font-weight: 650;
+    font-weight: 600;
+    line-height: 1.05;
   }
 
   .brand p {
-    margin: 7px 0 0;
-    color: var(--muted);
-    font-size: 12px;
-    line-height: 1.5;
+    display: none;
   }
 
   .collapse-btn, .icon-btn {
@@ -116,8 +141,11 @@
   .section-title {
     padding: 12px 8px 7px;
     color: var(--faint);
-    font-size: 12px;
-    letter-spacing: 0.08em;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
   }
 
   .skill-item {
@@ -380,15 +408,14 @@
 
   .auth-card h3 {
     margin: 0;
+    font-family: var(--font-display);
     font-size: 24px;
     line-height: 1.2;
+    font-weight: 600;
   }
 
   .auth-card p {
-    margin: 10px 0 0;
-    color: var(--muted);
-    line-height: 1.7;
-    font-size: 13px;
+    display: none;
   }
 
   .auth-form {
@@ -457,33 +484,18 @@
   }
 
   .topbar {
-    min-height: 70px;
-    padding: 16px 24px;
+    min-height: 54px;
+    padding: 10px 24px;
     border-bottom: 1px solid var(--line);
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     gap: 16px;
     background: rgba(21, 16, 18, 0.78);
   }
 
   .session-title {
-    min-width: 0;
-  }
-
-  .session-title h2 {
-    margin: 0;
-    font-size: 19px;
-    font-weight: 700;
-  }
-
-  .session-title p {
-    margin: 6px 0 0;
-    color: var(--muted);
-    font-size: 13px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: none;
   }
 
   .status-row {
@@ -492,6 +504,13 @@
     gap: 10px;
     flex-wrap: wrap;
     justify-content: flex-end;
+  }
+
+  .status-row .pill,
+  .status-row .toolbar-logout,
+  .status-row .toggle-line,
+  .status-row > .toolbar-field:not([for="periodSelect"]) {
+    display: none;
   }
 
   .pill {
@@ -504,7 +523,10 @@
     border-radius: 999px;
     color: var(--muted);
     background: rgba(241, 220, 207, 0.04);
-    font-size: 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     white-space: nowrap;
   }
 
@@ -555,15 +577,20 @@
     text-align: left;
     padding: 14px;
     min-height: 86px;
-    color: var(--text);
-    border: 1px solid var(--line);
+    color: var(--ai-text);
+    border: 1px solid var(--ai-border);
     border-radius: 8px;
-    background: rgba(241, 220, 207, 0.045);
+    background:
+      linear-gradient(180deg, rgba(199, 147, 159, 0.12), rgba(199, 147, 159, 0.06)),
+      rgba(241, 220, 207, 0.03);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   }
 
   .quick-card:hover {
-    border-color: rgba(212, 171, 124, 0.42);
-    background: rgba(212, 171, 124, 0.08);
+    border-color: rgba(199, 147, 159, 0.48);
+    background:
+      linear-gradient(180deg, rgba(199, 147, 159, 0.18), rgba(199, 147, 159, 0.09)),
+      rgba(241, 220, 207, 0.04);
   }
 
   .quick-card strong {
@@ -574,7 +601,7 @@
   .quick-card span {
     display: block;
     margin-top: 6px;
-    color: var(--muted);
+    color: rgba(246, 217, 223, 0.76);
     font-size: 12px;
     line-height: 1.45;
   }
@@ -1070,9 +1097,10 @@
     min-width: 76px;
     min-height: 42px;
     border-radius: 8px;
-    background: var(--accent);
-    color: #1a1012;
+    background: linear-gradient(180deg, var(--ai-accent), var(--ai-accent-deep));
+    color: #241417;
     font-weight: 800;
+    box-shadow: 0 10px 22px rgba(170, 111, 125, 0.24);
   }
 
   .send-btn:disabled {
@@ -1181,65 +1209,1076 @@
       --sidebar: 1fr;
     }
   }
+
+  .nav-cluster {
+    display: grid;
+    gap: 6px;
+  }
+
+  .sidebar-logout {
+    width: 100%;
+    margin-top: 10px;
+    min-height: 38px;
+    text-align: left;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(241, 220, 207, 0.1);
+    background: rgba(241, 220, 207, 0.04);
+    color: var(--muted);
+  }
+
+  .sidebar-logout:hover {
+    border-color: rgba(192, 128, 143, 0.28);
+    background: rgba(192, 128, 143, 0.08);
+    color: var(--text);
+  }
+
+  .nav-link {
+    width: 100%;
+    min-height: 38px;
+    text-align: left;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: rgba(241, 220, 207, 0.02);
+    color: var(--muted);
+  }
+
+  .nav-link:hover,
+  .nav-link.active {
+    background: rgba(212, 171, 124, 0.11);
+    border-color: rgba(212, 171, 124, 0.2);
+    color: var(--text);
+  }
+
+  .hidden-store {
+    display: none !important;
+  }
+
+  .toolbar-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(241, 220, 207, 0.04);
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .toolbar-field select {
+    min-height: 24px;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    outline: none;
+    padding: 0;
+  }
+
+  .toolbar-logout {
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(192, 128, 143, 0.22);
+    background: rgba(192, 128, 143, 0.12);
+    color: #f0bdc9;
+  }
+
+  .dashboard-scroll {
+    overflow: auto;
+    padding: 22px clamp(18px, 3vw, 34px) 110px;
+  }
+
+  .dashboard-shell {
+    max-width: 1160px;
+    margin: 0 auto;
+    display: grid;
+    gap: 16px;
+  }
+
+  .hero-surface {
+    border: 1px solid rgba(212, 171, 124, 0.18);
+    border-radius: 18px;
+    padding: 20px;
+    background:
+      radial-gradient(130% 170% at 100% 0%, rgba(212, 171, 124, 0.18), transparent 58%),
+      linear-gradient(135deg, rgba(241, 220, 207, 0.07), rgba(0, 0, 0, 0.18));
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) auto;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .hero-copy-block {
+    display: grid;
+    gap: 10px;
+  }
+
+  .hero-label {
+    display: none;
+  }
+
+  .hero-heading {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(28px, 3.6vw, 38px);
+    line-height: 1.08;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .hero-paragraph {
+    display: none;
+  }
+
+  .hero-tools {
+    display: grid;
+    gap: 10px;
+  }
+
+  .ghost-btn {
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(241, 220, 207, 0.12);
+    background: rgba(241, 220, 207, 0.04);
+    color: var(--text);
+  }
+
+  .ghost-btn:hover {
+    border-color: rgba(212, 171, 124, 0.28);
+    background: rgba(212, 171, 124, 0.08);
+  }
+
+  .ghost-btn[data-run-skill],
+  .ghost-btn[data-chat-message] {
+    border-color: var(--ai-border);
+    background:
+      linear-gradient(180deg, rgba(199, 147, 159, 0.12), rgba(199, 147, 159, 0.05)),
+      rgba(241, 220, 207, 0.03);
+    color: var(--ai-text);
+  }
+
+  .ghost-btn[data-run-skill]:hover,
+  .ghost-btn[data-chat-message]:hover {
+    border-color: rgba(199, 147, 159, 0.5);
+    background:
+      linear-gradient(180deg, rgba(199, 147, 159, 0.18), rgba(199, 147, 159, 0.08)),
+      rgba(241, 220, 207, 0.04);
+  }
+
+  .hero-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .kpi-card {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: rgba(241, 220, 207, 0.04);
+  }
+
+  .kpi-card .kpi-label {
+    color: var(--faint);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .kpi-card .kpi-value {
+    margin-top: 8px;
+    font-family: var(--font-display);
+    font-size: 30px;
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--text);
+  }
+
+  .kpi-card .kpi-note {
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .overview-card {
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(22, 16, 18, 0.92);
+    padding: 16px;
+  }
+
+  .overview-card.span-7 { grid-column: span 7; }
+  .overview-card.span-5 { grid-column: span 5; }
+  .overview-card.span-12 { grid-column: span 12; }
+
+  .chart-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 14px;
+    background: rgba(241, 220, 207, 0.03);
+    padding: 14px;
+  }
+
+  .chart-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .chart-head h4 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  .chart-sub {
+    display: none;
+  }
+
+  .chart-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: rgba(212, 171, 124, 0.08);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .chart-frame {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.14);
+    padding: 10px;
+  }
+
+  .chart-svg {
+    display: block;
+    width: 100%;
+    height: 220px;
+  }
+
+  .chart-grid-line {
+    stroke: rgba(241, 220, 207, 0.08);
+    stroke-width: 1;
+  }
+
+  .chart-axis-text {
+    fill: rgba(241, 220, 207, 0.52);
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+
+  .chart-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .chart-stat {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 12px;
+    background: rgba(241, 220, 207, 0.03);
+    padding: 10px;
+  }
+
+  .chart-stat-label {
+    color: var(--faint);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .chart-stat-value {
+    margin-top: 6px;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .chart-stat-note {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .overview-bottom-grid {
+    display: grid;
+    grid-template-columns: minmax(320px, 0.92fr) minmax(0, 1.08fr);
+    gap: 14px;
+  }
+
+  .funnel-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .funnel-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 12px;
+    background: rgba(241, 220, 207, 0.03);
+    padding: 12px;
+  }
+
+  .funnel-label {
+    color: var(--faint);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .funnel-value {
+    margin-top: 7px;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .funnel-rate {
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .mix-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .mix-row {
+    display: grid;
+    gap: 7px;
+  }
+
+  .mix-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  .mix-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(241, 220, 207, 0.08);
+    overflow: hidden;
+  }
+
+  .mix-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, rgba(212, 171, 124, 0.9), rgba(199, 147, 159, 0.92));
+  }
+
+  .empty-chart {
+    color: var(--faint);
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 8px 2px 2px;
+  }
+
+  .section-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .board {
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(22, 16, 18, 0.92);
+    padding: 16px;
+  }
+
+  .board.span-5 { grid-column: span 5; }
+  .board.span-6 { grid-column: span 6; }
+  .board.span-7 { grid-column: span 7; }
+  .board.span-12 { grid-column: span 12; }
+
+  .board-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: start;
+    margin-bottom: 14px;
+  }
+
+  .board-head h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.005em;
+  }
+
+  .board-copy {
+    display: none;
+  }
+
+  .board-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .focus-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .focus-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 12px;
+    padding: 12px;
+    background: rgba(241, 220, 207, 0.03);
+  }
+
+  .focus-card strong {
+    display: block;
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  .focus-card span {
+    display: block;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .stack-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .stack-item {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 12px;
+    padding: 12px;
+    background: rgba(241, 220, 207, 0.03);
+  }
+
+  .stack-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .stack-meta {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .tone-positive {
+    background: rgba(159, 208, 181, 0.08);
+    border-color: rgba(159, 208, 181, 0.18);
+  }
+
+  .tone-warning {
+    background: rgba(226, 160, 142, 0.08);
+    border-color: rgba(226, 160, 142, 0.18);
+  }
+
+  .history-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .history-preview-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 12px;
+    background: rgba(241, 220, 207, 0.03);
+    padding: 12px;
+    text-align: left;
+    color: var(--muted);
+  }
+
+  .history-preview-card:hover {
+    background: rgba(241, 220, 207, 0.05);
+    color: var(--text);
+  }
+
+  .history-preview-card strong {
+    display: block;
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  .history-preview-card span {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .assistant-fab {
+    position: absolute;
+    right: 26px;
+    bottom: 28px;
+    z-index: 12;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    border: 1px solid var(--ai-border);
+    background:
+      radial-gradient(140% 140% at 30% 20%, rgba(199, 147, 159, 0.4), transparent 44%),
+      linear-gradient(180deg, rgba(71, 42, 49, 0.98), rgba(31, 19, 23, 0.98));
+    color: var(--ai-text);
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.35), 0 0 0 8px rgba(199, 147, 159, 0.05);
+  }
+
+  .assistant-fab strong {
+    display: block;
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .assistant-fab span {
+    display: block;
+    margin-top: 4px;
+    font-size: 10px;
+    color: rgba(246, 217, 223, 0.74);
+  }
+
+  .assistant-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.36);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+  }
+
+  .assistant-drawer {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    bottom: 14px;
+    width: min(520px, calc(100vw - 28px));
+    border: 1px solid rgba(241, 220, 207, 0.12);
+    border-radius: 22px;
+    background: rgba(20, 15, 17, 0.98);
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+    transform: translateX(calc(100% + 24px));
+    transition: transform 0.22s ease;
+    z-index: 11;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    overflow: hidden;
+  }
+
+  .assistant-header {
+    padding: 18px 18px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .assistant-header h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 600;
+  }
+
+  .assistant-header p {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .assistant-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: rgba(241, 220, 207, 0.04);
+    color: var(--muted);
+  }
+
+  body.assistant-open .assistant-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body.assistant-open .assistant-drawer {
+    transform: translateX(0);
+  }
+
+  body.assistant-open .assistant-fab {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .assistant-drawer .messages {
+    padding: 18px;
+    overflow: auto;
+  }
+
+  .assistant-drawer .message {
+    max-width: none;
+    margin: 0 0 14px;
+  }
+
+  .assistant-empty {
+    margin: 0;
+    text-align: left;
+  }
+
+  .assistant-empty .quick-grid {
+    margin: 22px 0 0;
+    max-width: none;
+  }
+
+  .assistant-drawer .composer {
+    padding: 14px 18px 18px;
+    border-top: 1px solid var(--line);
+  }
+
+  .assistant-drawer .composer-inner,
+  .assistant-drawer .hint-line {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .ops-dual-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .list-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 12px;
+    background: rgba(241, 220, 207, 0.03);
+    padding: 12px;
+  }
+
+  .list-card h4 {
+    margin: 0 0 10px;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .mini-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .mini-style-item {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.12);
+  }
+
+  .mini-style-head {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .mini-style-title {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .mini-style-meta,
+  .mini-style-note {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .mini-style-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .tiny-btn {
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(241, 220, 207, 0.12);
+    background: rgba(241, 220, 207, 0.04);
+    color: var(--text);
+    font-size: 12px;
+  }
+
+  .tiny-btn.ai {
+    background: rgba(199, 147, 159, 0.12);
+    border-color: rgba(199, 147, 159, 0.22);
+    color: #f6d9df;
+  }
+
+  .tiny-btn.promote {
+    background: rgba(212, 171, 124, 0.14);
+    border-color: rgba(212, 171, 124, 0.26);
+  }
+
+  .public-peer-grid {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .peer-public-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 12px;
+    padding: 12px;
+    background: rgba(241, 220, 207, 0.03);
+  }
+
+  .peer-public-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .peer-public-name {
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .peer-public-meta {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .manager-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .manager-modal.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .manager-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.54);
+    backdrop-filter: blur(6px);
+  }
+
+  .manager-panel {
+    position: absolute;
+    inset: 22px;
+    border: 1px solid rgba(241, 220, 207, 0.14);
+    border-radius: 24px;
+    background: rgba(20, 15, 17, 0.98);
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+    display: grid;
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+  }
+
+  .manager-topbar {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 22px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .manager-topbar h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 600;
+  }
+
+  .manager-topbar p {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .manager-layout {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(300px, 0.88fr) minmax(0, 1.12fr);
+  }
+
+  .manager-list {
+    min-height: 0;
+    overflow: auto;
+    border-right: 1px solid var(--line);
+    padding: 18px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .manager-style-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 14px;
+    padding: 12px;
+    background: rgba(241, 220, 207, 0.03);
+    text-align: left;
+  }
+
+  .manager-style-card.active {
+    border-color: rgba(212, 171, 124, 0.36);
+    background: rgba(212, 171, 124, 0.08);
+  }
+
+  .manager-style-card .style-line {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .manager-style-card .style-name {
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .manager-style-card .style-sub,
+  .manager-style-card .style-note {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .manager-detail {
+    min-height: 0;
+    overflow: auto;
+    padding: 20px;
+    display: grid;
+    gap: 14px;
+  }
+
+  .manager-detail-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 16px;
+    background: rgba(241, 220, 207, 0.03);
+    padding: 14px;
+  }
+
+  .manager-detail-card h4 {
+    margin: 0 0 10px;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .manager-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .manager-close {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(241, 220, 207, 0.04);
+    color: var(--muted);
+  }
+
+  @media (max-width: 1080px) {
+    .overview-card.span-7,
+    .overview-card.span-5 {
+      grid-column: span 12;
+    }
+    .overview-bottom-grid {
+      grid-template-columns: 1fr;
+    }
+    .kpi-strip,
+    .focus-grid,
+    .history-preview-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .ops-dual-grid,
+    .manager-layout {
+      grid-template-columns: 1fr;
+    }
+    .board.span-5,
+    .board.span-6,
+    .board.span-7 {
+      grid-column: span 12;
+    }
+    .hero-surface {
+      grid-template-columns: 1fr;
+    }
+    .manager-panel {
+      inset: 10px;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .dashboard-scroll {
+      padding-bottom: 140px;
+    }
+    .chart-stats,
+    .funnel-strip,
+    .kpi-strip,
+    .focus-grid,
+    .history-preview-grid {
+      grid-template-columns: 1fr;
+    }
+    .assistant-fab {
+      right: 18px;
+      bottom: 18px;
+      width: 60px;
+      height: 60px;
+    }
+    .assistant-drawer {
+      top: 8px;
+      right: 8px;
+      bottom: 8px;
+      width: calc(100vw - 16px);
+    }
+  }
 </style>
 </head>
-<body>
+<body class="auth-locked">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-row">
-        <h1>甲趣商家 SKILLS</h1>
+        <h1>甲趣商家经营台</h1>
         <button class="collapse-btn" id="collapseBtn" title="折叠侧边栏">☰</button>
       </div>
-      <p>保存、运行和生成商家运营技能。OpenClaw 会根据你的意图调度对应 SKILL。</p>
+      <p></p>
     </div>
 
-    <button class="new-skill" id="newSkillBtn">+ 新建 SKILL</button>
-
-    <div class="side-section" id="skillList">
-      <div class="section-title">已保存 SKILLS</div>
-    </div>
-
-    <div class="side-section" id="customSkillSection">
-      <div class="section-title">自定义 SKILLS</div>
-      <div id="customSkillList"></div>
-    </div>
-
-    <div class="side-section" id="historySection">
-      <div class="section-title">最近记录</div>
-      <div id="historyList"></div>
-    </div>
-
-    <div class="side-footer">
-      <div class="field">
-        <label for="shopSelect">当前门店</label>
-        <select id="shopSelect">
-          <option value="">请先登录商家账号</option>
-        </select>
+    <div class="side-section">
+      <div class="section-title">经营导航</div>
+      <div class="nav-cluster">
+        <button class="nav-link" type="button" data-target="overviewSection">经营总览</button>
+        <button class="nav-link" type="button" data-target="stylesSection">款式经营</button>
+        <button class="nav-link" type="button" data-target="competitorSection">竞品与趋势</button>
+        <button class="nav-link" type="button" data-target="actionsSection">动作中心</button>
+        <button class="nav-link" type="button" data-target="historyBoard">最近记录</button>
+        <button class="sidebar-logout" id="sidebarLogoutBtn" type="button" hidden>退出登录</button>
       </div>
-      <div class="field">
-        <label>登录账号</label>
-        <div class="account-card">
-          <div class="account-name" id="merchantDisplay">未登录</div>
-          <div class="account-meta" id="merchantMeta">登录后才可以运行商家技能、查看历史和保存自定义 SKILL。</div>
+    </div>
+    <div class="hidden-store">
+      <button class="new-skill" id="newSkillBtn">+ 新建经营模板</button>
+      <div class="side-section" id="skillList"></div>
+      <div class="side-section" id="customSkillSection">
+        <div class="section-title">自定义模板</div>
+        <div id="customSkillList"></div>
+      </div>
+      <div class="side-section" id="historySection">
+        <div class="section-title">最近记录</div>
+        <div id="historyList"></div>
+      </div>
+      <div class="side-footer">
+        <div class="field">
+          <label for="shopSelect">当前门店</label>
+          <select id="shopSelect">
+            <option value="">请先登录商家账号</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>当前商家</label>
+          <div class="account-card">
+            <div class="account-name" id="merchantDisplay">未登录</div>
+            <div class="account-meta" id="merchantMeta">登录后才可以查看经营总览、最近记录和 AI 助手分析。</div>
+          </div>
         </div>
       </div>
-      <div class="field">
-        <label for="periodSelect">分析周期</label>
-        <select id="periodSelect">
-          <option value="7">近 7 天</option>
-          <option value="14" selected>近 14 天</option>
-          <option value="30">近 30 天</option>
-        </select>
-      </div>
-      <div class="toggle-line">
-        <span>调用 OpenClaw</span>
-        <label class="switch">
-          <input type="checkbox" id="openclawToggle">
-          <span class="slider"></span>
-        </label>
-      </div>
-      <button class="logout-btn" id="logoutBtn" type="button" hidden>退出商家登录</button>
     </div>
   </aside>
 
@@ -1247,59 +2286,237 @@
     <div class="auth-gate" id="authGate">
       <div class="auth-card">
         <h3>商家登录</h3>
-        <p>现在商家端只允许查看当前登录商家的数据，不再支持左下角随意切换其他门店。</p>
         <form class="auth-form" id="loginForm">
           <input class="auth-input" id="loginUsername" type="text" placeholder="请输入商家账号">
           <input class="auth-input" id="loginPassword" type="password" placeholder="请输入密码">
           <button class="auth-submit" type="submit">登录商家端</button>
           <div class="auth-error" id="loginError"></div>
         </form>
-        <div class="section-title" style="padding-left:0;">示例账号</div>
         <div class="demo-grid" id="demoAccounts"></div>
       </div>
     </div>
     <header class="topbar">
       <div class="session-title">
-        <h2 id="sessionTitle">商家智能体工作台</h2>
-        <p id="sessionSub">选择左侧 SKILL，或直接在底部告诉 OpenClaw 你想完成什么。</p>
+        <h2 id="sessionTitle">商家经营总览</h2>
+        <p id="sessionSub"></p>
       </div>
       <div class="status-row">
         <span class="pill"><span class="dot offline" id="openclawDot"></span><span id="openclawStatus">测试模式</span></span>
         <span class="pill" id="shopPill">Fleur Rose · 五道口</span>
         <span class="pill" id="periodPill">近 14 天</span>
         <span class="pill" id="etaPill">预计 1 分钟</span>
+        <label class="toolbar-field" for="periodSelect">
+          <span>周期</span>
+          <select id="periodSelect">
+            <option value="7">近 7 天</option>
+            <option value="14" selected>近 14 天</option>
+            <option value="30">近 30 天</option>
+          </select>
+        </label>
+        <div class="toolbar-field">
+          <span>OpenClaw</span>
+          <label class="switch">
+            <input type="checkbox" id="openclawToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <button class="toolbar-logout" id="logoutBtn" type="button" hidden>退出登录</button>
         <span class="pill" id="versionPill">merchant-ui</span>
       </div>
     </header>
 
-    <section class="messages" id="messages">
-      <div class="empty-state" id="emptyState">
-        <h3>把经营问题交给 OpenClaw</h3>
-        <p>左侧保存的是可调度 SKILLS。点击即可开启会话；也可以在底部直接说需求，让 OpenClaw 选择并组合 SKILLS。</p>
-        <div class="quick-grid">
-          <button class="quick-card" data-message="帮我找出本周适合上线的爆款，并给出动作队列">
-            <strong>找爆款</strong>
-            <span>调度爆款上线建议和自动化动作队列</span>
-          </button>
-          <button class="quick-card" data-message="帮我看看哪些款式应该降权、改款或下架">
-            <strong>找冷门款</strong>
-            <span>识别低转化、低热度、趋势下降款式</span>
-          </button>
-          <button class="quick-card" data-message="请总结我的店铺风格，并对比同风格竞品">
-            <strong>分析我的店</strong>
-            <span>调度商家风格画像和同风格竞品分析</span>
-          </button>
+    <section class="dashboard-scroll" id="dashboardScroll">
+      <div class="dashboard-shell">
+        <section class="hero-surface" id="overviewSection">
+          <div class="hero-copy-block">
+            <span class="hero-label">门店经营总览</span>
+            <h3 class="hero-heading" id="heroShopTitle">登录后查看你的门店经营状态</h3>
+            <p class="hero-paragraph" id="heroSummary">这里会展示门店主风格、核心转化、近期机会和本周动作建议。商家先看结果，不需要先理解技能。</p>
+            <div class="hero-chips" id="heroChips"></div>
+          </div>
+          <div class="hero-tools">
+            <button class="ghost-btn action-trigger" id="refreshDashboardBtn" type="button">刷新经营总览</button>
+            <button class="ghost-btn action-trigger" data-run-skill="periodic_ops_report" type="button">做一轮周期深挖</button>
+          </div>
+        </section>
+
+        <section class="kpi-strip" id="dashboardKpis"></section>
+
+        <section class="overview-grid">
+          <article class="overview-card span-7">
+            <div class="chart-head">
+              <div>
+                <h4>流量到成交走势</h4>
+                <div class="chart-sub">直接读取当前商家的日级运营数据，观察搜索、点击到团购的变化趋势。</div>
+              </div>
+              <span class="chart-badge">日趋势</span>
+            </div>
+            <div id="trafficTrend"></div>
+          </article>
+
+          <article class="overview-card span-5">
+            <div class="chart-head">
+              <div>
+                <h4>营收与投放</h4>
+                <div class="chart-sub">看每天营收与投放消耗的相对关系，判断本周期是否值得继续加码。</div>
+              </div>
+              <span class="chart-badge">经营效率</span>
+            </div>
+            <div id="revenueTrend"></div>
+          </article>
+
+          <article class="overview-card span-12">
+            <div class="chart-head">
+              <div>
+                <h4>经营结构拆解</h4>
+                <div class="chart-sub">把当前周期的转化漏斗和风格成交结构一起放到总览区，方便商家快速判断问题在哪一层。</div>
+              </div>
+              <span class="chart-badge">结构图</span>
+            </div>
+            <div class="overview-bottom-grid">
+              <div id="funnelSummary"></div>
+              <div id="categoryMix"></div>
+            </div>
+          </article>
+        </section>
+
+        <div class="section-grid">
+          <article class="board span-12" id="profileSection">
+            <div class="board-head">
+              <div>
+                <h3>门店画像</h3>
+                <p class="board-copy">先看风格识别度、优势和风险，再决定要不要扩款或调价。</p>
+              </div>
+              <div class="board-actions">
+                <button class="ghost-btn action-trigger" type="button" data-run-skill="merchant_style_profile">深度画像</button>
+              </div>
+            </div>
+            <div class="focus-grid" id="profileHighlights"></div>
+          </article>
+
+          <article class="board span-12" id="stylesSection">
+            <div class="board-head">
+              <div>
+                <h3>款式经营</h3>
+                <p class="board-copy">系统先帮你挑出值得放大的款和需要处理的低效款。</p>
+              </div>
+              <div class="board-actions">
+                <button class="ghost-btn action-trigger" type="button" data-run-skill="hot_style_launch">查爆款</button>
+                <button class="ghost-btn action-trigger" type="button" data-run-skill="cold_style_retire">查低效款</button>
+                <button class="ghost-btn action-trigger" id="openStyleManagerBtn" type="button">管理全部款式</button>
+              </div>
+            </div>
+            <div class="focus-grid" id="styleHighlights"></div>
+            <div class="ops-dual-grid">
+              <div id="hotStyleBoard"></div>
+              <div id="coldStyleBoard"></div>
+            </div>
+          </article>
+
+          <article class="board span-6" id="competitorSection">
+            <div class="board-head">
+              <div>
+                <h3>竞品与趋势</h3>
+                <p class="board-copy">看同风格门店的对比结果和市场趋势，判断自己该补哪里。</p>
+              </div>
+              <div class="board-actions">
+                <button class="ghost-btn action-trigger" type="button" data-run-skill="same_style_competitor_analysis">看竞品差距</button>
+                <button class="ghost-btn action-trigger" id="boostTrafficBtn" type="button">投流放大热款</button>
+              </div>
+            </div>
+            <div class="stack-list" id="competitorSummary"></div>
+            <div class="public-peer-grid" id="competitorPublicBoard"></div>
+          </article>
+
+          <article class="board span-6" id="actionsSection">
+            <div class="board-head">
+              <div>
+                <h3>动作中心</h3>
+                <p class="board-copy">把本周最该做的上新、改款、活动和竞品动作集中到一个地方。</p>
+              </div>
+              <div class="board-actions">
+                <button class="ghost-btn action-trigger" type="button" data-run-skill="automation_queue">生成动作队列</button>
+                <button class="ghost-btn action-trigger" type="button" data-chat-message="请根据当前门店状态，帮我解释这周最优先的三件事为什么要做">让 AI 解释</button>
+              </div>
+            </div>
+            <div class="stack-list" id="actionSummary"></div>
+          </article>
+
+          <article class="board span-12" id="historyBoard">
+            <div class="board-head">
+              <div>
+                <h3>最近记录</h3>
+                <p class="board-copy">你之前已经跑过的分析会保存在这里，点开即可继续看详情或接着追问。</p>
+              </div>
+            </div>
+            <div class="history-preview-grid" id="historyPreview"></div>
+          </article>
         </div>
       </div>
     </section>
 
-    <footer class="composer">
-      <div class="composer-inner">
-        <textarea id="chatInput" rows="1" placeholder="例如：帮我生成一个每周自动分析爆款和冷门款的新 SKILL"></textarea>
-        <button class="send-btn" id="sendBtn">发送</button>
+    <button class="assistant-fab" id="assistantFab" type="button" title="打开 AI 助手">
+      <strong>AI</strong>
+      <span>经营助手</span>
+    </button>
+
+    <div class="assistant-backdrop" id="assistantBackdrop"></div>
+
+    <aside class="assistant-drawer" id="assistantDrawer">
+      <div class="assistant-header">
+        <div>
+          <h3>AI 经营助手</h3>
+          <p>需要追问原因、组合技能或生成新的经营模板时，再打开这里聊天。</p>
+        </div>
+        <button class="assistant-close" id="assistantCloseBtn" type="button">×</button>
       </div>
-      <div class="hint-line" id="hintLine">提示：正在检测本机 OpenClaw 状态...</div>
-    </footer>
+
+      <section class="messages" id="messages">
+        <div class="empty-state assistant-empty" id="emptyState">
+          <h3>想追问，再点我</h3>
+          <p>主页面先给你经营结果。这里适合继续追问“为什么”、“下一步怎么做”，或者直接生成新的经营模板。</p>
+          <div class="quick-grid">
+            <button class="quick-card" data-message="帮我找出本周适合上线的爆款，并给出动作队列">
+              <strong>问爆款</strong>
+              <span>继续追问哪些款最值得推、为什么要推</span>
+            </button>
+            <button class="quick-card" data-message="帮我看看哪些款式应该降权、改款或下架">
+              <strong>问低效款</strong>
+              <span>继续追问哪些款应该观察、改款或下架</span>
+            </button>
+            <button class="quick-card" data-message="帮我创建一个每周自动分析爆款和冷门款的新 SKILL">
+              <strong>建经营模板</strong>
+              <span>把常用的经营分析流程保存成一个可复用模板</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <footer class="composer">
+        <div class="composer-inner">
+          <textarea id="chatInput" rows="1" placeholder="例如：为什么本周先推这两个款？再给我一份更适合店员执行的话术"></textarea>
+          <button class="send-btn" id="sendBtn">发送</button>
+        </div>
+        <div class="hint-line" id="hintLine">提示：正在检测本机 OpenClaw 状态...</div>
+      </footer>
+    </aside>
+
+    <div class="manager-modal" id="styleManagerModal">
+      <div class="manager-backdrop" id="styleManagerBackdrop"></div>
+      <div class="manager-panel">
+        <div class="manager-topbar">
+          <div>
+            <h3>款式管理页</h3>
+            <p>这里集中管理自家所有款式：看爆款、看冷门、做投流、上下架和 AI 改款，同时保留经营视角下的价格和转化分析。</p>
+          </div>
+          <button class="manager-close" id="styleManagerCloseBtn" type="button">×</button>
+        </div>
+        <div class="manager-layout">
+          <div class="manager-list" id="styleManagerList"></div>
+          <div class="manager-detail" id="styleManagerDetail"></div>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -1349,7 +2566,7 @@ const BUILTIN_SKILLS = [
   }
 ];
 
-const UI_VERSION = 'merchant-ui 2026-06-06 22:20';
+const UI_VERSION = 'merchant-ui 2026-06-07 15:55';
 
 const SHOP_LABELS = {
   shop_001: 'Maison Purete · 三里屯',
@@ -1362,9 +2579,12 @@ const SHOP_LABELS = {
 const ACTION_LABELS = {
   generate_variant: '生成变体款',
   generate_style_variants: '生成风格变体',
+  promote_traffic: '投流放大',
   promote_homepage: '首页专题推广',
   promote_shop: '门店活动推广',
   refresh_primary_styles: '刷新主推款',
+  set_inventory_status: '上下架调整',
+  apply_ai_update: '应用 AI 修改',
   retire_or_revise_cold_style: '冷门款处理',
   improve_booking_cta: '优化预约转化',
   boost_shop_exposure: '提升门店曝光',
@@ -1404,7 +2624,7 @@ const FIELD_LABELS = {
   ctr: '点击率',
   conversion_rate: '转化率',
   refund_rate: '退款率',
-  booking_rate: '预约率',
+  booking_rate: '转化率',
   like_rate: '好评率',
   books: '预约数',
   likes: '喜欢数',
@@ -1443,10 +2663,13 @@ let customSkills = [];
 let historyRecords = [];
 let lastEstimateSeconds = 60;
 let merchantSession = null;
+let dashboardSnapshot = null;
+let workbenchSnapshot = null;
+let managedStyleId = '';
+let emptyState = null;
 
 const $ = selector => document.querySelector(selector);
 const messages = $('#messages');
-const emptyState = $('#emptyState');
 const skillList = $('#skillList');
 const customSkillList = $('#customSkillList');
 const historyList = $('#historyList');
@@ -1466,23 +2689,55 @@ const demoAccounts = $('#demoAccounts');
 const merchantDisplay = $('#merchantDisplay');
 const merchantMeta = $('#merchantMeta');
 const logoutBtn = $('#logoutBtn');
+const sidebarLogoutBtn = $('#sidebarLogoutBtn');
+const dashboardScroll = $('#dashboardScroll');
+const heroShopTitle = $('#heroShopTitle');
+const heroSummary = $('#heroSummary');
+const heroChips = $('#heroChips');
+const dashboardKpis = $('#dashboardKpis');
+const trafficTrend = $('#trafficTrend');
+const revenueTrend = $('#revenueTrend');
+const funnelSummary = $('#funnelSummary');
+const categoryMix = $('#categoryMix');
+const profileHighlights = $('#profileHighlights');
+const styleHighlights = $('#styleHighlights');
+const hotStyleBoard = $('#hotStyleBoard');
+const coldStyleBoard = $('#coldStyleBoard');
+const competitorSummary = $('#competitorSummary');
+const competitorPublicBoard = $('#competitorPublicBoard');
+const actionSummary = $('#actionSummary');
+const historyPreview = $('#historyPreview');
+const refreshDashboardBtn = $('#refreshDashboardBtn');
+const openStyleManagerBtn = $('#openStyleManagerBtn');
+const boostTrafficBtn = $('#boostTrafficBtn');
+const assistantFab = $('#assistantFab');
+const assistantDrawer = $('#assistantDrawer');
+const assistantBackdrop = $('#assistantBackdrop');
+const assistantCloseBtn = $('#assistantCloseBtn');
+const styleManagerModal = $('#styleManagerModal');
+const styleManagerBackdrop = $('#styleManagerBackdrop');
+const styleManagerCloseBtn = $('#styleManagerCloseBtn');
+const styleManagerList = $('#styleManagerList');
+const styleManagerDetail = $('#styleManagerDetail');
+const navLinks = Array.from(document.querySelectorAll('.nav-link'));
 
 async function init() {
   if (versionPill) versionPill.textContent = UI_VERSION;
+  emptyState = $('#emptyState');
   renderSkills();
   bindEvents();
   syncTopbar();
+  renderDashboardLoggedOut();
   await loadMerchantSession();
   loadOpenClawStatus();
 }
 
 function renderSkills() {
-  const title = skillList.querySelector('.section-title') || createSectionTitle('已保存 SKILLS');
   skillList.innerHTML = '';
-  skillList.appendChild(title);
-  BUILTIN_SKILLS.forEach(skill => {
-    skillList.appendChild(createSkillButton(skill));
-  });
+  const note = document.createElement('div');
+  note.className = 'side-empty';
+  note.textContent = '首页已经按经营总览、款式经营、竞品与趋势和动作中心自动整理，不需要再手动挑选内置分析模板。';
+  skillList.appendChild(note);
   renderCustomSkills();
 }
 
@@ -1491,7 +2746,7 @@ function renderCustomSkills() {
   if (!customSkills.length) {
     const empty = document.createElement('div');
     empty.className = 'side-empty';
-    empty.textContent = '还没有自定义技能。直接在底部输入“帮我创建一个新的商家 SKILL …”就会保存到这里。';
+    empty.textContent = '还没有自定义模板。直接在底部输入“帮我创建一个新的商家经营模板…”就会保存到这里。';
     customSkillList.appendChild(empty);
     return;
   }
@@ -1533,6 +2788,7 @@ function bindEvents() {
   $('#newSkillBtn').addEventListener('click', () => {
     const text = '我想创建一个新的商家 SKILL：请帮我基于当前门店和周期，设计一个可保存、可调度、可执行的运营技能';
     chatInput.value = text;
+    openAssistantDrawer();
     chatInput.focus();
   });
 
@@ -1559,6 +2815,41 @@ function bindEvents() {
     btn.addEventListener('click', () => sendChat(btn.dataset.message));
   });
 
+  navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      scrollToBoard(link.dataset.target);
+    });
+  });
+
+  dashboardScroll.addEventListener('click', event => {
+    const actionButton = event.target.closest('[data-run-skill]');
+    if (actionButton) {
+      runSkill(actionButton.dataset.runSkill);
+      return;
+    }
+    const styleActionButton = event.target.closest('[data-style-action]');
+    if (styleActionButton) {
+      const action = styleActionButton.dataset.styleAction || '';
+      const styleId = styleActionButton.dataset.styleId || '';
+      if (action === 'promote_traffic') {
+        navigateToStylesPage(styleId, 'promote');
+        return;
+      }
+      handleStyleAction(action, styleId, styleActionButton.dataset.status || '');
+      return;
+    }
+    const openManagerButton = event.target.closest('[data-open-style-manager]');
+    if (openManagerButton) {
+      openStyleManager(openManagerButton.dataset.openStyleManager || '');
+      return;
+    }
+    const chatButton = event.target.closest('[data-chat-message]');
+    if (chatButton) {
+      sendChat(chatButton.dataset.chatMessage);
+    }
+  });
+  dashboardScroll.addEventListener('scroll', updateActiveBoardByScroll, { passive: true });
+
   sendBtn.addEventListener('click', () => {
     const text = chatInput.value.trim();
     if (text) sendChat(text);
@@ -1578,10 +2869,43 @@ function bindEvents() {
   });
 
   shopSelect.addEventListener('change', syncTopbar);
-  periodSelect.addEventListener('change', syncTopbar);
+  periodSelect.addEventListener('change', async () => {
+    syncTopbar();
+    if (merchantSession) {
+      await loadDashboard();
+    }
+  });
   openclawToggle.addEventListener('change', syncTopbar);
   loginForm.addEventListener('submit', handleMerchantLogin);
   logoutBtn.addEventListener('click', handleMerchantLogout);
+  sidebarLogoutBtn.addEventListener('click', handleMerchantLogout);
+  refreshDashboardBtn.addEventListener('click', () => {
+    if (!merchantSession) {
+      showAuthGate();
+      return;
+    }
+    loadDashboard();
+  });
+  openStyleManagerBtn.addEventListener('click', () => openStyleManager());
+  boostTrafficBtn.addEventListener('click', () => boostTopHotStyle());
+  assistantFab.addEventListener('click', openAssistantDrawer);
+  assistantBackdrop.addEventListener('click', closeAssistantDrawer);
+  assistantCloseBtn.addEventListener('click', closeAssistantDrawer);
+  styleManagerBackdrop.addEventListener('click', closeStyleManager);
+  styleManagerCloseBtn.addEventListener('click', closeStyleManager);
+  styleManagerList.addEventListener('click', event => {
+    const card = event.target.closest('[data-manage-style-id]');
+    if (card) {
+      managedStyleId = card.dataset.manageStyleId || '';
+      renderStyleManager();
+    }
+  });
+  styleManagerDetail.addEventListener('click', event => {
+    const styleActionButton = event.target.closest('[data-style-action]');
+    if (styleActionButton) {
+      handleStyleAction(styleActionButton.dataset.styleAction, styleActionButton.dataset.styleId, styleActionButton.dataset.status || '');
+    }
+  });
 }
 
 async function loadMerchantSession() {
@@ -1590,7 +2914,7 @@ async function loadMerchantSession() {
     if (payload.authenticated && payload.merchant) {
       applyMerchantSession(payload.merchant);
       hideAuthGate();
-      await Promise.all([loadCustomSkills(), loadHistory()]);
+      await Promise.all([loadCustomSkills(), loadHistory(), loadDashboard()]);
       return;
     }
   } catch (error) {
@@ -1602,27 +2926,26 @@ async function loadMerchantSession() {
 }
 
 async function loadDemoAccounts() {
+  if (!demoAccounts) return;
   try {
     const payload = await getJson('/api/merchant/auth/demo-accounts');
     renderDemoAccounts(Array.isArray(payload.accounts) ? payload.accounts : []);
   } catch (error) {
-    demoAccounts.innerHTML = `<div class="side-empty">示例账号加载失败：${escapeHtml(error.message || String(error))}</div>`;
+    demoAccounts.innerHTML = '';
   }
 }
 
 function renderDemoAccounts(accounts) {
+  if (!demoAccounts) return;
   demoAccounts.innerHTML = '';
-  if (!accounts.length) {
-    demoAccounts.innerHTML = '<div class="side-empty">当前还没有可用的商家账号。</div>';
-    return;
-  }
+  if (!accounts.length) return;
   accounts.slice(0, 8).forEach(account => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'demo-account';
     btn.innerHTML = `
-      <strong>${escapeHtml(account.shop_name || account.display_name || account.username)}</strong>
-      <span>${escapeHtml(account.username)} / demo123456</span>
+      <strong>${escapeHtml(account.shop_name || account.display_name || '示例店铺')}</strong>
+      <span>点击快速填充</span>
     `;
     btn.addEventListener('click', () => {
       loginUsername.value = account.username || '';
@@ -1646,7 +2969,7 @@ async function handleMerchantLogin(event) {
     const payload = await postJson('/api/merchant/auth/login', { username, password });
     applyMerchantSession(payload.merchant);
     hideAuthGate();
-    await Promise.all([loadCustomSkills(), loadHistory()]);
+    await Promise.all([loadCustomSkills(), loadHistory(), loadDashboard()]);
   } catch (error) {
     loginError.textContent = error.message || String(error);
   }
@@ -1660,6 +2983,9 @@ async function handleMerchantLogout() {
   }
   clearMerchantSession();
   showAuthGate();
+  closeAssistantDrawer();
+  closeStyleManager();
+  resetAssistantEmptyState();
   await loadDemoAccounts();
 }
 
@@ -1674,32 +3000,38 @@ function applyMerchantSession(merchant) {
   shopSelect.disabled = true;
   merchantDisplay.textContent = merchant?.shop_name || '未登录';
   merchantMeta.textContent = merchant
-    ? `${merchant.username} · ${merchant.city || ''}${merchant.district ? ` / ${merchant.district}` : ''} · ${merchant.style_name || merchant.style || ''}`
-    : '登录后才可以运行商家技能、查看历史和保存自定义 SKILL。';
+    ? `${merchant.city || ''}${merchant.district ? ` / ${merchant.district}` : ''} · ${merchant.style_name || merchant.style || ''}`
+    : '登录后才可以查看经营总览、最近记录和 AI 助手分析。';
   logoutBtn.hidden = !merchant;
+  sidebarLogoutBtn.hidden = !merchant;
   syncTopbar();
 }
 
 function clearMerchantSession() {
   merchantSession = null;
+  dashboardSnapshot = null;
   customSkills = [];
   historyRecords = [];
   renderCustomSkills();
   renderHistory();
+  renderDashboardLoggedOut();
   shopSelect.innerHTML = '<option value="">请先登录商家账号</option>';
   shopSelect.disabled = true;
   merchantDisplay.textContent = '未登录';
-  merchantMeta.textContent = '登录后才可以运行商家技能、查看历史和保存自定义 SKILL。';
+  merchantMeta.textContent = '登录后才可以查看经营总览、最近记录和 AI 助手分析。';
   logoutBtn.hidden = true;
+  sidebarLogoutBtn.hidden = true;
   syncTopbar();
 }
 
 function showAuthGate() {
+  document.body.classList.add('auth-locked');
   authGate.classList.remove('hidden');
   loginError.textContent = '';
 }
 
 function hideAuthGate() {
+  document.body.classList.remove('auth-locked');
   authGate.classList.add('hidden');
   loginError.textContent = '';
 }
@@ -1712,6 +3044,113 @@ function syncTopbar() {
   $('#openclawStatus').textContent = openclawToggle.checked ? 'OpenClaw 在线调用' : '测试模式';
   $('#openclawDot').classList.toggle('offline', !openclawToggle.checked);
   etaPill.textContent = `预计 ${formatEta(lastEstimateSeconds)}`;
+}
+
+function buildStylesPageUrl(styleId = '', action = '') {
+  const params = new URLSearchParams();
+  if (styleId) params.set('style_id', styleId);
+  if (action) params.set('action', action);
+  const suffix = params.toString();
+  return `/static/merchant_styles.html${suffix ? `?${suffix}` : ''}`;
+}
+
+function navigateToStylesPage(styleId = '', action = '') {
+  window.location.href = buildStylesPageUrl(styleId, action);
+}
+
+function openAssistantDrawer() {
+  document.body.classList.add('assistant-open');
+  requestAnimationFrame(() => {
+    chatInput.focus();
+    scrollBottom();
+  });
+}
+
+function closeAssistantDrawer() {
+  document.body.classList.remove('assistant-open');
+}
+
+function scrollToBoard(targetId) {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  navLinks.forEach(link => link.classList.toggle('active', link.dataset.target === targetId));
+}
+
+function updateActiveBoardByScroll() {
+  if (!dashboardScroll) return;
+  const sectionIds = ['overviewSection', 'stylesSection', 'competitorSection', 'actionsSection', 'historyBoard'];
+  const currentOffset = dashboardScroll.scrollTop + 120;
+  let activeId = sectionIds[0];
+  sectionIds.forEach(sectionId => {
+    const node = document.getElementById(sectionId);
+    if (!node) return;
+    if (node.offsetTop <= currentOffset) {
+      activeId = sectionId;
+    }
+  });
+  navLinks.forEach(link => link.classList.toggle('active', link.dataset.target === activeId));
+}
+
+function resetAssistantEmptyState() {
+  messages.innerHTML = `
+    <div class="empty-state assistant-empty" id="emptyState">
+      <h3>想追问，再点我</h3>
+      <p>主页面先给你经营结果。这里适合继续追问“为什么”、“下一步怎么做”，或者直接生成新的经营模板。</p>
+      <div class="quick-grid">
+        <button class="quick-card" data-message="帮我找出本周适合上线的爆款，并给出动作队列">
+          <strong>问爆款</strong>
+          <span>继续追问哪些款最值得推、为什么要推</span>
+        </button>
+        <button class="quick-card" data-message="帮我看看哪些款式应该降权、改款或下架">
+          <strong>问低效款</strong>
+          <span>继续追问哪些款应该观察、改款或下架</span>
+        </button>
+        <button class="quick-card" data-message="帮我创建一个每周自动分析爆款和冷门款的新 SKILL">
+          <strong>建经营模板</strong>
+          <span>把常用的经营分析流程保存成一个可复用模板</span>
+        </button>
+      </div>
+    </div>
+  `;
+  emptyState = $('#emptyState');
+  messages.querySelectorAll('.quick-card').forEach(btn => {
+    btn.addEventListener('click', () => sendChat(btn.dataset.message));
+  });
+}
+
+function renderDashboardLoggedOut() {
+  workbenchSnapshot = null;
+  managedStyleId = '';
+  heroShopTitle.textContent = '登录后查看你的门店经营状态';
+  heroSummary.textContent = '这里会展示门店主风格、核心转化、近期机会和本周动作建议。商家先看结果，不需要先理解技能。';
+  heroChips.innerHTML = '<span class="tag">登录后自动加载当前门店</span><span class="tag">不再支持随意切换其他门店</span>';
+  dashboardKpis.innerHTML = [
+    ['本期转化', '—', '登录后查看当前周期核心转化'],
+    ['主力款', '—', '登录后查看本店主力款表现'],
+    ['本周动作', '—', '登录后查看系统建议动作'],
+    ['竞品差距', '—', '登录后查看同风格门店对比'],
+  ].map(([label, value, note]) => `
+    <div class="kpi-card">
+      <div class="kpi-label">${escapeHtml(label)}</div>
+      <div class="kpi-value">${escapeHtml(value)}</div>
+      <div class="kpi-note">${escapeHtml(note)}</div>
+    </div>
+  `).join('');
+  trafficTrend.innerHTML = '<div class="empty-chart">登录后这里会显示搜索、点击和团购的日趋势图。</div>';
+  revenueTrend.innerHTML = '<div class="empty-chart">登录后这里会显示营收与投放的趋势图。</div>';
+  funnelSummary.innerHTML = '<div class="empty-chart">登录后这里会显示经营漏斗拆解。</div>';
+  categoryMix.innerHTML = '<div class="empty-chart">登录后这里会显示风格成交结构。</div>';
+  profileHighlights.innerHTML = '<div class="focus-card"><strong>先登录商家账号</strong><span>登录后这里会展示门店风格、优势、风险和推荐方向。</span></div>';
+  styleHighlights.innerHTML = '<div class="focus-card"><strong>先登录商家账号</strong><span>登录后这里会展示值得放大的款和需要处理的低效款。</span></div>';
+  hotStyleBoard.innerHTML = '<div class="empty-chart">登录后这里会显示卖得好的爆款清单。</div>';
+  coldStyleBoard.innerHTML = '<div class="empty-chart">登录后这里会显示需要处理的冷门款列表。</div>';
+  competitorSummary.innerHTML = '<div class="stack-item"><div class="stack-title"><span>竞品与趋势</span></div><div class="stack-meta">登录后系统会自动比较同风格门店，并给出你该补齐的差距。</div></div>';
+  competitorPublicBoard.innerHTML = '<div class="empty-chart">登录后这里会展示竞品公开信息榜和可执行投流入口。</div>';
+  actionSummary.innerHTML = '<div class="stack-item"><div class="stack-title"><span>动作中心</span></div><div class="stack-meta">登录后会根据你的店铺数据自动整理本周动作队列。</div></div>';
+  historyPreview.innerHTML = '<div class="history-preview-card"><strong>还没有记录</strong><span>登录并运行分析后，这里会自动保存最近的经营结果。</span></div>';
+  renderStyleManager();
+  navLinks.forEach(link => link.classList.toggle('active', link.dataset.target === 'overviewSection'));
 }
 
 async function loadCustomSkills() {
@@ -1735,6 +3174,7 @@ async function loadCustomSkills() {
 async function loadHistory() {
   if (!merchantSession) {
     historyList.innerHTML = '<div class="side-empty">登录后才会显示当前商家的运行记录。</div>';
+    renderHistoryPreview();
     return;
   }
   try {
@@ -1747,6 +3187,7 @@ async function loadHistory() {
     errorNode.className = 'side-empty';
     errorNode.textContent = `记录加载失败：${error.message || String(error)}`;
     historyList.appendChild(errorNode);
+    historyPreview.innerHTML = `<div class="history-preview-card"><strong>记录加载失败</strong><span>${escapeHtml(error.message || String(error))}</span></div>`;
   }
 }
 
@@ -1757,11 +3198,13 @@ function renderHistory() {
     empty.className = 'side-empty';
     empty.textContent = '运行后的结果会自动保存到这里，刷新页面后也能继续查看。';
     historyList.appendChild(empty);
+    renderHistoryPreview();
     return;
   }
   historyRecords.forEach(record => {
     historyList.appendChild(createHistoryButton(record));
   });
+  renderHistoryPreview();
 }
 
 function createHistoryButton(record) {
@@ -1781,6 +3224,362 @@ function createHistoryButton(record) {
     </span>
   `;
   return btn;
+}
+
+async function loadDashboard() {
+  if (!merchantSession) {
+    renderDashboardLoggedOut();
+    return;
+  }
+  heroShopTitle.textContent = merchantSession.shop_name || '正在加载门店总览';
+  heroSummary.textContent = '正在根据当前门店和周期读取经营结果，请稍等…';
+  dashboardKpis.innerHTML = Array.from({ length: 4 }).map(() => `
+    <div class="kpi-card">
+      <div class="kpi-label">加载中</div>
+      <div class="kpi-value">...</div>
+      <div class="kpi-note">正在读取经营快照</div>
+    </div>
+  `).join('');
+  trafficTrend.innerHTML = '<div class="empty-chart">正在读取当前门店的日级经营趋势…</div>';
+  revenueTrend.innerHTML = '<div class="empty-chart">正在整理营收与投放走势…</div>';
+  funnelSummary.innerHTML = '<div class="empty-chart">正在拆解当前周期的经营漏斗…</div>';
+  categoryMix.innerHTML = '<div class="empty-chart">正在汇总风格成交结构…</div>';
+  hotStyleBoard.innerHTML = '<div class="empty-chart">正在整理爆款列表…</div>';
+  coldStyleBoard.innerHTML = '<div class="empty-chart">正在整理低效款列表…</div>';
+  competitorPublicBoard.innerHTML = '<div class="empty-chart">正在生成竞品公开榜…</div>';
+  try {
+    const payload = await getJson(`/api/merchant/skills?period_days=${encodeURIComponent(periodSelect.value)}`);
+    let workbench = null;
+    try {
+      workbench = await getJson(`/api/merchant/workbench?period_days=${encodeURIComponent(periodSelect.value)}&style_limit=120`);
+    } catch (workbenchError) {
+      console.warn('merchant workbench load failed', workbenchError);
+    }
+    dashboardSnapshot = payload;
+    workbenchSnapshot = workbench;
+    renderDashboard(payload, workbench);
+    updateActiveBoardByScroll();
+  } catch (error) {
+    dashboardSnapshot = null;
+    workbenchSnapshot = null;
+    heroSummary.textContent = `经营总览加载失败：${error.message || String(error)}`;
+    trafficTrend.innerHTML = `<div class="empty-chart">${escapeHtml(error.message || String(error))}</div>`;
+    revenueTrend.innerHTML = `<div class="empty-chart">${escapeHtml(error.message || String(error))}</div>`;
+    funnelSummary.innerHTML = `<div class="empty-chart">${escapeHtml(error.message || String(error))}</div>`;
+    categoryMix.innerHTML = `<div class="empty-chart">${escapeHtml(error.message || String(error))}</div>`;
+    profileHighlights.innerHTML = `<div class="focus-card tone-warning"><strong>加载失败</strong><span>${escapeHtml(error.message || String(error))}</span></div>`;
+    styleHighlights.innerHTML = '';
+    hotStyleBoard.innerHTML = '';
+    coldStyleBoard.innerHTML = '';
+    competitorSummary.innerHTML = '';
+    competitorPublicBoard.innerHTML = '';
+    actionSummary.innerHTML = '';
+  }
+}
+
+function renderDashboard(payload, workbench = null) {
+  const skills = payload?.skills || {};
+  const overview = payload?.overview || {};
+  const profile = skills.merchant_style_profile || {};
+  const report = skills.periodic_ops_report || {};
+  const competitors = skills.same_style_competitor_analysis || {};
+  const hot = skills.hot_style_launch || {};
+  const cold = skills.cold_style_retire || {};
+  const queue = skills.automation_queue || {};
+  const shop = payload?.shop || merchantSession || {};
+
+  $('#sessionTitle').textContent = `${shop.name || merchantSession?.shop_name || '当前门店'} 经营总览`;
+  $('#sessionSub').textContent = '';
+
+  heroShopTitle.textContent = shop.name || merchantSession?.shop_name || '当前门店';
+  heroSummary.textContent = profile.style_summary
+    || report.trend_summary
+    || '已根据当前周期数据整理一版经营总览。';
+  heroChips.innerHTML = [
+    profile.primary_category_name ? `主风格 ${profile.primary_category_name}` : '',
+    report.metrics ? `本期成交 ${formatMetricValue(report.metrics.shop_books ?? report.metrics.group_buy_orders ?? report.metrics.books ?? 0)}` : '',
+    Array.isArray(queue.items) ? `${queue.items.length} 条本周动作` : '',
+    Array.isArray(competitors.peer_group) ? `${competitors.peer_group.length} 家同风格对比` : '',
+  ].filter(Boolean).map(item => `<span class="tag">${escapeHtml(item)}</span>`).join('');
+
+  dashboardKpis.innerHTML = buildDashboardKpis(report, hot, cold, queue, workbench);
+  trafficTrend.innerHTML = buildTrafficTrendChart(overview, report);
+  revenueTrend.innerHTML = buildRevenueTrendChart(overview, report);
+  funnelSummary.innerHTML = buildFunnelSummary(report, workbench);
+  categoryMix.innerHTML = buildCategoryMix(report);
+  profileHighlights.innerHTML = buildProfileHighlights(profile, report);
+  styleHighlights.innerHTML = buildStyleHighlights(hot, cold);
+  hotStyleBoard.innerHTML = renderStyleListBoard('卖得好的爆款清单', workbench?.hot_styles || [], 'hot');
+  coldStyleBoard.innerHTML = renderStyleListBoard('需要处理的冷门款', workbench?.cold_styles || [], 'cold');
+  competitorSummary.innerHTML = buildCompetitorHighlights(competitors);
+  competitorPublicBoard.innerHTML = renderPublicCompetitorBoard(workbench?.public_competitors || []);
+  actionSummary.innerHTML = buildActionHighlights(queue, hot, cold);
+  renderStyleManager();
+  renderHistoryPreview();
+}
+
+function renderHistoryPreview() {
+  if (!historyRecords.length) {
+    historyPreview.innerHTML = '<div class="history-preview-card"><strong>还没有记录</strong><span>运行任意分析后，最近结果会自动保存到这里。</span></div>';
+    return;
+  }
+  historyPreview.innerHTML = historyRecords.slice(0, 4).map(record => `
+    <button class="history-preview-card" type="button" data-history-id="${escapeHtml(String(record.id || ''))}">
+      <strong>${escapeHtml(record.title || '历史记录')}</strong>
+      <span>${escapeHtml(record.summary || '点击继续查看这条结果')}</span>
+      <span>${escapeHtml(formatTimestamp(record.created_at))}</span>
+    </button>
+  `).join('');
+  historyPreview.querySelectorAll('[data-history-id]').forEach(button => {
+    button.addEventListener('click', () => openHistoryRecord(button.dataset.historyId));
+  });
+}
+
+function renderStyleListBoard(title, items, mode) {
+  if (!Array.isArray(items) || !items.length) {
+    return `<div class="list-card"><h4>${escapeHtml(title)}</h4><div class="empty-chart">当前周期还没有足够的数据生成这组款式清单。</div></div>`;
+  }
+  return `
+    <div class="list-card">
+      <h4>${escapeHtml(title)}</h4>
+      <div class="mini-list">
+        ${items.slice(0, 6).map(item => {
+          const conversion = item.conversion_rate != null ? `${Math.round(Number(item.conversion_rate || 0) * 100)}%` : '未提供';
+          const score = mode === 'hot'
+            ? `成交 ${formatCount(item.group_buy_orders_30d || 0)}`
+            : `转化 ${conversion}`;
+          const note = mode === 'hot'
+            ? `搜索 ${formatCount(item.search_volume_30d || 0)} · 点击 ${formatCount(item.click_volume_30d || 0)} · 价格 ¥${formatCount(item.price || 0)}`
+            : `搜索 ${formatCount(item.search_volume_30d || 0)} · 点击 ${formatCount(item.click_volume_30d || 0)} · 退款 ${formatCount(item.refund_orders_30d || 0)}`;
+          return `
+            <div class="mini-style-item">
+              <div class="mini-style-head">
+                <div>
+                  <div class="mini-style-title">${escapeHtml(item.style_name || item.style_id || '未命名款式')}</div>
+                  <div class="mini-style-meta">${escapeHtml(note)}</div>
+                </div>
+                <span class="visual-badge">${escapeHtml(score)}</span>
+              </div>
+              <div class="mini-style-note">${escapeHtml(buildWorkbenchStyleSummary(item, mode))}</div>
+              <div class="mini-style-actions">
+                <button class="tiny-btn" type="button" data-open-style-manager="${escapeAttr(item.style_id || '')}">查看详情</button>
+                <button class="tiny-btn promote" type="button" data-style-action="promote_traffic" data-style-id="${escapeAttr(item.style_id || '')}">投流</button>
+                <button class="tiny-btn ai" type="button" data-open-style-manager="${escapeAttr(item.style_id || '')}">AI 修改</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderPublicCompetitorBoard(items) {
+  if (!Array.isArray(items) || !items.length) {
+    return '<div class="empty-chart">当前还没有同风格门店的公开信息样本。</div>';
+  }
+  return items.slice(0, 5).map(item => `
+    <div class="peer-public-card">
+      <div class="peer-public-head">
+        <div class="peer-public-name">${escapeHtml(`${item.rank}. ${item.shop_name || '同风格门店'}`)}</div>
+        <span class="visual-badge">${escapeHtml(`公开热度 ${item.public_score}`)}</span>
+      </div>
+      <div class="peer-public-meta">${escapeHtml(`${item.city || ''}${item.district ? ` / ${item.district}` : ''} · ${item.style_name || '未标注风格'} · 评分 ${item.rating ?? '未提供'} · 团购均价 ¥${formatCount(item.avg_ticket || 0)}`)}</div>
+    </div>
+  `).join('');
+}
+
+function buildWorkbenchStyleSummary(item, mode = 'hot') {
+  const trend = item.trend_signal ? `趋势 ${formatTrendLabel(item.trend_signal)}` : '';
+  const base = mode === 'hot'
+    ? `当前成交表现更稳定，适合继续放大。`
+    : `当前点击和成交不匹配，建议重点排查价格、首图和卖点。`;
+  return [base, trend].filter(Boolean).join(' ');
+}
+
+function openStyleManager(styleId = '') {
+  if (!merchantSession) {
+    showAuthGate();
+    return;
+  }
+  navigateToStylesPage(styleId || '');
+}
+
+function closeStyleManager() {
+  styleManagerModal.classList.remove('open');
+}
+
+function renderStyleManager() {
+  const styles = Array.isArray(workbenchSnapshot?.styles) ? workbenchSnapshot.styles : [];
+  if (!styles.length) {
+    styleManagerList.innerHTML = '<div class="empty-chart">当前还没有可管理的款式。</div>';
+    styleManagerDetail.innerHTML = '<div class="empty-chart">请先生成或加载当前商家的款式数据。</div>';
+    return;
+  }
+  if (!managedStyleId || !styles.some(item => item.style_id === managedStyleId)) {
+    managedStyleId = styles[0].style_id;
+  }
+  const selected = styles.find(item => item.style_id === managedStyleId) || styles[0];
+  styleManagerList.innerHTML = styles.map(item => {
+    const active = item.style_id === managedStyleId ? ' active' : '';
+    const statusLabel = item.inventory_status === 'offline' ? '已下架' : '上架中';
+    return `
+      <button type="button" class="manager-style-card${active}" data-manage-style-id="${escapeAttr(item.style_id || '')}">
+        <div class="style-line">
+          <div>
+            <div class="style-name">${escapeHtml(item.style_name || item.style_id || '未命名款式')}</div>
+            <div class="style-sub">${escapeHtml(`${item.primary_style || '未标注风格'} · 价格 ¥${formatCount(item.price || 0)} · ${statusLabel}`)}</div>
+          </div>
+          <span class="visual-badge">${escapeHtml(`成交 ${formatCount(item.group_buy_orders_30d || 0)}`)}</span>
+        </div>
+        <div class="style-note">${escapeHtml(`搜索 ${formatCount(item.search_volume_30d || 0)} · 点击 ${formatCount(item.click_volume_30d || 0)} · 转化 ${Math.round(Number(item.conversion_rate || 0) * 100)}%`)}</div>
+      </button>
+    `;
+  }).join('');
+  styleManagerDetail.innerHTML = renderStyleManagerDetail(selected);
+}
+
+function renderStyleManagerDetail(style) {
+  if (!style) {
+    return '<div class="empty-chart">请选择一个款式查看详情。</div>';
+  }
+  const insight = buildStyleAiInsight(style);
+  const nextStatus = String(style.inventory_status || 'active') === 'offline' ? 'active' : 'offline';
+  const statusLabel = nextStatus === 'active' ? '上架' : '下架';
+  return `
+    <div class="manager-detail-card">
+      <h4>${escapeHtml(style.style_name || style.style_id || '未命名款式')}</h4>
+      <div class="tag-row">
+        <span class="tag">${escapeHtml(style.primary_style || '未标注主风格')}</span>
+        <span class="tag">${escapeHtml(style.nail_shape || '未标注甲型')}</span>
+        <span class="tag">${escapeHtml(style.nail_length || '未标注长度')}</span>
+        <span class="tag">${escapeHtml(`价格 ¥${formatCount(style.price || 0)}`)}</span>
+      </div>
+      <div class="manager-action-row" style="margin-top:12px;">
+        <button class="tiny-btn" type="button" data-style-action="set_inventory_status" data-status="${escapeAttr(nextStatus)}" data-style-id="${escapeAttr(style.style_id || '')}">${escapeHtml(statusLabel)}</button>
+        <button class="tiny-btn promote" type="button" data-style-action="promote_traffic" data-style-id="${escapeAttr(style.style_id || '')}">投流</button>
+        <button class="tiny-btn ai" type="button" data-style-action="apply_ai_update" data-style-id="${escapeAttr(style.style_id || '')}">应用 AI 修改</button>
+      </div>
+    </div>
+    <div class="manager-detail-card">
+      <h4>核心经营指标</h4>
+      <div class="stat-grid">
+        ${[
+          ['30天搜索', formatCount(style.search_volume_30d || 0), '搜索曝光规模'],
+          ['30天点击', formatCount(style.click_volume_30d || 0), '点击进入门店或详情'],
+          ['30天成交', formatCount(style.group_buy_orders_30d || 0), '形成团购或下单'],
+          ['转化率', `${Math.round(Number(style.conversion_rate || 0) * 100)}%`, '点击到成交效率'],
+          ['退款单', formatCount(style.refund_orders_30d || 0), '售后风险观察'],
+          ['收藏分享', `${formatCount(style.favorite_count_30d || 0)} / ${formatCount(style.share_count_30d || 0)}`, '用户愿不愿意留存和传播'],
+        ].map(item => `
+          <div class="stat-tile">
+            <div class="stat-label">${escapeHtml(item[0])}</div>
+            <div class="stat-value">${escapeHtml(item[1])}</div>
+            <div class="stat-note">${escapeHtml(item[2])}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="manager-detail-card">
+      <h4>AI 款式分析</h4>
+      <div class="focus-grid">
+        <div class="focus-card">
+          <strong>${escapeHtml(insight.headline)}</strong>
+          <span>${escapeHtml(insight.summary)}</span>
+        </div>
+        <div class="focus-card tone-warning">
+          <strong>价格建议</strong>
+          <span>${escapeHtml(insight.priceAdvice)}</span>
+        </div>
+      </div>
+      <div class="stack-list" style="margin-top:12px;">
+        <div class="stack-item">
+          <div class="stack-title"><span>值得保留</span></div>
+          <div class="stack-meta">${escapeHtml(insight.strengths.join('；'))}</div>
+        </div>
+        <div class="stack-item tone-warning">
+          <div class="stack-title"><span>优先优化</span></div>
+          <div class="stack-meta">${escapeHtml(insight.risks.join('；'))}</div>
+        </div>
+        <div class="stack-item tone-positive">
+          <div class="stack-title"><span>推荐动作</span></div>
+          <div class="stack-meta">${escapeHtml(insight.actions.join('；'))}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function buildStyleAiInsight(style) {
+  const search = Number(style.search_volume_30d || 0);
+  const click = Number(style.click_volume_30d || 0);
+  const orders = Number(style.group_buy_orders_30d || 0);
+  const conversion = Number(style.conversion_rate || 0);
+  const refunds = Number(style.refund_orders_30d || 0);
+  const hot = orders >= 12 && conversion >= 0.1;
+  const cold = click >= 80 && conversion < 0.06;
+  const headline = hot ? '这是一款已经跑出来的成交款' : (cold ? '这是一款高点击低成交的待优化款' : '这是一款值得继续观察的中间款');
+  const summary = hot
+    ? '当前成交和转化已经形成优势，更适合继续放大流量并尝试做系列化变体。'
+    : (cold
+      ? '说明用户会点进来看，但最后不愿意下单，问题通常出在价格、首图、套餐说明或风格落差。'
+      : '当前基础指标不算差，但还没形成明确的爆款势能，适合先做小步优化。');
+  const priceAdvice = cold
+    ? `建议先测试小幅调价，当前价格 ¥${formatCount(style.price || 0)} 可以先向下试 10-20 元。`
+    : (hot
+      ? `这款可以尝试轻微提价或做高配版，当前价格 ¥${formatCount(style.price || 0)} 有进一步放大客单的空间。`
+      : `当前价格 ¥${formatCount(style.price || 0)} 可以先保持，优先优化标题、首图和卖点。`);
+  const strengths = [
+    search ? `有 ${formatCount(search)} 次搜索承接，说明风格本身有需求。` : '当前还没有足够的搜索样本。',
+    orders ? `已经形成 ${formatCount(orders)} 次成交，具备继续优化的基础。` : '当前成交仍偏少，适合先做小流量测试。',
+  ];
+  const risks = [
+    conversion < 0.06 ? `转化率只有 ${Math.round(conversion * 100)}%，点击后的购买决策还不够强。` : `转化率约 ${Math.round(conversion * 100)}%，可以继续观察是否还能提升。`,
+    refunds > 0 ? `已有 ${formatCount(refunds)} 单退款，建议回看售后原因和预期管理。` : '当前退款压力不高，可以把重点放在曝光和点击承接上。',
+  ];
+  const actions = [
+    hot ? '优先投流放大，并围绕这款做系列化变体。' : '先重做首图与标题，再决定是否加投流。',
+    cold ? '把团购价、套餐描述和首图卖点一起做 A/B 测试。' : '同步检查是否需要做轻微调价和标签优化。',
+  ];
+  return { headline, summary, priceAdvice, strengths, risks, actions };
+}
+
+async function boostTopHotStyle() {
+  const target = workbenchSnapshot?.hot_styles?.[0] || workbenchSnapshot?.styles?.[0];
+  navigateToStylesPage(target?.style_id || '', 'promote');
+}
+
+async function handleStyleAction(action, styleId, status = '') {
+  if (!merchantSession || !styleId) return;
+  if (action === 'promote_traffic') {
+    navigateToStylesPage(styleId, 'promote');
+    return;
+  }
+  try {
+    busy = true;
+    const payload = {};
+    if (status) payload.status = status;
+    const result = await postJson('/api/merchant/style-actions', {
+      style_id: styleId,
+      action,
+      payload,
+    });
+    if (result?.message) {
+      heroSummary.textContent = result.message;
+      await persistHistoryRecord({
+        type: 'style_action',
+        title: `款式动作：${formatActionLabel(action)}`,
+        userMessage: `${formatActionLabel(action)} ${styleId}`,
+        skillId: '',
+        payload: { action, style: result.style || null, message: result.message },
+      });
+    }
+    await Promise.all([loadHistory(), loadDashboard()]);
+  } catch (error) {
+    heroSummary.textContent = `执行失败：${error.message || String(error)}`;
+  } finally {
+    busy = false;
+  }
 }
 
 function getSkillById(skillId) {
@@ -1866,6 +3665,7 @@ async function runSkill(skillId) {
     return;
   }
   if (busy) return;
+  openAssistantDrawer();
   const skill = getSkillById(skillId);
   if (!skill) return;
   lastEstimateSeconds = skill.estimated_seconds || 60;
@@ -1911,6 +3711,7 @@ async function sendChat(text) {
     return;
   }
   if (busy) return;
+  openAssistantDrawer();
   clearEmpty();
   chatInput.value = '';
   chatInput.style.height = 'auto';
@@ -2580,8 +4381,8 @@ function renderPeerGallery(items) {
               <span class="visual-title">${escapeHtml(item.shop?.name || item.shop?.id || '未知门店')}</span>
               <span class="visual-badge">${escapeHtml(item.style_match != null ? `匹配度 ${Math.round(item.style_match * 100)}%` : '同风格') }</span>
             </div>
-            <div class="story-note">${escapeHtml(`预约 ${item.books || 0} · 预约率 ${Math.round((item.booking_rate || 0) * 100)}% · 试戴 ${item.tryons || 0}`)}</div>
-            <div class="mini-bar"><div class="mini-bar-fill" style="width:${normalizeVisualPercent((item.booking_rate || 0) * 100, 30)}%"></div></div>
+            <div class="story-note">${escapeHtml(`评分 ${item.shop?.rating ?? '未提供'} · 团购均价 ¥${item.shop?.price_avg ?? '未提供'}`)}</div>
+            <div class="mini-bar"><div class="mini-bar-fill" style="width:${normalizeVisualPercent((item.style_match || 0) * 100, 100)}%"></div></div>
           </div>
         `).join('')}
       </div>
@@ -2716,6 +4517,7 @@ function sanitizePayloadForHistory(payload) {
 
 function summarizePayloadForHistory(payload) {
   if (!payload || typeof payload !== 'object') return '';
+  if (payload.message) return String(payload.message);
   if (payload.created_skill?.desc) return payload.created_skill.desc;
   const normalized = normalizeReply(payload.openclaw?.reply, payload);
   if (normalized?.kind === 'structured') {
@@ -2747,8 +4549,10 @@ function openHistoryRecord(historyId) {
     showAuthGate();
     return;
   }
+  if (busy) return;
   const record = historyRecords.find(item => String(item.id || '') === String(historyId || ''));
   if (!record) return;
+  openAssistantDrawer();
   clearEmpty();
   messages.innerHTML = '';
   if (record.shop_id && SHOP_LABELS[record.shop_id]) {
@@ -2789,9 +4593,9 @@ function renderShopCard(shop) {
     ['客单价', shop.price_avg],
     ['试戴', shop.tryons],
     ['喜欢', shop.likes],
-    ['预约', shop.books],
+    ['成交', shop.books],
     ['喜欢率', shop.like_rate_pct != null ? `${shop.like_rate_pct}%` : null],
-    ['预约率', shop.booking_rate_pct != null ? `${shop.booking_rate_pct}%` : null],
+    ['转化率', shop.booking_rate_pct != null ? `${shop.booking_rate_pct}%` : null],
   ].filter(([, value]) => value !== undefined && value !== null && value !== '');
 
   if (!rows.length) return '';
@@ -2846,7 +4650,7 @@ function renderStyleMixCard(items) {
           const metrics = [
             item.tryons != null ? `试戴 ${item.tryons}` : '',
             item.likes != null ? `喜欢 ${item.likes}` : '',
-            item.books != null ? `预约 ${item.books}` : '',
+            item.books != null ? `成交 ${item.books}` : '',
             item.like_rate ? `好评 ${item.like_rate}` : '',
           ].filter(Boolean).join(' · ');
           const note = item.note || '';
@@ -2867,8 +4671,8 @@ function renderPeerGroupCard(items) {
           const shop = item.shop || {};
           const bits = [
             shop.name || shop.id || '未知门店',
-            item.booking_rate != null ? `预约率 ${item.booking_rate}` : '',
-            item.books != null ? `预约 ${item.books}` : '',
+            shop.rating != null ? `评分 ${shop.rating}` : '',
+            shop.price_avg != null ? `团购均价 ¥${shop.price_avg}` : '',
             item.style_match != null ? `匹配度 ${item.style_match}` : ''
           ].filter(Boolean).join(' · ');
           return `<li>${escapeHtml(bits)}</li>`;
@@ -3150,7 +4954,7 @@ function buildProfileStats(analysis, payload) {
     { label: '门店评分', value: shop.rating != null ? String(shop.rating) : '未提供', note: '当前门店基础口碑' },
     { label: '试戴量', value: shop.tryons != null ? String(shop.tryons) : '未提供', note: '当前样本规模' },
     { label: '好评率', value: shop.like_rate_pct != null ? `${shop.like_rate_pct}%` : '未提供', note: '用户即时偏好' },
-    { label: '预约率', value: shop.booking_rate_pct != null ? `${shop.booking_rate_pct}%` : '未提供', note: '最终转化表现' },
+    { label: '转化率', value: shop.booking_rate_pct != null ? `${shop.booking_rate_pct}%` : '未提供', note: '当前门店的最终成交表现' },
   ];
 }
 
@@ -3169,7 +4973,7 @@ function buildCompetitorStats(structured, analysis) {
   const peerGroup = structured?.peer_group || analysis?.peer_group || [];
   const gaps = structured?.gaps || analysis?.gaps || [];
   return [
-    { label: '预约率', value: shop.booking_rate != null ? `${Math.round(shop.booking_rate * 100)}%` : '未提供', note: '当前门店在同风格中的转化' },
+    { label: '门店评分', value: shop.rating != null ? String(shop.rating) : '未提供', note: '当前门店在同风格里的口碑表现' },
     { label: '竞品样本', value: String(peerGroup.length), note: '参与对比的同风格门店' },
     { label: '优势点', value: String((structured?.advantages || analysis?.advantages || []).length), note: '已经具备的竞争点' },
     { label: '差距点', value: String(gaps.length), note: '需要重点补齐的短板' },
@@ -3220,13 +5024,433 @@ function buildDispatchStats(structured, payload) {
   ];
 }
 
+function buildTrafficTrendChart(overview, report) {
+  const series = Array.isArray(overview?.daily_series) ? overview.daily_series : [];
+  if (!series.length) {
+    return '<div class="empty-chart">当前门店还没有可用于绘图的日级经营数据。</div>';
+  }
+  const stats = report?.metrics || overview?.totals || {};
+  return `
+    <div class="chart-card">
+      <div class="chart-legend">
+        ${buildLegendItem('#d4ab7c', '搜索')}
+        ${buildLegendItem('#c7939f', '点击')}
+        ${buildLegendItem('#9fd0b5', '团购')}
+      </div>
+      <div class="chart-frame">
+        ${renderTrafficTrendSvg(series)}
+      </div>
+      <div class="chart-stats">
+        ${buildChartStat('搜索量', formatCount(stats.search_volume ?? 0), '本周期进入商家内容搜索的总量')}
+        ${buildChartStat('点击量', formatCount(stats.click_volume ?? 0), '从搜索进入详情的点击量')}
+        ${buildChartStat('团购量', formatCount(stats.group_buy_orders ?? stats.shop_books ?? 0), '最终形成支付或团购的订单量')}
+      </div>
+    </div>
+  `;
+}
+
+function buildRevenueTrendChart(overview, report) {
+  const series = Array.isArray(overview?.daily_series) ? overview.daily_series : [];
+  if (!series.length) {
+    return '<div class="empty-chart">当前门店还没有可用于绘图的营收与投放数据。</div>';
+  }
+  const totals = overview?.totals || report?.metrics || {};
+  const revenue = Number(totals.revenue || 0);
+  const spend = Number(totals.ad_spend || 0);
+  const roas = spend > 0 ? (revenue / spend).toFixed(1) : '—';
+  return `
+    <div class="chart-card">
+      <div class="chart-legend">
+        ${buildLegendItem('#d4ab7c', '营收')}
+        ${buildLegendItem('#c0808f', '投放')}
+      </div>
+      <div class="chart-frame">
+        ${renderRevenueTrendSvg(series)}
+      </div>
+      <div class="chart-stats">
+        ${buildChartStat('总营收', `¥${formatCount(revenue)}`, '本周期门店累计营收')}
+        ${buildChartStat('投放消耗', `¥${formatCount(spend)}`, '本周期广告或内容投放花费')}
+        ${buildChartStat('投入产出', roas === '—' ? roas : `${roas}x`, '营收除以投放消耗得到的粗略效率')}
+      </div>
+    </div>
+  `;
+}
+
+function buildFunnelSummary(report, workbench = null) {
+  const metrics = report?.metrics || {};
+  const search = Number(metrics.search_volume || 0);
+  const click = Number(metrics.click_volume || 0);
+  const orders = Number(metrics.group_buy_orders ?? metrics.shop_books ?? 0);
+  const repeat = Number(metrics.repeat_orders || 0);
+  const searchFlow = workbench?.funnels?.search_click_group_buy;
+  const tryonFlow = workbench?.funnels?.tryon_click_group_buy;
+  if (!searchFlow && !tryonFlow) {
+    return `
+      <div class="chart-card">
+        <div class="funnel-strip">
+          ${buildFunnelCard('搜索', formatCount(search), '100% 基线')}
+          ${buildFunnelCard('点击', formatCount(click), `${formatStageRate(click, search)} 点击率`)}
+          ${buildFunnelCard('团购', formatCount(orders), `${formatStageRate(orders, click)} 支付转化`)}
+          ${buildFunnelCard('复购', formatCount(repeat), `${formatStageRate(repeat, orders)} 复购率`)}
+        </div>
+      </div>
+    `;
+  }
+  return `
+    <div class="chart-card">
+      <div class="funnel-strip">
+        ${buildFunnelCard('搜索', formatCount(searchFlow?.search_volume || search), '搜索样本')}
+        ${buildFunnelCard('点击店铺', formatCount(searchFlow?.store_click_volume || click), `${Math.round(Number(searchFlow?.click_rate || 0) * 100)}% 点击率`)}
+        ${buildFunnelCard('团购', formatCount(searchFlow?.group_buy_orders || orders), `${Math.round(Number(searchFlow?.group_buy_rate || 0) * 100)}% 成交率`)}
+        ${buildFunnelCard('复购', formatCount(repeat), `${formatStageRate(repeat, orders || searchFlow?.group_buy_orders || 0)} 复购率`)}
+      </div>
+      <div class="funnel-strip" style="margin-top:10px;">
+        ${buildFunnelCard('试戴样本', formatCount(tryonFlow?.tryon_volume || click), '款式兴趣样本')}
+        ${buildFunnelCard('点击店铺', formatCount(tryonFlow?.store_click_volume || click), `${Math.round(Number(tryonFlow?.click_rate || 0) * 100)}% 点击率`)}
+        ${buildFunnelCard('团购', formatCount(tryonFlow?.group_buy_orders || orders), `${Math.round(Number(tryonFlow?.group_buy_rate || 0) * 100)}% 成交率`)}
+        ${buildFunnelCard('咨询', formatCount(workbench?.funnels?.consultation_group_buy?.consultation_volume || metrics.consultation_volume || 0), `${Math.round(Number(workbench?.funnels?.consultation_group_buy?.group_buy_rate || 0) * 100)}% 咨询成交率`)}
+      </div>
+    </div>
+  `;
+}
+
+function buildCategoryMix(report) {
+  const items = Array.isArray(report?.top_categories) ? report.top_categories : [];
+  if (!items.length) {
+    return '<div class="empty-chart">当前还没有足够的风格成交结构数据。</div>';
+  }
+  const maxCount = Math.max(...items.map(item => Number(item.count || 0)), 1);
+  return `
+    <div class="chart-card">
+      <div class="mix-list">
+        ${items.slice(0, 5).map(item => {
+          const count = Number(item.count || 0);
+          const width = Math.max(10, Math.round((count / maxCount) * 100));
+          return `
+            <div class="mix-row">
+              <div class="mix-head">
+                <span>${escapeHtml(item.name || item.category || '未命名风格')}</span>
+                <span>${escapeHtml(`${formatCount(count)} 单`)}</span>
+              </div>
+              <div class="mix-bar"><div class="mix-fill" style="width:${width}%"></div></div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderTrafficTrendSvg(series) {
+  const width = 640;
+  const height = 220;
+  const pad = { top: 12, right: 12, bottom: 28, left: 12 };
+  const searchValues = series.map(item => Number(item.search_volume || 0));
+  const clickValues = series.map(item => Number(item.click_volume || 0));
+  const orderValues = series.map(item => Number(item.group_buy_orders || 0));
+  const searchPath = buildNormalizedLinePath(searchValues, width, height, pad);
+  const clickPath = buildNormalizedLinePath(clickValues, width, height, pad);
+  const orderPath = buildNormalizedLinePath(orderValues, width, height, pad);
+  return `
+    <svg class="chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-label="流量到成交走势">
+      ${renderChartGrid(width, height, pad)}
+      <path d="${searchPath}" fill="none" stroke="#d4ab7c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="${clickPath}" fill="none" stroke="#c7939f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="${orderPath}" fill="none" stroke="#9fd0b5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+      ${renderAxisLabels(series, width, height, pad)}
+    </svg>
+  `;
+}
+
+function renderRevenueTrendSvg(series) {
+  const width = 460;
+  const height = 220;
+  const pad = { top: 12, right: 12, bottom: 28, left: 12 };
+  const barValues = series.map(item => Number(item.revenue || 0));
+  const lineValues = series.map(item => Number(item.ad_spend || 0));
+  const maxValue = Math.max(...barValues, ...lineValues, 1);
+  const innerW = width - pad.left - pad.right;
+  const innerH = height - pad.top - pad.bottom;
+  const step = innerW / Math.max(series.length, 1);
+  const barWidth = Math.max(8, step * 0.58);
+  const bars = barValues.map((value, index) => {
+    const heightRatio = value / maxValue;
+    const barHeight = Math.max(2, heightRatio * innerH);
+    const x = pad.left + index * step + (step - barWidth) / 2;
+    const y = pad.top + innerH - barHeight;
+    return `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${barWidth.toFixed(2)}" height="${barHeight.toFixed(2)}" rx="4" fill="rgba(212, 171, 124, 0.72)"></rect>`;
+  }).join('');
+  const spendPath = buildSharedLinePath(lineValues, width, height, pad, maxValue);
+  return `
+    <svg class="chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-label="营收与投放走势">
+      ${renderChartGrid(width, height, pad)}
+      ${bars}
+      <path d="${spendPath}" fill="none" stroke="#c0808f" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"></path>
+      ${renderAxisLabels(series, width, height, pad)}
+    </svg>
+  `;
+}
+
+function buildLegendItem(color, label) {
+  return `<span class="legend-item"><span class="legend-dot" style="background:${color}"></span>${escapeHtml(label)}</span>`;
+}
+
+function buildChartStat(label, value, note) {
+  return `
+    <div class="chart-stat">
+      <div class="chart-stat-label">${escapeHtml(label)}</div>
+      <div class="chart-stat-value">${escapeHtml(value)}</div>
+      <div class="chart-stat-note">${escapeHtml(note)}</div>
+    </div>
+  `;
+}
+
+function buildFunnelCard(label, value, rate) {
+  return `
+    <div class="funnel-card">
+      <div class="funnel-label">${escapeHtml(label)}</div>
+      <div class="funnel-value">${escapeHtml(value)}</div>
+      <div class="funnel-rate">${escapeHtml(rate)}</div>
+    </div>
+  `;
+}
+
+function renderChartGrid(width, height, pad) {
+  const lines = [];
+  const innerH = height - pad.top - pad.bottom;
+  for (let index = 0; index < 4; index += 1) {
+    const y = pad.top + (innerH / 3) * index;
+    lines.push(`<line class="chart-grid-line" x1="${pad.left}" y1="${y.toFixed(2)}" x2="${(width - pad.right).toFixed(2)}" y2="${y.toFixed(2)}"></line>`);
+  }
+  return lines.join('');
+}
+
+function renderAxisLabels(series, width, height, pad) {
+  if (!series.length) return '';
+  const indexes = [...new Set([0, Math.floor((series.length - 1) / 2), series.length - 1])];
+  const innerW = width - pad.left - pad.right;
+  return indexes.map(index => {
+    const x = pad.left + (series.length === 1 ? innerW / 2 : (innerW / (series.length - 1)) * index);
+    const label = shortDateLabel(series[index]?.date);
+    return `<text class="chart-axis-text" x="${x.toFixed(2)}" y="${height - 8}" text-anchor="middle">${escapeHtml(label)}</text>`;
+  }).join('');
+}
+
+function buildNormalizedLinePath(values, width, height, pad) {
+  const maxValue = Math.max(...values, 1);
+  return buildSharedLinePath(values, width, height, pad, maxValue);
+}
+
+function buildSharedLinePath(values, width, height, pad, maxValue) {
+  const innerW = width - pad.left - pad.right;
+  const innerH = height - pad.top - pad.bottom;
+  return values.map((value, index) => {
+    const x = pad.left + (values.length === 1 ? innerW / 2 : (innerW / (values.length - 1)) * index);
+    const y = pad.top + innerH - ((Number(value || 0) / Math.max(maxValue, 1)) * innerH);
+    return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
+  }).join(' ');
+}
+
+function shortDateLabel(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (!Number.isNaN(date.getTime())) {
+    return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+  }
+  return String(value).slice(5).replace('-', '/');
+}
+
+function formatCount(value) {
+  const numeric = Number(value || 0);
+  if (!Number.isFinite(numeric)) return String(value ?? '0');
+  return numeric.toLocaleString('zh-CN');
+}
+
+function formatStageRate(value, base) {
+  const denominator = Number(base || 0);
+  if (!denominator) return '0%';
+  return `${Math.round((Number(value || 0) / denominator) * 100)}%`;
+}
+
+function buildDashboardKpis(report, hot, cold, queue, workbench = null) {
+  const metrics = report?.metrics || {};
+  const tryonSample = Number(workbench?.funnels?.tryon_click_group_buy?.tryon_volume || metrics.tryons || metrics.click_volume || 0);
+  const kpis = [
+    {
+      label: metrics.search_volume != null ? '搜索量' : '本期试戴',
+      value: formatMetricValue(metrics.search_volume ?? metrics.tryons ?? 0),
+      note: metrics.search_volume != null ? '当前周期店铺内容被搜索的总量' : '当前周期进入试戴的总样本量',
+    },
+    {
+      label: metrics.click_volume != null ? '点击量' : '本期喜欢',
+      value: formatMetricValue(metrics.click_volume ?? metrics.likes ?? 0),
+      note: metrics.click_volume != null ? '从搜索进入详情的点击总量' : '当前周期用户正反馈数量',
+    },
+    {
+      label: metrics.group_buy_orders != null ? '团购量' : '到店成交',
+      value: formatMetricValue(metrics.group_buy_orders ?? metrics.shop_books ?? metrics.books ?? 0),
+      note: metrics.group_buy_orders != null ? '当前周期真实成交的团购订单量' : '本店当前周期真实转化量',
+    },
+    {
+      label: Array.isArray(queue?.items) ? '本周动作' : '低效款',
+      value: Array.isArray(queue?.items)
+        ? String(queue.items.length)
+        : String((cold?.cold_candidates || []).length),
+      note: Array.isArray(queue?.items)
+        ? '系统已经整理好的优先动作数'
+        : '当前需要重点处理的低表现款式数',
+    },
+    {
+      label: '试戴样本',
+      value: formatMetricValue(tryonSample),
+      note: '可理解为用户对当前款式产生尝试兴趣的样本规模',
+    },
+  ];
+  return kpis.map(item => `
+    <div class="kpi-card">
+      <div class="kpi-label">${escapeHtml(item.label)}</div>
+      <div class="kpi-value">${escapeHtml(item.value)}</div>
+      <div class="kpi-note">${escapeHtml(item.note)}</div>
+    </div>
+  `).join('');
+}
+
+function buildProfileHighlights(profile, report) {
+  const strength = Array.isArray(profile?.strengths) && profile.strengths.length
+    ? formatDisplayText(profile.strengths[0])
+    : '当前没有明显优势摘要，建议点击“深度画像”查看完整分析。';
+  const risk = Array.isArray(profile?.risks) && profile.risks.length
+    ? formatDisplayText(profile.risks[0])
+    : '当前没有显著高风险项，可以继续放大主风格。';
+  const direction = Array.isArray(profile?.recommended_direction) && profile.recommended_direction.length
+    ? formatDisplayText(profile.recommended_direction[0])
+    : '先围绕当前主风格做系列化扩展。';
+  const metrics = report?.metrics || {};
+  const conversionValue = metrics.booking_rate != null
+    ? `${Math.round(Number(metrics.booking_rate || 0) * 100)}%`
+    : (metrics.conversion_rate != null ? `${Math.round(Number(metrics.conversion_rate || 0) * 100)}%` : '未提供');
+  return [
+    { title: '当前主风格', body: profile.primary_category_name || '未识别', tone: '' },
+    { title: '最值得保留的优势', body: strength, tone: 'tone-positive' },
+    { title: '最该先处理的风险', body: risk, tone: 'tone-warning' },
+    { title: '当前转化表现', body: `本期关键转化约 ${conversionValue}，${direction}`, tone: '' },
+  ].map(item => `
+    <div class="focus-card ${item.tone}">
+      <strong>${escapeHtml(item.title)}</strong>
+      <span>${escapeHtml(item.body)}</span>
+    </div>
+  `).join('');
+}
+
+function buildStyleHighlights(hot, cold) {
+  const hotItems = Array.isArray(hot?.hot_candidates) ? hot.hot_candidates.slice(0, 2) : [];
+  const coldItems = Array.isArray(cold?.cold_candidates) ? cold.cold_candidates.slice(0, 2) : [];
+  const cards = [];
+  hotItems.forEach(item => {
+    cards.push({
+      title: `建议重点放大：${item.name || item.style_id || '未命名款'}`,
+      body: `${buildCandidateMetricLine(item, 'hot')}；${formatDisplayText(item.note || '适合作为近期主推款。')}`,
+      tone: 'tone-positive',
+    });
+  });
+  coldItems.forEach(item => {
+    cards.push({
+      title: `需要处理：${item.name || item.style_id || '未命名款'}`,
+      body: `${buildCandidateMetricLine(item, 'cold')}；${formatDisplayText(item.note || '建议先复查卖点和定价。')}`,
+      tone: 'tone-warning',
+    });
+  });
+  if (!cards.length) {
+    cards.push({
+      title: '款式经营待生成',
+      body: '点击“查爆款”或“查低效款”，系统会把最值得关注的款式直接整理给你。',
+      tone: '',
+    });
+  }
+  return cards.slice(0, 4).map(item => `
+    <div class="focus-card ${item.tone}">
+      <strong>${escapeHtml(item.title)}</strong>
+      <span>${escapeHtml(item.body)}</span>
+    </div>
+  `).join('');
+}
+
+function buildCompetitorHighlights(competitors) {
+  const peerGroup = Array.isArray(competitors?.peer_group) ? competitors.peer_group.slice(0, 3) : [];
+  const gaps = Array.isArray(competitors?.gaps) ? competitors.gaps : [];
+  const opportunities = Array.isArray(competitors?.opportunities) ? competitors.opportunities : [];
+  const blocks = [];
+  if (peerGroup.length) {
+    peerGroup.forEach(item => {
+      blocks.push(`
+        <div class="stack-item">
+          <div class="stack-title">
+            <span>${escapeHtml(item.shop?.name || item.shop?.id || '同风格门店')}</span>
+            <span class="visual-badge">${escapeHtml(item.style_match != null ? `匹配度 ${Math.round(Number(item.style_match || 0) * 100)}%` : '同风格')}</span>
+          </div>
+          <div class="stack-meta">${escapeHtml(`评分 ${item.shop?.rating ?? '未提供'} · 团购均价 ¥${item.shop?.price_avg ?? '未提供'}`)}</div>
+        </div>
+      `);
+    });
+  }
+  blocks.push(`
+    <div class="stack-item ${gaps.length ? 'tone-warning' : 'tone-positive'}">
+      <div class="stack-title"><span>${escapeHtml(gaps.length ? '当前差距' : '当前优势')}</span></div>
+      <div class="stack-meta">${escapeHtml(formatDisplayText((gaps[0] || opportunities[0] || competitors?.competitive_position || '当前暂无更明显的差距提示。')))}</div>
+    </div>
+  `);
+  return blocks.join('');
+}
+
+function buildActionHighlights(queue, hot, cold) {
+  const items = Array.isArray(queue?.items) ? queue.items.slice(0, 5) : [];
+  if (!items.length) {
+    const hotItem = hot?.hot_candidates?.[0];
+    const coldItem = cold?.cold_candidates?.[0];
+    const fallback = [];
+    if (hotItem) {
+      fallback.push({
+        title: `先放大 ${hotItem.name || hotItem.style_id || '主推款'}`,
+        body: buildCandidateMetricLine(hotItem, 'hot'),
+      });
+    }
+    if (coldItem) {
+      fallback.push({
+        title: `复查 ${coldItem.name || coldItem.style_id || '低效款'}`,
+        body: buildCandidateMetricLine(coldItem, 'cold'),
+      });
+    }
+    if (!fallback.length) {
+      fallback.push({
+        title: '本周动作待生成',
+        body: '点击“生成动作队列”后，这里会自动整理本周优先动作。',
+      });
+    }
+    return fallback.map(item => `
+      <div class="stack-item">
+        <div class="stack-title"><span>${escapeHtml(item.title)}</span></div>
+        <div class="stack-meta">${escapeHtml(item.body)}</div>
+      </div>
+    `).join('');
+  }
+  return items.map((item, index) => `
+    <div class="stack-item ${String(item.status || '').includes('pending') ? 'tone-warning' : ''}">
+      <div class="stack-title">
+        <span>${escapeHtml(`${index + 1}. ${formatActionLabel(item.type || item.suggested_action || '建议动作')}`)}</span>
+        <span class="visual-badge">${escapeHtml(formatStatusValue(item.status || item.priority || 'ready'))}</span>
+      </div>
+      <div class="stack-meta">${escapeHtml(formatActionReason(item))}</div>
+    </div>
+  `).join('');
+}
+
 function buildStyleMetricLine(item) {
   const metrics = [
     item.tryons != null ? `试戴 ${item.tryons}` : '',
     item.likes != null ? `喜欢 ${item.likes}` : '',
-    item.books != null ? `预约 ${item.books}` : '',
+    item.books != null ? `成交 ${item.books}` : '',
     item.like_rate ? `好评 ${item.like_rate}` : '',
-    item.booking_rate ? `预约率 ${item.booking_rate}` : '',
+    item.booking_rate ? `转化率 ${item.booking_rate}` : '',
   ].filter(Boolean);
   return metrics.join(' · ') || '当前没有更多指标。';
 }
@@ -3236,7 +5460,7 @@ function buildCandidateMetricLine(item, mode) {
   const head = [
     metrics.tryons != null ? `试戴 ${metrics.tryons}` : '',
     metrics.likes != null ? `喜欢 ${metrics.likes}` : '',
-    metrics.books != null ? `预约 ${metrics.books}` : '',
+    metrics.books != null ? `成交 ${metrics.books}` : '',
   ].filter(Boolean).join(' · ');
   if (mode === 'cold') {
     return `${head || '基础表现偏弱'}${item.suggested_action ? ` · ${formatActionLabel(item.suggested_action)}` : ''}`;
@@ -3310,9 +5534,10 @@ function buildMiniHighlights(skillId, value) {
 function setBusy(value) {
   busy = value;
   sendBtn.disabled = value;
-  document.querySelectorAll('.skill-item, .history-item, .quick-card, .new-skill').forEach(btn => {
+  document.querySelectorAll('.skill-item, .history-item, .history-preview-card, .quick-card, .new-skill, .action-trigger, .nav-link').forEach(btn => {
     btn.disabled = value;
   });
+  if (assistantFab) assistantFab.disabled = value;
 }
 
 function clearEmpty() {
@@ -3342,6 +5567,18 @@ function formatActionLabel(value) {
   if (!value) return '建议动作';
   const key = String(value).trim();
   return ACTION_LABELS[key] || formatDisplayText(key);
+}
+
+function formatTrendLabel(value) {
+  const key = String(value || '').trim();
+  return {
+    breakout: '爆发中',
+    rising: '上升中',
+    stable: '稳定',
+    cooling: '降温中',
+    falling: '下滑中',
+    flat: '平稳'
+  }[key] || key || '未标注';
 }
 
 function formatValueLabel(value) {
@@ -3447,6 +5684,10 @@ function escapeHtml(value) {
     '"': '&quot;',
     "'": '&#39;'
   }[ch]));
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
 }
 
 init();

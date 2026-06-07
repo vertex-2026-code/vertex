@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>甲趣商家款式管理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600&family=Noto+Serif+SC:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #151012;
+    --panel: #21191c;
+    --line: rgba(241, 220, 207, 0.13);
+    --text: #f1dccf;
+    --muted: rgba(241, 220, 207, 0.68);
+    --faint: rgba(241, 220, 207, 0.42);
+    --accent: #d4ab7c;
+    --rose: #c0808f;
+    --green: #9fd0b5;
+    --red: #e2a08e;
+    --font-display: "Fraunces", "Noto Serif SC", serif;
+    --font-body: "Fraunces", "Noto Serif SC", serif;
+    --font-mono: "DM Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    color: var(--text);
+    font-family: var(--font-body);
+    background:
+      radial-gradient(900px 520px at 100% 0%, rgba(212, 171, 124, 0.13), transparent 60%),
+      radial-gradient(700px 440px at 0% 100%, rgba(192, 128, 143, 0.12), transparent 62%),
+      var(--bg);
+  }
+  button, select, input { font: inherit; }
+  button { cursor: pointer; border: 0; }
+  .page {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(21, 16, 18, 0.82);
+  }
+  .top-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .back-btn, .action-btn, .ghost-btn {
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(241, 220, 207, 0.12);
+    background: rgba(241, 220, 207, 0.04);
+    color: var(--text);
+  }
+  .action-btn {
+    background: rgba(212, 171, 124, 0.14);
+    border-color: rgba(212, 171, 124, 0.25);
+    color: var(--accent);
+  }
+  .ghost-btn.ai {
+    background: rgba(192, 128, 143, 0.12);
+    border-color: rgba(192, 128, 143, 0.24);
+    color: #f6d9df;
+  }
+  .title h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(28px, 3.6vw, 40px);
+    line-height: 1.05;
+    font-weight: 600;
+  }
+  .toolbar-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(241, 220, 207, 0.04);
+  }
+  .toolbar-field select {
+    background: transparent;
+    border: 0;
+    color: var(--text);
+    outline: none;
+  }
+  .layout {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(360px, 0.92fr) minmax(0, 1.08fr);
+  }
+  .list-pane {
+    min-height: 0;
+    overflow: auto;
+    border-right: 1px solid var(--line);
+    padding: 18px;
+    display: grid;
+    gap: 10px;
+  }
+  .search-bar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding-bottom: 10px;
+    background: linear-gradient(180deg, rgba(21, 16, 18, 0.98), rgba(21, 16, 18, 0.9));
+  }
+  .search-bar input {
+    width: 100%;
+    min-height: 42px;
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(241, 220, 207, 0.12);
+    background: rgba(241, 220, 207, 0.04);
+    color: var(--text);
+    outline: none;
+  }
+  .style-card {
+    width: 100%;
+    text-align: left;
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 14px;
+    background: rgba(241, 220, 207, 0.03);
+    padding: 12px;
+  }
+  .style-card.active {
+    border-color: rgba(212, 171, 124, 0.34);
+    background: rgba(212, 171, 124, 0.08);
+  }
+  .style-head {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .style-name {
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .style-meta, .style-note {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(212, 171, 124, 0.1);
+    color: var(--accent);
+    font-size: 11px;
+  }
+  .detail-pane {
+    min-height: 0;
+    overflow: auto;
+    padding: 20px;
+    display: grid;
+    gap: 14px;
+  }
+  .section-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 16px;
+    background: rgba(241, 220, 207, 0.03);
+    padding: 16px;
+  }
+  .section-card h2, .section-card h3 {
+    margin: 0 0 12px;
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+  .tag-row, .action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(241, 220, 207, 0.1);
+    background: rgba(241, 220, 207, 0.04);
+    color: var(--text);
+    font-size: 12px;
+  }
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .metric-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.12);
+    padding: 12px;
+  }
+  .metric-card .label {
+    color: var(--faint);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .metric-card .value {
+    margin-top: 8px;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 24px;
+    line-height: 1;
+  }
+  .metric-card .note {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .kv-grid {
+    display: grid;
+    gap: 10px;
+  }
+  .kv {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 30px;
+    border-top: 1px solid rgba(241, 220, 207, 0.08);
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .kv:first-child { border-top: 0; }
+  .kv b { color: var(--text); }
+  .promotion-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .promo-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 12px;
+    background: rgba(241, 220, 207, 0.03);
+    padding: 12px;
+  }
+  .promo-card.active {
+    border-color: rgba(212, 171, 124, 0.34);
+    background: rgba(212, 171, 124, 0.09);
+  }
+  .promo-card strong {
+    display: block;
+    color: var(--text);
+    font-size: 14px;
+  }
+  .promo-card span {
+    display: block;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .promo-input {
+    width: 100%;
+    min-height: 42px;
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(241, 220, 207, 0.12);
+    background: rgba(241, 220, 207, 0.04);
+    color: var(--text);
+    outline: none;
+  }
+  .notice {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .status-note {
+    margin-bottom: 12px;
+    border: 1px solid rgba(212, 171, 124, 0.16);
+    border-radius: 12px;
+    background: rgba(212, 171, 124, 0.08);
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .status-note.success {
+    border-color: rgba(159, 208, 181, 0.22);
+    background: rgba(159, 208, 181, 0.1);
+  }
+  .status-note.error {
+    border-color: rgba(226, 160, 142, 0.22);
+    background: rgba(226, 160, 142, 0.1);
+  }
+  .proposal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .proposal-card {
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    border-radius: 12px;
+    background: rgba(241, 220, 207, 0.03);
+    padding: 12px;
+  }
+  .proposal-card strong {
+    display: block;
+    color: var(--text);
+    font-size: 14px;
+  }
+  .proposal-card span {
+    display: block;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  .proposal-list {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .empty {
+    color: var(--faint);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  @media (max-width: 1080px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+    .metric-grid,
+    .promotion-grid,
+    .proposal-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div class="top-left">
+      <button class="back-btn" id="backBtn" type="button">返回经营台</button>
+      <div class="title">
+        <h1 id="pageTitle">全部款式</h1>
+      </div>
+    </div>
+    <label class="toolbar-field" for="periodSelect">
+      <span>周期</span>
+      <select id="periodSelect">
+        <option value="7">近 7 天</option>
+        <option value="14" selected>近 14 天</option>
+        <option value="30">近 30 天</option>
+      </select>
+    </label>
+  </header>
+
+  <section class="layout">
+    <aside class="list-pane">
+      <div class="search-bar">
+        <input id="styleSearch" type="text" placeholder="搜索款式名 / 风格 / 颜色">
+      </div>
+      <div id="styleList"></div>
+    </aside>
+
+    <main class="detail-pane">
+      <div id="detailRoot" class="empty">正在读取当前商家的款式数据…</div>
+    </main>
+  </section>
+</div>
+
+<script>
+const $ = selector => document.querySelector(selector);
+const periodSelect = $('#periodSelect');
+const backBtn = $('#backBtn');
+const pageTitle = $('#pageTitle');
+const styleSearch = $('#styleSearch');
+const styleList = $('#styleList');
+const detailRoot = $('#detailRoot');
+
+let merchantSession = null;
+let workbenchSnapshot = null;
+let selectedStyleId = '';
+let selectedPromo = 'medium';
+let pendingAction = '';
+let aiProposalCache = {};
+let detailFlash = null;
+
+const PROMO_PRESETS = {
+  light: { label: '轻量投流', trafficUnits: 1, budget: 120, note: '先试水，适合观察点击反馈' },
+  medium: { label: '标准投流', trafficUnits: 2, budget: 240, note: '兼顾放量和成本控制' },
+  strong: { label: '重点投流', trafficUnits: 4, budget: 480, note: '适合主推爆款集中放量' },
+};
+
+async function init() {
+  backBtn.addEventListener('click', () => {
+    window.location.href = '/merchant';
+  });
+  periodSelect.addEventListener('change', loadWorkbench);
+  styleSearch.addEventListener('input', renderStyleList);
+  await loadSession();
+}
+
+async function loadSession() {
+  try {
+    const payload = await getJson('/api/merchant/auth/session');
+    if (!payload.authenticated || !payload.merchant) {
+      window.location.href = '/merchant';
+      return;
+    }
+    merchantSession = payload.merchant;
+    await loadWorkbench();
+  } catch (error) {
+    window.location.href = '/merchant';
+  }
+}
+
+async function loadWorkbench() {
+  detailRoot.innerHTML = '<div class="empty">正在读取当前商家的全部款式…</div>';
+  try {
+    const payload = await getJson(`/api/merchant/workbench?period_days=${encodeURIComponent(periodSelect.value)}&style_limit=180`);
+    workbenchSnapshot = payload;
+    const params = new URLSearchParams(window.location.search);
+    const targetStyle = params.get('style_id') || '';
+    pendingAction = params.get('action') || '';
+    if (targetStyle && payload.styles.some(item => item.style_id === targetStyle)) {
+      selectedStyleId = targetStyle;
+    } else if (!selectedStyleId || !payload.styles.some(item => item.style_id === selectedStyleId)) {
+      selectedStyleId = payload.styles?.[0]?.style_id || '';
+    }
+    pageTitle.textContent = `${merchantSession?.shop_name || '当前门店'} · 全部款式`;
+    renderStyleList();
+    renderDetail();
+  } catch (error) {
+    styleList.innerHTML = '';
+    detailRoot.innerHTML = `<div class="empty">${escapeHtml(error.message || String(error))}</div>`;
+  }
+}
+
+function renderStyleList() {
+  const styles = Array.isArray(workbenchSnapshot?.styles) ? workbenchSnapshot.styles : [];
+  const query = String(styleSearch.value || '').trim().toLowerCase();
+  const filtered = styles.filter(item => {
+    if (!query) return true;
+    const hay = [
+      item.style_name,
+      item.style_id,
+      item.primary_style,
+      item.secondary_style,
+      item.primary_color,
+      ...(Array.isArray(item.title_tags) ? item.title_tags : []),
+    ].join(' ').toLowerCase();
+    return hay.includes(query);
+  });
+  if (!filtered.length) {
+    styleList.innerHTML = '<div class="empty">没有匹配到款式。</div>';
+    return;
+  }
+  styleList.innerHTML = filtered.map(item => {
+    const active = item.style_id === selectedStyleId ? ' active' : '';
+    const statusLabel = item.inventory_status === 'offline' ? '已下架' : '上架中';
+    return `
+      <button class="style-card${active}" type="button" data-style-id="${escapeAttr(item.style_id || '')}">
+        <div class="style-head">
+          <div>
+            <div class="style-name">${escapeHtml(item.style_name || item.style_id || '未命名款式')}</div>
+            <div class="style-meta">${escapeHtml(`${item.primary_style || '未标注风格'} · ${item.primary_color || '未标注颜色'} · ${statusLabel}`)}</div>
+          </div>
+          <span class="badge">${escapeHtml(`成交 ${formatCount(item.group_buy_orders_30d || 0)}`)}</span>
+        </div>
+        <div class="style-note">${escapeHtml(`搜索 ${formatCount(item.search_volume_30d || 0)} · 点击 ${formatCount(item.click_volume_30d || 0)} · 转化 ${Math.round(Number(item.conversion_rate || 0) * 100)}%`)}</div>
+      </button>
+    `;
+  }).join('');
+  styleList.querySelectorAll('[data-style-id]').forEach(button => {
+    button.addEventListener('click', () => {
+      selectedStyleId = button.dataset.styleId || '';
+      renderStyleList();
+      renderDetail();
+    });
+  });
+}
+
+function renderDetail() {
+  const styles = Array.isArray(workbenchSnapshot?.styles) ? workbenchSnapshot.styles : [];
+  const style = styles.find(item => item.style_id === selectedStyleId) || styles[0];
+  if (!style) {
+    detailRoot.innerHTML = '<div class="empty">当前没有可管理的款式。</div>';
+    return;
+  }
+  const preset = PROMO_PRESETS[selectedPromo] || PROMO_PRESETS.medium;
+  const priceAdvice = buildPriceAdvice(style);
+  const proposal = aiProposalCache[style.style_id] || null;
+  const promoteNotice = pendingAction === 'promote'
+    ? `<div class="status-note">已为你定位到 <strong>${escapeHtml(style.style_name || style.style_id || '当前款式')}</strong> 的投流设置。先选投流强度，再决定预算。</div>`
+    : '';
+  const flashBlock = detailFlash?.message
+    ? `<div class="status-note ${escapeAttr(detailFlash.tone || '')}">${escapeHtml(detailFlash.message)}</div>`
+    : '';
+  detailRoot.innerHTML = `
+    ${promoteNotice}
+    ${flashBlock}
+    <section class="section-card">
+      <h2>${escapeHtml(style.style_name || style.style_id || '未命名款式')}</h2>
+      <div class="tag-row">
+        <span class="tag">${escapeHtml(style.primary_style || '未标注主风格')}</span>
+        <span class="tag">${escapeHtml(style.nail_shape || '未标注甲型')}</span>
+        <span class="tag">${escapeHtml(style.nail_length || '未标注长度')}</span>
+        <span class="tag">${escapeHtml(`价格 ¥${formatCount(style.price || 0)}`)}</span>
+        ${style.style_image_status === 'needs_regeneration' ? '<span class="tag">款式图待重绘</span>' : ''}
+      </div>
+    </section>
+
+    <section class="section-card">
+      <h3>核心经营指标</h3>
+      <div class="metric-grid">
+        ${[
+          ['30天搜索', formatCount(style.search_volume_30d || 0), '搜索曝光'],
+          ['30天点击', formatCount(style.click_volume_30d || 0), '进入门店或详情'],
+          ['30天成交', formatCount(style.group_buy_orders_30d || 0), '形成团购或下单'],
+          ['转化率', `${Math.round(Number(style.conversion_rate || 0) * 100)}%`, '点击到成交'],
+          ['退款单', formatCount(style.refund_orders_30d || 0), '售后风险'],
+          ['收藏/分享', `${formatCount(style.favorite_count_30d || 0)} / ${formatCount(style.share_count_30d || 0)}`, '用户留存传播'],
+        ].map(item => `
+          <div class="metric-card">
+            <div class="label">${escapeHtml(item[0])}</div>
+            <div class="value">${escapeHtml(item[1])}</div>
+            <div class="note">${escapeHtml(item[2])}</div>
+          </div>
+        `).join('')}
+      </div>
+    </section>
+
+    <section class="section-card">
+      <h3>价格与 AI 建议</h3>
+      <div class="kv-grid">
+        <div class="kv"><span>当前价格</span><b>¥${escapeHtml(formatCount(style.price || 0))}</b></div>
+        <div class="kv"><span>价格判断</span><b>${escapeHtml(priceAdvice.headline)}</b></div>
+        <div class="kv"><span>建议动作</span><b>${escapeHtml(priceAdvice.action)}</b></div>
+      </div>
+      <div class="notice" style="margin-top:12px;">${escapeHtml(priceAdvice.note)}</div>
+      <div class="action-row" style="margin-top:14px;">
+        <button class="ghost-btn" id="toggleStatusBtn" type="button">${escapeHtml(style.inventory_status === 'offline' ? '重新上架' : '下架该款')}</button>
+        <button class="ghost-btn ai" id="aiUpdateBtn" type="button">生成 AI 改款方案</button>
+      </div>
+    </section>
+
+    <section class="section-card" id="aiProposalPanel">
+      <h3>AI 改款方案</h3>
+      ${proposal ? `
+        <div class="notice">${escapeHtml(proposal.summary || 'AI 已整理好本次改款建议。')}</div>
+        <div class="proposal-grid" style="margin-top:12px;">
+          <div class="proposal-card">
+            <strong>改款策略</strong>
+            <span>${escapeHtml(proposal.strategy || '内容焕新')}</span>
+          </div>
+          <div class="proposal-card">
+            <strong>价格调整</strong>
+            <span>${escapeHtml(`¥${formatCount(proposal.current_price || style.price || 0)} → ¥${formatCount(proposal.price || style.price || 0)}`)}</span>
+          </div>
+          <div class="proposal-card">
+            <strong>标题文案</strong>
+            <span>${escapeHtml(proposal.title_copy || '')}</span>
+          </div>
+          <div class="proposal-card">
+            <strong>团购主卖点</strong>
+            <span>${escapeHtml(proposal.offer_copy || '')}</span>
+          </div>
+        </div>
+        <div class="stack-list" style="margin-top:12px;">
+          <div class="stack-item">
+            <div class="stack-title"><span>副标题建议</span></div>
+            <div class="stack-meta">${escapeHtml(proposal.subtitle_copy || '建议突出当前款式更适合的人群和场景。')}</div>
+          </div>
+          <div class="stack-item">
+            <div class="stack-title"><span>封面图调整方向</span></div>
+            <div class="stack-meta">${escapeHtml(Array.isArray(proposal.image_direction) ? proposal.image_direction.join('；') : '')}</div>
+          </div>
+          <div class="stack-item">
+            <div class="stack-title"><span>推荐卖点</span></div>
+            <div class="stack-meta">${escapeHtml(Array.isArray(proposal.selling_points) ? proposal.selling_points.join('；') : '')}</div>
+          </div>
+          <div class="stack-item">
+            <div class="stack-title"><span>款式图提示词</span></div>
+            <div class="stack-meta">${escapeHtml(proposal.image_prompt || '')}</div>
+          </div>
+        </div>
+        <div class="tag-row" style="margin-top:12px;">
+          ${Array.isArray(proposal.title_tags) ? proposal.title_tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('') : ''}
+        </div>
+        <div class="proposal-card" style="margin-top:12px;">
+          <strong>应用后会执行</strong>
+          <ul class="proposal-list">
+            ${(Array.isArray(proposal.apply_changes) ? proposal.apply_changes : []).map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+          </ul>
+        </div>
+        <div class="action-row" style="margin-top:14px;">
+          <button class="action-btn" id="confirmAiApplyBtn" type="button">确认应用改款</button>
+          <button class="ghost-btn" id="dismissAiProposalBtn" type="button">先保留方案</button>
+        </div>
+      ` : `
+        <div class="notice">这里会先生成一版 AI 改款方案，内容会覆盖价格建议、封面图方向、标题文案、团购卖点和推荐动作；你确认后才会真正应用到当前款式。</div>
+      `}
+    </section>
+
+    <section class="section-card" id="promotionPanel">
+      <h3>投流设置</h3>
+      <div class="promotion-grid">
+        ${Object.entries(PROMO_PRESETS).map(([key, item]) => `
+          <button class="promo-card${key === selectedPromo ? ' active' : ''}" type="button" data-promo-key="${escapeAttr(key)}">
+            <strong>${escapeHtml(item.label)}</strong>
+            <span>${escapeHtml(`预计流量系数 ${item.trafficUnits}x`)}</span>
+            <span>${escapeHtml(`建议预算 ¥${formatCount(item.budget)}`)}</span>
+            <span>${escapeHtml(item.note)}</span>
+          </button>
+        `).join('')}
+      </div>
+      <div class="action-row" style="margin-top:12px;">
+        <input class="promo-input" id="budgetInput" type="number" min="60" step="10" value="${escapeAttr(String(preset.budget))}" placeholder="请输入预算">
+        <button class="action-btn" id="promoteBtn" type="button">确认投流</button>
+      </div>
+    </section>
+  `;
+
+  detailRoot.querySelectorAll('[data-promo-key]').forEach(button => {
+    button.addEventListener('click', () => {
+      selectedPromo = button.dataset.promoKey || 'medium';
+      renderDetail();
+    });
+  });
+  $('#toggleStatusBtn').addEventListener('click', () => runStyleAction('set_inventory_status', style.style_id, {
+    status: style.inventory_status === 'offline' ? 'active' : 'offline',
+  }));
+  $('#aiUpdateBtn').addEventListener('click', () => previewAiUpdate(style.style_id));
+  if (proposal) {
+    $('#confirmAiApplyBtn').addEventListener('click', () => runStyleAction('apply_ai_update', style.style_id, { confirm_apply: true }));
+    $('#dismissAiProposalBtn').addEventListener('click', () => {
+      delete aiProposalCache[style.style_id];
+      detailFlash = { tone: 'success', message: '已保留这版 AI 改款方案，你可以稍后再决定是否应用。' };
+      renderDetail();
+    });
+  }
+  $('#promoteBtn').addEventListener('click', () => {
+    const chosen = PROMO_PRESETS[selectedPromo] || PROMO_PRESETS.medium;
+    const budget = Math.max(60, Number($('#budgetInput').value || chosen.budget));
+    runStyleAction('promote_traffic', style.style_id, {
+      traffic_units: chosen.trafficUnits,
+      budget,
+    });
+  });
+  if (pendingAction === 'promote') {
+    requestAnimationFrame(() => {
+      $('#promotionPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    pendingAction = '';
+  }
+}
+
+async function previewAiUpdate(styleId) {
+  try {
+    detailFlash = { tone: '', message: '正在生成 AI 改款方案…' };
+    renderDetail();
+    const res = await postJson('/api/merchant/style-actions', {
+      style_id: styleId,
+      action: 'apply_ai_update',
+      payload: { preview_only: true },
+    });
+    aiProposalCache[styleId] = res.proposal || null;
+    detailFlash = { tone: 'success', message: res.message || '已生成 AI 改款方案。' };
+    renderDetail();
+    $('#aiProposalPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (error) {
+    detailFlash = { tone: 'error', message: error.message || String(error) };
+    renderDetail();
+  }
+}
+
+async function runStyleAction(action, styleId, payload) {
+  try {
+    const res = await postJson('/api/merchant/style-actions', {
+      style_id: styleId,
+      action,
+      payload,
+    });
+    if (action === 'apply_ai_update') {
+      delete aiProposalCache[styleId];
+    }
+    detailFlash = { tone: 'success', message: res.message || '已执行' };
+    await loadWorkbench();
+  } catch (error) {
+    detailFlash = { tone: 'error', message: error.message || String(error) };
+    renderDetail();
+  }
+}
+
+function buildPriceAdvice(style) {
+  const conversion = Number(style.conversion_rate || 0);
+  const orders = Number(style.group_buy_orders_30d || 0);
+  const click = Number(style.click_volume_30d || 0);
+  if (orders >= 16 && conversion >= 0.12) {
+    return {
+      headline: '这款可以尝试提价',
+      action: '保持主推并测试高配版',
+      note: '当前成交稳定、转化不弱，适合小幅提高价格或做高客单版本。',
+    };
+  }
+  if (click >= 120 && conversion < 0.06) {
+    return {
+      headline: '这款更适合先降价试',
+      action: '先做引流价测试',
+      note: '用户会点击但不愿下单，通常要优先检查价格、首图和套餐描述。',
+    };
+  }
+  return {
+    headline: '先保持当前价格',
+    action: '优先优化卖点和展示',
+    note: '这款还没有形成明确的爆款或冷门特征，建议先小步优化再放量。',
+  };
+}
+
+async function getJson(url) {
+  const res = await fetch(url, { credentials: 'same-origin' });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+async function postJson(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+function formatCount(value) {
+  const num = Number(value || 0);
+  return Number.isFinite(num) ? num.toLocaleString('zh-CN') : String(value || 0);
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
+}
+
+init();
+</script>
+</body>
+</html>

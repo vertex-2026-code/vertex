@@ -414,6 +414,32 @@
 
   td strong { color: var(--text); }
 
+  .style-cell {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .style-preview {
+    width: 54px;
+    height: 54px;
+    flex: 0 0 54px;
+    border-radius: 12px;
+    border: 1px solid rgba(212, 171, 124, 0.18);
+    background:
+      linear-gradient(135deg, rgba(212, 171, 124, 0.18), rgba(192, 128, 143, 0.12)),
+      rgba(255, 255, 255, 0.03);
+    background-size: cover;
+    background-position: center;
+  }
+
+  .style-submeta {
+    margin-top: 4px;
+    color: var(--faint);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
   .empty,
   .loading {
     padding: 22px;
@@ -444,7 +470,7 @@
     <div class="topbar">
       <div class="title">
         <h1>商家数据查看台</h1>
-        <p>浏览你生成的商家样本，查看单店画像、主力款式、搜索点击团购转化和最近日运营数据。</p>
+        <p>浏览你生成的商家样本，查看单店画像、主力款式、风格模板和最近日运营数据。</p>
       </div>
       <div class="top-links">
         <a class="pill-link" href="/admin">返回运营看板</a>
@@ -464,15 +490,15 @@
       <section class="panel sidebar">
         <div class="sidebar-head">
           <h2 class="section-title">商家列表</h2>
-          <p class="section-sub">支持按门店名、账号、城市、风格筛选。点左侧商家，右边会展开完整数据。</p>
+          <p class="section-sub">支持按门店名、城市和风格模板筛选。点左侧商家，右边会展开完整数据。</p>
           <div class="filters">
-            <input class="input" id="queryInput" placeholder="搜索门店名 / shop_id / 登录账号">
+            <input class="input" id="queryInput" placeholder="搜索门店名">
             <div class="filters-row">
               <select class="select" id="citySelect">
                 <option value="">全部城市</option>
               </select>
               <select class="select" id="styleSelect">
-                <option value="">全部风格</option>
+                <option value="">全部模板</option>
               </select>
             </div>
           </div>
@@ -490,7 +516,7 @@
       <section class="panel detail">
         <div class="detail-head">
           <h2 class="section-title">单店数据详情</h2>
-          <p class="section-sub">查看单店画像、登录账号、近 30 天款式表现、近期日运营走势和低转化款式。</p>
+          <p class="section-sub">查看单店画像、风格模板、近 30 天款式表现、近期日运营走势和低转化款式。</p>
         </div>
         <div class="detail-scroll" id="detailRoot">
           <div class="loading">请选择左侧一个商家以查看详情…</div>
@@ -500,7 +526,7 @@
   </div>
 
 <script>
-const UI_VERSION = 'merchant-data-ui 2026-06-06 23:40';
+const UI_VERSION = 'merchant-data-ui 2026-06-07 15:10';
 const state = {
   page: 1,
   pageSize: 24,
@@ -579,8 +605,8 @@ function renderOverview(payload) {
   const summary = payload?.summary || {};
   const cards = [
     { label: '商家总数', value: totals.merchants || summary.merchant_count || 0, note: '当前库里的门店画像总量' },
+    { label: '风格模板', value: totals.style_personas || 0, note: '当前已覆盖的细分风格模板数量' },
     { label: '上架款式', value: totals.styles || summary.styles_total || 0, note: '所有门店合计的款式数量' },
-    { label: '可登录账号', value: totals.portal_accounts || 0, note: '已开放商家端登录的账号数量' },
     { label: '日运营数据', value: totals.shop_daily_rows || summary.shop_daily_rows || 0, note: '商家日级运营记录行数' },
   ];
   summaryGrid.innerHTML = cards.map(card => `
@@ -596,7 +622,7 @@ function fillFilters(payload) {
   const cities = Array.isArray(payload?.cities) ? payload.cities : [];
   const styles = Array.isArray(payload?.styles) ? payload.styles : [];
   citySelect.innerHTML = '<option value="">全部城市</option>' + cities.map(item => `<option value="${escapeAttr(item.city)}">${escapeHtml(item.city)} (${formatNumber(item.merchant_count)})</option>`).join('');
-  styleSelect.innerHTML = '<option value="">全部风格</option>' + styles.map(item => `<option value="${escapeAttr(item.style)}">${escapeHtml(item.style_name || item.style)} (${formatNumber(item.merchant_count)})</option>`).join('');
+  styleSelect.innerHTML = '<option value="">全部模板</option>' + styles.map(item => `<option value="${escapeAttr(item.style)}">${escapeHtml(item.style_name || item.style)} (${formatNumber(item.merchant_count)})</option>`).join('');
   citySelect.value = state.city;
   styleSelect.value = state.style;
 }
@@ -648,12 +674,11 @@ function renderMerchantList(items) {
     if (item.shop_id === state.selectedShopId) btn.classList.add('active');
     btn.innerHTML = `
       <div class="merchant-name">${escapeHtml(item.shop_name)}</div>
-      <div class="merchant-meta">${escapeHtml(item.shop_id)} · ${escapeHtml(item.city || '')}${item.district ? ` / ${escapeHtml(item.district)}` : ''} · ${escapeHtml(item.style_name || item.style || '')}</div>
+      <div class="merchant-meta">${escapeHtml(item.city || '')}${item.district ? ` / ${escapeHtml(item.district)}` : ''} · ${escapeHtml(item.style_persona_name || item.style_name || item.style || '')}</div>
       <div class="merchant-kpis">
-        <span class="chip">账号 ${escapeHtml(item.username || '未绑定')}</span>
         <span class="chip">款式 ${formatNumber(item.style_count || 0)}</span>
         <span class="chip">搜索 ${formatNumber(item.search_volume_30d || 0)}</span>
-        <span class="chip">团购 ${formatNumber(item.group_buy_orders_30d || 0)}</span>
+        <span class="chip">成交 ${formatNumber(item.group_buy_orders_30d || 0)}</span>
       </div>
     `;
     btn.addEventListener('click', () => loadMerchantDetail(item.shop_id));
@@ -685,7 +710,6 @@ function syncListSelection() {
 
 function renderMerchantDetail(payload) {
   const profile = payload?.profile || {};
-  const account = payload?.account || null;
   const totals = payload?.totals || {};
   const topStyles = Array.isArray(payload?.top_styles) ? payload.top_styles : [];
   const lowStyles = Array.isArray(payload?.low_conversion_styles) ? payload.low_conversion_styles : [];
@@ -694,23 +718,21 @@ function renderMerchantDetail(payload) {
   detailRoot.innerHTML = `
     <section class="hero">
       <div>
-        <div class="hero-eyebrow">${escapeHtml(profile.shop_id || '')}</div>
+        <div class="hero-eyebrow">${escapeHtml(profile.style_persona_name || profile.style_name || '商家样本')}</div>
         <div class="hero-title">${escapeHtml(profile.shop_name || '未命名门店')}</div>
         <div class="hero-desc">
-          ${escapeHtml((profile.city || '') + (profile.district ? ` / ${profile.district}` : ''))} · ${escapeHtml(profile.style_name || profile.style || '未设置风格')} · 评分 ${escapeHtml(String(profile.rating ?? '未提供'))} · 客单价 ¥${escapeHtml(formatNumber(profile.avg_ticket || 0))}
+          ${escapeHtml((profile.city || '') + (profile.district ? ` / ${profile.district}` : ''))} · ${escapeHtml(profile.style_persona_name || profile.style_name || profile.style || '未设置风格')} · 评分 ${escapeHtml(String(profile.rating ?? '未提供'))} · 客单价 ¥${escapeHtml(formatNumber(profile.avg_ticket || 0))}
         </div>
         <div class="merchant-kpis" style="margin-top:12px;">
-          <span class="chip">登录账号 ${escapeHtml(account?.username || '未绑定')}</span>
-          <span class="chip">${account?.enabled_for_portal ? '已开放商家端登录' : '未开放登录'}</span>
-          ${account?.enabled_for_portal ? '<span class="chip">默认密码 demo123456</span>' : ''}
           <span class="chip">主力款 ${escapeHtml(profile.hero_sku_name || '未设置')}</span>
+          ${profile.style_persona_name ? `<span class="chip">模板 ${escapeHtml(profile.style_persona_name)}</span>` : ''}
         </div>
       </div>
       <div class="hero-grid">
         ${renderMetricTile('月营收', `¥${formatNumber(profile.monthly_revenue || 0)}`)}
         ${renderMetricTile('总款式数', formatNumber(totals.style_count || 0))}
         ${renderMetricTile('30天搜索', formatNumber(totals.search_volume_30d || 0))}
-        ${renderMetricTile('30天团购', formatNumber(totals.group_buy_orders_30d || 0))}
+        ${renderMetricTile('30天成交', formatNumber(totals.group_buy_orders_30d || 0))}
         ${renderMetricTile('平均 CTR', formatPercent(totals.avg_ctr))}
         ${renderMetricTile('平均转化率', formatPercent(totals.avg_conversion_rate))}
       </div>
@@ -720,7 +742,9 @@ function renderMerchantDetail(payload) {
       <section class="card">
         <h3>门店画像</h3>
         ${renderKv('店主', profile.owner_name)}
-        ${renderKv('风格代码', profile.style)}
+        ${renderKv('商家模板', profile.style_persona_name)}
+        ${renderKv('风格关键词', Array.isArray(profile.style_keywords) ? profile.style_keywords.join(' / ') : '')}
+        ${renderKv('主推人群', Array.isArray(profile.target_audiences) ? profile.target_audiences.join(' / ') : '')}
         ${renderKv('评价数', formatNumber(profile.review_count || 0))}
         ${renderKv('复购率', formatPercent(profile.repeat_customer_rate))}
         ${renderKv('退款率', formatPercent(profile.refund_rate))}
@@ -731,15 +755,15 @@ function renderMerchantDetail(payload) {
         <h3>近 30 天总览</h3>
         ${renderKv('点击量', formatNumber(totals.click_volume_30d || 0))}
         ${renderKv('加购量', formatNumber(totals.cart_volume_30d || 0))}
-        ${renderKv('团购量', formatNumber(totals.group_buy_orders_30d || 0))}
+        ${renderKv('成交量', formatNumber(totals.group_buy_orders_30d || 0))}
         ${renderKv('退款单量', formatNumber(totals.refund_orders_30d || 0))}
         ${renderKv('30天 GMV', `¥${formatNumber(totals.gmv_30d || 0)}`)}
-        ${renderKv('账号来源', profile.shop_id?.startsWith('m_shop_') ? '批量生成商家样本' : 'Demo 门店账号')}
+        ${renderKv('门店位置', `${profile.city || ''}${profile.district ? ` / ${profile.district}` : ''}`)}
       </section>
     </div>
 
-    ${renderStylesTable('主力款式表现', '按团购量、点击量和搜索量排序，适合快速看这家店最能打的款。', topStyles, true)}
-    ${renderStylesTable('低转化款式观察', '按转化率从低到高排序，适合排查高点击低团购的款式。', lowStyles, false)}
+    ${renderStylesTable('主力款式表现', '按成交、点击量和搜索量排序，适合快速看这家店最能打的款。', topStyles, true)}
+    ${renderStylesTable('低转化款式观察', '按转化率从低到高排序，适合排查高点击低成交的款式。', lowStyles, false)}
     ${renderDailyTable(daily)}
   `;
 }
@@ -787,7 +811,7 @@ function renderStylesTable(title, subtitle, rows, showTags) {
             <th>价格</th>
             <th>搜索</th>
             <th>点击</th>
-            <th>团购</th>
+            <th>成交</th>
             <th>CTR</th>
             <th>转化率</th>
             <th>趋势</th>
@@ -797,7 +821,22 @@ function renderStylesTable(title, subtitle, rows, showTags) {
         <tbody>
           ${rows.map(row => `
             <tr>
-              <td><strong>${escapeHtml(row.style_name || row.style_id || '')}</strong><div style="margin-top:4px;color:var(--faint)">${escapeHtml(row.style_id || '')}</div></td>
+              <td>
+                <div class="style-cell">
+                  <div class="style-preview"${row.style_image_url ? ` style="background-image:url('${escapeAttr(row.style_image_url)}')"` : ''}></div>
+                  <div>
+                    <strong>${escapeHtml(row.style_name || row.style_id || '')}</strong>
+                    <div class="style-submeta">
+                      ${escapeHtml([
+                        row.primary_style || '',
+                        row.nail_shape || '',
+                        row.nail_length || '',
+                        row.primary_color || '',
+                      ].filter(Boolean).join(' / ') || '未提供结构化风格字段')}
+                    </div>
+                  </div>
+                </div>
+              </td>
               <td>¥${formatNumber(row.price || 0)}</td>
               <td>${formatNumber(row.search_volume_30d || 0)}</td>
               <td>${formatNumber(row.click_volume_30d || 0)}</td>
@@ -829,7 +868,7 @@ function renderDailyTable(rows) {
     <section class="table-card">
       <div class="table-head">
         <h3>最近 14 天日运营数据</h3>
-        <p>包含搜索、点击、咨询、团购、营收、投放消耗和收藏变化，适合看波动。</p>
+        <p>包含搜索、点击、咨询、成交、营收、投放消耗和收藏变化，适合看波动。</p>
       </div>
       <table>
         <thead>
@@ -838,7 +877,7 @@ function renderDailyTable(rows) {
             <th>搜索</th>
             <th>点击</th>
             <th>咨询</th>
-            <th>团购</th>
+            <th>成交</th>
             <th>营收</th>
             <th>投放</th>
             <th>复购</th>
