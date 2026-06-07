@@ -812,13 +812,16 @@
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;
       background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px">
       <span style="font-family:var(--font-mono);font-size:10px;color:var(--t-tertiary);text-transform:uppercase;letter-spacing:0.14em;margin-right:4px">运营数据看板</span>
-      <input type="text" id="merchant-search" placeholder="搜索门店名…" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 10px;font-size:12px;font-family:var(--font-body);width:140px" oninput="loadMerchantList()">
-      <select id="gmv-city" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 10px;font-size:12px;font-family:var(--font-body)" onchange="loadGmvDashboard();loadMerchantList()">
+      <select id="gmv-city" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 10px;font-size:12px;font-family:var(--font-body)" onchange="loadGmvDashboard()">
         <option value="">全部城市</option>
       </select>
-      <select id="gmv-style" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 10px;font-size:12px;font-family:var(--font-body);min-width:120px" onchange="loadGmvDashboard()">
+      <select id="gmv-style" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 10px;font-size:12px;font-family:var(--font-body);min-width:110px" onchange="loadGmvDashboard()">
         <option value="">全部风格</option>
       </select>
+      <input type="text" id="merchant-search" placeholder="搜索门店…" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 10px;font-size:12px;font-family:var(--font-body);width:120px" oninput="loadMerchantList()">
+      <input type="date" id="gmv-from" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 8px;font-size:12px;font-family:var(--font-body)" onchange="loadGmvDashboard()">
+      <span style="color:var(--t-tertiary);font-size:12px">→</span>
+      <input type="date" id="gmv-to" style="background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--t-primary);padding:4px 8px;font-size:12px;font-family:var(--font-body)" onchange="loadGmvDashboard()">
       <button onclick="toggleMerchantPanel()" style="background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--t-secondary);padding:4px 12px;font-size:11px;cursor:pointer;font-family:var(--font-body);margin-left:auto">商家列表 ▾</button>
     </div>
 
@@ -834,7 +837,7 @@
     <!-- 趋势图 -->
     <div class="panel" style="margin-top:10px">
       <div class="panel-head">
-        <div><span class="panel-eyebrow">Multi-Metric Trend</span><h2 class="panel-title">GMV 趋势 · 五维同屏</h2></div>
+        <div><span class="panel-eyebrow">Trend Visualization</span><h2 class="panel-title">趋势可视化</h2></div>
       </div>
       <div style="height:280px"><canvas id="gmvDashChart"></canvas></div>
     </div>
@@ -1092,25 +1095,33 @@ async function loadGmvDashboard() {
     // Chart
     if (d.daily?.length) {
       const dates = d.daily.map(x => x.date.slice(5));
-      const gmvMax = Math.max(...d.daily.map(x => x.gmv), 1);
-      const viewsMax = Math.max(...d.daily.map(x => x.views), 1);
       const ctx = document.getElementById('gmvDashChart')?.getContext('2d');
       if (!ctx) return;
       if (gmvDashChart) gmvDashChart.destroy();
+
+      // 归一化: 每条线 = 当日值 / 该指标最大值 × 100，五线同轴可比
+      const gmvMax = Math.max(...d.daily.map(x => x.gmv), 1);
+      const ordersMax = Math.max(...d.daily.map(x => x.orders), 1);
+      const viewsMax = Math.max(...d.daily.map(x => x.views), 1);
+      const aovMax = Math.max(...d.daily.map(x => x.aov), 1);
+      const cvrMax = Math.max(...d.daily.map(x => x.cvr), 1);
 
       gmvDashChart = new Chart(ctx, {
         type: 'line',
         data: {
           labels: dates,
           datasets: [
-            { label: 'GMV (¥)', data: d.daily.map(x => (x.gmv/gmvMax*100).toFixed(1)),
-              borderColor: '#d4ab7c', tension: 0.3, pointRadius: 0, yAxisID: 'yPct', borderWidth: 2 },
-            { label: '订单数', data: d.daily.map(x => (x.orders/Math.max(...d.daily.map(y=>y.orders),1)*100).toFixed(1)),
-              borderColor: '#c0808f', tension: 0.3, pointRadius: 0, yAxisID: 'yPct', borderWidth: 1.5 },
-            { label: '浏览量', data: d.daily.map(x => (x.views/viewsMax*100).toFixed(1)),
-              borderColor: 'rgba(241,220,207,0.4)', tension: 0.3, pointRadius: 0, yAxisID: 'yPct', borderWidth: 1, borderDash: [4,3] },
-            { label: 'CVR (%)', data: d.daily.map(x => x.cvr),
-              borderColor: '#88c8a0', tension: 0.3, pointRadius: 0, yAxisID: 'yCvr', borderWidth: 1.5, borderDash: [2,2] },
+            { label: 'GMV', data: d.daily.map(x => +(x.gmv/gmvMax*100).toFixed(1)),
+              borderColor: '#d4ab7c', backgroundColor: 'rgba(212,171,124,0.06)', fill: true,
+              tension: 0.3, pointRadius: 0, borderWidth: 2.2 },
+            { label: '订单数', data: d.daily.map(x => +(x.orders/ordersMax*100).toFixed(1)),
+              borderColor: '#c0808f', tension: 0.3, pointRadius: 0, borderWidth: 1.8 },
+            { label: 'AOV', data: d.daily.map(x => +(x.aov/aovMax*100).toFixed(1)),
+              borderColor: '#e0a07e', tension: 0.3, pointRadius: 0, borderWidth: 1.5, borderDash: [5,3] },
+            { label: '浏览量', data: d.daily.map(x => +(x.views/viewsMax*100).toFixed(1)),
+              borderColor: 'rgba(241,220,207,0.5)', tension: 0.3, pointRadius: 0, borderWidth: 1.2, borderDash: [3,4] },
+            { label: 'CVR', data: d.daily.map(x => +(x.cvr/cvrMax*100).toFixed(1)),
+              borderColor: '#88c8a0', tension: 0.3, pointRadius: 0, borderWidth: 1.8 },
           ]
         },
         options: {
@@ -1121,23 +1132,19 @@ async function loadGmvDashboard() {
             tooltip: {
               callbacks: {
                 label: ctx => {
-                  if (ctx.datasetIndex === 0) return 'GMV: ¥' + F(d.daily[ctx.dataIndex].gmv);
-                  if (ctx.datasetIndex === 1) return '订单: ' + F(d.daily[ctx.dataIndex].orders);
-                  if (ctx.datasetIndex === 2) return '浏览: ' + F(d.daily[ctx.dataIndex].views);
-                  if (ctx.datasetIndex === 3) return 'CVR: ' + d.daily[ctx.dataIndex].cvr + '%';
-                  return ctx.dataset.label + ': ' + ctx.raw;
+                  const i = ctx.dataIndex;
+                  const row = d.daily[i];
+                  const map = { GMV: '¥' + F(row.gmv), '订单数': F(row.orders), AOV: '¥' + F(Math.round(row.aov)), '浏览量': F(row.views), CVR: row.cvr.toFixed(2) + '%' };
+                  return ctx.dataset.label + ': ' + (map[ctx.dataset.label] || ctx.raw + '%');
                 }
               }
             }
           },
           scales: {
-            x: { ticks: { color: 'color-mix(in srgb, #f1dccf 35%, transparent)', font: {size:9} }, grid: { color: 'rgba(241,220,207,0.03)' } },
-            yPct: { type: 'linear', position: 'left', min: 0, max: 100,
+            x: { ticks: { color: 'color-mix(in srgb, #f1dccf 35%, transparent)', font: {size:9}, maxTicksLimit: 12 }, grid: { color: 'rgba(241,220,207,0.03)' } },
+            y: { min: 0, max: 100,
               ticks: { color: 'color-mix(in srgb, #f1dccf 35%, transparent)', callback: v => v + '%', font: {size:9} },
-              grid: { color: 'rgba(241,220,207,0.04)' } },
-            yCvr: { type: 'linear', position: 'right', min: 0,
-              ticks: { color: '#88c8a0', callback: v => v + '%', font: {size:9} },
-              grid: { display: false } }
+              grid: { color: 'rgba(241,220,207,0.04)' } }
           }
         }
       });
@@ -1198,6 +1205,22 @@ async function loadMerchantList() {
       </div>`).join('');
   } catch(e) { console.log('merchant list:', e); }
 }
+
+// 页面加载时填充城市/风格下拉
+(async function initFilters() {
+  try {
+    const r = await fetch('/api/admin/merchant_list');
+    const d = await r.json();
+    if (d.cities?.length) {
+      const sel = $('#gmv-city');
+      d.cities.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel?.appendChild(o); });
+    }
+    if (d.styles?.length) {
+      const sel = $('#gmv-style');
+      d.styles.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel?.appendChild(o); });
+    }
+  } catch(e) {}
+})();
 
 /* ===== AI 对话 ===== */
 const chatMessages = $('#chat-messages');
