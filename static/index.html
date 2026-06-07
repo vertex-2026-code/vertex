@@ -455,6 +455,7 @@
   }
   .ai-rec-body { flex: 1; min-width: 0; }
   .ai-rec-title { font-size: 13px; color: var(--t-primary); margin-bottom: 2px; }
+  .ai-rec-num { font-family: var(--font-mono); font-size: 10px; color: var(--t-tertiary); margin-left: 4px; letter-spacing: 0.06em; }
   .ai-rec-reason { font-size: 11px; color: var(--t-secondary); line-height: 1.45; }
   .ai-rec-score { font-family: var(--font-mono); font-size: 10px; color: var(--accent); opacity: 0.8; }
   .ai-insight-box {
@@ -500,42 +501,86 @@
     background: var(--accent);
     border-color: var(--accent);
   }
-  /* 细分风格 chip 条 —— 跟 cat-tab 同一套字体/圆 chip，但更小更克制 */
-  .tag-tabs {
+  /* 单层 chip 横滑：5 大类 + 13 细分合并 */
+  .filter-chips {
     display: flex;
-    gap: 5px;
+    gap: 6px;
     overflow-x: auto;
-    padding-bottom: 6px;
-    margin-bottom: 10px;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
     scrollbar-width: none;
   }
-  .tag-tabs::-webkit-scrollbar { display: none; }
-  .tag-tab {
+  .filter-chips::-webkit-scrollbar { display: none; }
+  .chip {
     flex-shrink: 0;
-    padding: 4px 10px;
+    padding: 6px 12px;
     border: 1px solid var(--border);
     border-radius: 999px;
     font-family: var(--font-body);
-    font-size: 11px;
+    font-size: 12px;
     color: var(--t-secondary);
     background: transparent;
     cursor: pointer;
     user-select: none;
     transition: color 0.18s, border-color 0.18s, background 0.18s;
     white-space: nowrap;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
   }
-  .tag-tab:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
-  .tag-tab.active {
+  .chip em {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-style: normal;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.55;
+  }
+  .chip .tag-count {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    opacity: 0.5;
+  }
+  .chip:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+  .chip.active {
     color: var(--bg);
     background: var(--accent);
     border-color: var(--accent);
   }
-  .tag-tab .tag-count {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    opacity: 0.6;
-    margin-left: 4px;
+  .chip.active em, .chip.active .tag-count { opacity: 0.7; }
+
+  /* 上传自定义款 — 独立一行矩形按钮，跟 styles-grid 分开 */
+  .custom-upload-rect {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 13px 16px;
+    background: transparent;
+    border: 1px dashed color-mix(in srgb, var(--accent) 50%, var(--border));
+    border-radius: 12px;
+    color: var(--t-secondary);
+    font-family: var(--font-body);
+    font-size: 13px;
+    cursor: pointer;
+    margin-bottom: 12px;
+    transition: all 0.18s ease;
+    position: relative;
   }
+  .custom-upload-rect:hover { border-color: var(--accent); color: var(--accent); background: rgba(212,165,116,0.05); }
+  .custom-upload-rect i { font-size: 16px; }
+  .custom-upload-rect .upload-hint {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--accent); opacity: 0.65; margin-left: auto;
+  }
+  .custom-upload-rect.has-image {
+    border-style: solid;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .custom-upload-rect.has-image .upload-hint::before { content: '已选 · '; }
 
   .styles-grid {
     display: grid;
@@ -1369,23 +1414,22 @@
         </div>
         <div id="recommend-track" class="recommend-track"></div>
       </div>
-      <div id="cat-tabs" class="cat-tabs">
-        <span class="cat-tab active" data-cat="all">全部</span>
-        <span class="cat-tab" data-cat="A">Pureté</span>
-        <span class="cat-tab" data-cat="B">Rosé</span>
-        <span class="cat-tab" data-cat="C">Lumière</span>
-        <span class="cat-tab" data-cat="D">Noir</span>
-        <span class="cat-tab" data-cat="E">Avant-Garde</span>
+      <div id="filter-chips" class="filter-chips" aria-label="风格筛选">
+        <span class="chip active" data-type="all" data-value="all">全部</span>
+        <span class="chip" data-type="cat" data-value="A">简约清透 <em>Pureté</em></span>
+        <span class="chip" data-type="cat" data-value="B">甜美可爱 <em>Rosé</em></span>
+        <span class="chip" data-type="cat" data-value="C">华丽璀璨 <em>Lumière</em></span>
+        <span class="chip" data-type="cat" data-value="D">暗黑酷飒 <em>Noir</em></span>
+        <span class="chip" data-type="cat" data-value="E">潮流前卫 <em>Avant</em></span>
+        <!-- 13 细分 tag 由 JS 注入 -->
       </div>
-      <div id="tag-tabs" class="tag-tabs" aria-label="细分风格筛选"></div>
+      <label class="custom-upload-rect" id="custom-upload-rect" for="custom-style-input">
+        <i class="ti ti-plus" aria-hidden="true"></i>
+        <span id="custom-upload-label">上传一张你喜欢的灵感图</span>
+        <span class="upload-hint">Custom</span>
+        <input type="file" accept="image/*" id="custom-style-input" class="hidden">
+      </label>
       <div id="styles-grid" class="styles-grid">
-        <label class="style-card custom-tile" data-id="__custom__" id="custom-tile">
-          <input type="file" accept="image/*" id="custom-style-input" class="hidden">
-          <div id="custom-tile-content" class="custom-tile-content">
-            <i class="ti ti-plus" aria-hidden="true"></i>
-            <div class="label">上传<br>自定义</div>
-          </div>
-        </label>
         <p id="styles-loading" class="empty-line">加载款式中...</p>
       </div>
     </section>
@@ -1758,47 +1802,46 @@
     loadRecommendations();
   });
 
-  // === 分类筛选 ===
-  let currentCat = 'all';
-  let currentTag = null;
+  // === 风格筛选（5 大类 + 13 细分合并单选）===
+  let currentFilter = {type: 'all', value: 'all'};
   function applyFilters() {
     allStyleCards.forEach(c => {
-      const catMatch = (currentCat === 'all' || c.dataset.cat === currentCat);
-      const tagMatch = !currentTag || (c.dataset.tags || '').split('|').includes(currentTag);
-      c.style.display = (catMatch && tagMatch) ? '' : 'none';
+      let show;
+      if (currentFilter.type === 'all') show = true;
+      else if (currentFilter.type === 'cat') show = c.dataset.cat === currentFilter.value;
+      else if (currentFilter.type === 'tag') show = (c.dataset.tags || '').split('|').includes(currentFilter.value);
+      else show = true;
+      c.style.display = show ? '' : 'none';
     });
   }
-  $('#cat-tabs').addEventListener('click', e => {
-    const tab = e.target.closest('.cat-tab');
-    if (!tab) return;
-    $$('.cat-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    currentCat = tab.dataset.cat;
-    applyFilters();
-  });
-
-  // === 细分风格 chip 筛选 ===
-  fetch('/api/styles/tags').then(r => r.json()).then(tags => {
-    const wrap = $('#tag-tabs');
-    if (!Array.isArray(tags) || !tags.length) { wrap.style.display = 'none'; return; }
-    wrap.innerHTML = tags.map(t =>
-      `<span class="tag-tab" data-tag="${t.tag}">${t.tag}<span class="tag-count">${t.count}</span></span>`
-    ).join('');
-    wrap.addEventListener('click', e => {
-      const chip = e.target.closest('.tag-tab');
+  function bindChipClick() {
+    $('#filter-chips').addEventListener('click', e => {
+      const chip = e.target.closest('.chip');
       if (!chip) return;
-      const tag = chip.dataset.tag;
-      // 再次点击同一 chip = 取消筛选
-      if (currentTag === tag) {
-        currentTag = null;
-        chip.classList.remove('active');
+      const type = chip.dataset.type;
+      const value = chip.dataset.value;
+      // 再点同一 chip = 回到「全部」
+      if (currentFilter.type === type && currentFilter.value === value && type !== 'all') {
+        currentFilter = {type: 'all', value: 'all'};
       } else {
-        $$('.tag-tab').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        currentTag = tag;
+        currentFilter = {type, value};
       }
+      $$('.chip').forEach(c => c.classList.remove('active'));
+      const active = $$('.chip').find(c => c.dataset.type === currentFilter.type && c.dataset.value === currentFilter.value);
+      (active || $$('.chip').find(c => c.dataset.type === 'all')).classList.add('active');
       applyFilters();
     });
+  }
+  bindChipClick();
+
+  // === 13 细分 chip 动态注入（接在 5 大类后面）===
+  fetch('/api/styles/tags').then(r => r.json()).then(tags => {
+    if (!Array.isArray(tags) || !tags.length) return;
+    const wrap = $('#filter-chips');
+    const html = tags.map(t =>
+      `<span class="chip" data-type="tag" data-value="${t.tag}">${t.tag}<span class="tag-count">${t.count}</span></span>`
+    ).join('');
+    wrap.insertAdjacentHTML('beforeend', html);
   }).catch(()=>{});
 
   // === 选预设款式 & 收藏切换 ===
@@ -1834,32 +1877,32 @@
 
     const c = e.target.closest('.style-card');
     if (!c) return;
-    if (c.id === 'custom-tile') return;
     $$('.style-card').forEach(x => x.classList.remove('selected'));
     c.classList.add('selected');
     selectedStyle = c.dataset.id;
     customStyleImage = null;
+    // 选了预设款 → 把上传按钮也复位
+    $('#custom-upload-rect').classList.remove('has-image');
+    $('#custom-upload-label').textContent = '上传一张你喜欢的灵感图';
     checkReady();
   });
 
-  // === 自定义款式上传 ===
+  // === 自定义款式上传（矩形按钮版）===
   $('#custom-style-input').addEventListener('change', e => {
     const f = e.target.files[0];
     if (!f) return;
     const r = new FileReader();
     r.onload = ev => {
       customStyleImage = ev.target.result;
-      const tile = $('#custom-tile');
-      tile.classList.add('has-image');
-      $('#custom-tile-content').innerHTML = `
-        <img src="${customStyleImage}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
-        <div class="custom-tag">我的款式</div>
-      `;
+      const rect = $('#custom-upload-rect');
+      rect.classList.add('has-image');
+      $('#custom-upload-label').textContent = f.name.length > 24 ? f.name.slice(0,24)+'…' : f.name;
       $$('.style-card').forEach(x => x.classList.remove('selected'));
-      tile.classList.add('selected');
       selectedStyle = '__custom__';
       checkReady();
     };
+    r.readAsDataURL(f);
+  });
     r.readAsDataURL(f);
   });
 
@@ -2302,15 +2345,20 @@
       `<span class="ai-trend-chip declining">↓ ${t.tag||''} ${t.growth||''}</span>`
     ).join('');
 
-    const recHTML = recs.map((r,i) => `
+    const recHTML = recs.map((r,i) => {
+      const sid = r.style_id || '';
+      const num = sid.replace('nail_','').replace(/^0/,'') || sid;
+      const catName = r.category_name || '';
+      return `
       <div class="ai-rec-item">
         <div class="ai-rec-rank">${r.rank || (i+1)}</div>
         <div class="ai-rec-body">
-          <div class="ai-rec-title">${r.style_id || ''} · ${r.category_name || ''}</div>
+          <div class="ai-rec-title">${catName} <span class="ai-rec-num">#${num}</span></div>
           <div class="ai-rec-reason">${r.reason || ''}</div>
           ${r.score != null ? `<div class="ai-rec-score">score ${(+r.score).toFixed(2)}</div>` : ''}
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
 
     return `
       <div class="ai-section">
