@@ -10,11 +10,11 @@ def detect_risks(db, lookback_days=7, risk_threshold=0.15):
     styles = ranking.get("styles", [])
     total_gmv = ranking.get("total_gmv", 0)
 
-    trends = db.execute("""
+    trends = db.execute(f"""
         SELECT style_tag, AVG(growth_rate) FROM community_trends
-        WHERE date >= DATE('now', '-? days') GROUP BY style_tag
+        WHERE date >= DATE('now', '-{lookback_days} days') GROUP BY style_tag
         HAVING AVG(growth_rate) > 0.05
-    """, (lookback_days,)).fetchall() or []
+    """).fetchall() or []
 
     for tag, avg_growth in trends:
         tag_styles = [s for s in styles if s.get("style_tag") == tag]
