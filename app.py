@@ -1531,6 +1531,119 @@ def gmv_recommend():
     return jsonify(get_recommendations(get_db()))
 
 
+# ============ 嵌入式 GMV 看板 API ============
+
+@app.route('/api/admin/gmv_dashboard')
+def gmv_dashboard():
+    """返回商家数据看台所需的多维聚合数据，支持城市/日期/款式筛选"""
+    db = get_db()
+    city = request.args.get("city", "")
+    date_from = request.args.get("from", "")
+    date_to = request.args.get("to", "")
+    style_id = request.args.get("style_id", "")
+
+    # WHERE 条件
+    shop_where = ""
+    style_where = ""
+    params_shop = []
+    params_style = []
+
+    if city:
+        shop_where = "AND p.city = ?"
+        params_shop.append(city)
+        params_style.append(city)
+    if date_from:
+        shop_where += " AND s.date >= ?"
+        params_shop.append(date_from)
+        params_style.append(date_from)
+    if date_to:
+        shop_where += " AND s.date <= ?"
+        params_shop.append(date_to)
+        params_style.append(date_to)
+    if style_id:
+        style_where += " AND d.style_id = ?"
+        params_style.append(style_id)
+
+    # 城市列表
+    cities = [r[0] for r in db.execute(
+        "SELECT DISTINCT city FROM merchant_profiles ORDER BY city"
+    ).fetchall()] if not city else []
+
+    # 款式列表（Top 20）
+    top_styles = []
+    try:
+        top_styles = [[r[0], r[1], r[2]] for r in db.execute("""
+            SELECT d.style_id, c.style_name, SUM(d.group_buy_orders * c.price) AS gmv
+            FROM merchant_style_daily_metrics d
+            JOIN merchant_style_catalog c ON d.style_id = c.style_id
+            GROUP BY d.style_id ORDER BY gmv DESC LIMIT 20
+        """).fetchall()]
+    except: pass
+
+    # 日聚合：GMV / 订单 / 浏览 / AOV / CVR
+    daily = []
+    try:
+        sql = """
+            SELECT s.date,
+                   SUM(s.revenue) AS gmv,
+                   SUM(s.group_buy_orders) AS orders,
+                   SUM(s.search_volume + s.click_volume + s.consultation_volume) AS views
+            FROM merchant_shop_daily_metrics s
+            JOIN merchant_profiles p ON s.shop_id = p.shop_id
+            WHERE 1=1 {shop_where}
+            GROUP BY s.date ORDER BY s.date
+        """.format(shop_where=shop_where)
+        rows = db.execute(sql, params_shop).fetchall()
+        for r in rows:
+            g = r[1] or 0
+            o = r[2] or 0
+            v = r[3] or 1
+            daily.append({
+                "date": r[0],
+                "gmv": round(g),
+                "orders": round(o),
+                "aov": round(g / o, 2) if o else 0,
+                "views": round(v),
+                "cvr": round(o / v * 100, 2) if v else 0,
+            })
+    except: pass
+
+    # 总额
+    total_gmv = sum(d["gmv"] for d in daily)
+    total_orders = sum(d["orders"] for d in daily)
+    total_views = sum(d["views"] for d in daily)
+    avg_aov = round(total_gmv / total_orders, 2) if total_orders else 0
+    avg_cvr = round(total_orders / total_views * 100, 2) if total_views else 0
+
+    # 趋势变化
+    if len(daily) >= 14:
+        recent = daily[-7:]
+        prior = daily[-14:-7]
+        def trend_vals(key):
+            r = sum(d[key] for d in recent)
+            p = sum(d[key] for d in prior)
+            return round((r - p) / p * 100, 1) if p else 0
+        gmv_chg = trend_vals("gmv")
+        orders_chg = trend_vals("orders")
+        views_chg = trend_vals("views")
+    else:
+        gmv_chg = orders_chg = views_chg = 0
+
+    return jsonify({
+        "cities": cities,
+        "top_styles": top_styles,
+        "daily": daily[-30:],
+        "total_gmv": round(total_gmv),
+        "total_orders": round(total_orders),
+        "total_views": round(total_views),
+        "avg_aov": avg_aov,
+        "avg_cvr": avg_cvr,
+        "gmv_chg": gmv_chg,
+        "orders_chg": orders_chg,
+        "views_chg": views_chg,
+    })
+
+
 # ============ Skills API ============
 
 @app.route('/api/admin/skills/<skill_name>')
