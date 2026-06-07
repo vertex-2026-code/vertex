@@ -138,6 +138,40 @@
     border-color: rgba(212, 171, 124, 0.34);
     background: rgba(212, 171, 124, 0.08);
   }
+  .style-visual {
+    display: grid;
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 12px;
+    align-items: stretch;
+  }
+  .style-thumb {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    background: rgba(241, 220, 207, 0.03);
+  }
+  .style-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 8px;
+    color: var(--faint);
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.4;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(212, 171, 124, 0.16), transparent 44%),
+      rgba(241, 220, 207, 0.03);
+  }
   .style-head {
     display: flex;
     align-items: start;
@@ -182,6 +216,26 @@
     margin: 0 0 12px;
     font-family: var(--font-display);
     font-weight: 600;
+  }
+  .hero-visual {
+    display: grid;
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .hero-image {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(241, 220, 207, 0.08);
+    background: rgba(241, 220, 207, 0.03);
+  }
+  .hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .tag-row, .action-row {
     display: flex;
@@ -346,6 +400,7 @@
     .layout {
       grid-template-columns: 1fr;
     }
+    .hero-visual,
     .metric-grid,
     .promotion-grid,
     .proposal-grid {
@@ -479,14 +534,19 @@ function renderStyleList() {
     const statusLabel = item.inventory_status === 'offline' ? '已下架' : '上架中';
     return `
       <button class="style-card${active}" type="button" data-style-id="${escapeAttr(item.style_id || '')}">
-        <div class="style-head">
+        <div class="style-visual">
+          <div class="style-thumb">${renderStyleThumb(item, '待生成款式图')}</div>
           <div>
-            <div class="style-name">${escapeHtml(item.style_name || item.style_id || '未命名款式')}</div>
-            <div class="style-meta">${escapeHtml(`${item.primary_style || '未标注风格'} · ${item.primary_color || '未标注颜色'} · ${statusLabel}`)}</div>
+            <div class="style-head">
+              <div>
+                <div class="style-name">${escapeHtml(item.style_name || item.style_id || '未命名款式')}</div>
+                <div class="style-meta">${escapeHtml(`${item.primary_style || '未标注风格'} · ${item.primary_color || '未标注颜色'} · ${statusLabel}`)}</div>
+              </div>
+              <span class="badge">${escapeHtml(`成交 ${formatCount(item.group_buy_orders_30d || 0)}`)}</span>
+            </div>
+            <div class="style-note">${escapeHtml(`搜索 ${formatCount(item.search_volume_30d || 0)} · 点击 ${formatCount(item.click_volume_30d || 0)} · 转化 ${Math.round(Number(item.conversion_rate || 0) * 100)}%`)}</div>
           </div>
-          <span class="badge">${escapeHtml(`成交 ${formatCount(item.group_buy_orders_30d || 0)}`)}</span>
         </div>
-        <div class="style-note">${escapeHtml(`搜索 ${formatCount(item.search_volume_30d || 0)} · 点击 ${formatCount(item.click_volume_30d || 0)} · 转化 ${Math.round(Number(item.conversion_rate || 0) * 100)}%`)}</div>
       </button>
     `;
   }).join('');
@@ -519,13 +579,19 @@ function renderDetail() {
     ${promoteNotice}
     ${flashBlock}
     <section class="section-card">
-      <h2>${escapeHtml(style.style_name || style.style_id || '未命名款式')}</h2>
-      <div class="tag-row">
-        <span class="tag">${escapeHtml(style.primary_style || '未标注主风格')}</span>
-        <span class="tag">${escapeHtml(style.nail_shape || '未标注甲型')}</span>
-        <span class="tag">${escapeHtml(style.nail_length || '未标注长度')}</span>
-        <span class="tag">${escapeHtml(`价格 ¥${formatCount(style.price || 0)}`)}</span>
-        ${style.style_image_status === 'needs_regeneration' ? '<span class="tag">款式图待重绘</span>' : ''}
+      <div class="hero-visual">
+        <div class="hero-image">${renderStyleThumb(style, '当前还没有款式图')}</div>
+        <div>
+          <h2>${escapeHtml(style.style_name || style.style_id || '未命名款式')}</h2>
+          <div class="tag-row">
+            <span class="tag">${escapeHtml(style.primary_style || '未标注主风格')}</span>
+            <span class="tag">${escapeHtml(style.nail_shape || '未标注甲型')}</span>
+            <span class="tag">${escapeHtml(style.nail_length || '未标注长度')}</span>
+            <span class="tag">${escapeHtml(`价格 ¥${formatCount(style.price || 0)}`)}</span>
+            ${style.style_image_status === 'needs_regeneration' ? '<span class="tag">款式图待重绘</span>' : ''}
+          </div>
+          <div class="notice" style="margin-top:12px;">${escapeHtml(style.style_image_url ? '这张款式图来自当前门店的即梦/Ark 出图结果，可继续配合投流、改款和价格测试。' : '当前还没有这款的门店图，确认改款或批量出图后会自动回写到这里。')}</div>
+        </div>
       </div>
     </section>
 
@@ -758,6 +824,13 @@ async function postJson(url, body) {
 function formatCount(value) {
   const num = Number(value || 0);
   return Number.isFinite(num) ? num.toLocaleString('zh-CN') : String(value || 0);
+}
+
+function renderStyleThumb(style, emptyText = '待生成款式图') {
+  if (style?.style_image_url) {
+    return `<img src="${escapeAttr(style.style_image_url)}" alt="${escapeAttr(style.style_name || style.style_id || '款式图')}">`;
+  }
+  return `<div class="thumb-placeholder">${escapeHtml(emptyText)}</div>`;
 }
 
 function escapeHtml(value) {

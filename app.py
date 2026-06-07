@@ -438,6 +438,26 @@ def admin_merchant_dataset_shop_detail(shop_id: str):
     return jsonify(detail)
 
 
+@app.route("/api/admin/merchant-dataset/style-images/generate", methods=["POST"])
+def admin_generate_merchant_style_images():
+    from services.merchant_data_skill import generate_existing_style_images
+    data = request.get_json(force=True) if request.data else {}
+    try:
+        summary = generate_existing_style_images(
+            BASE_DIR,
+            hot_count=int(data.get("hot_count", 7)),
+            cold_count=int(data.get("cold_count", 3)),
+            shop_limit=int(data.get("shop_limit", 0)),
+            only_missing=bool(data.get("only_missing", True)),
+            shop_ids=data.get("shop_ids") if isinstance(data.get("shop_ids"), list) else None,
+        )
+        return jsonify(summary)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
 @app.route("/api/styles")
 def list_styles():
     from services.style_taxonomy import STYLE_TO_USER_TAGS

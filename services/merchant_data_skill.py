@@ -1192,15 +1192,29 @@ def get_merchant_workbench(base_dir: str, shop_id: str, period_days: int = 14, s
     style_rows = [_normalize_style_row(dict(row)) for row in styles]
     daily = [dict(row) for row in reversed(daily_rows)]
     public_competitors = _build_public_competitors(peer_rows, detail["profile"])
+    hot_styles = _pick_hot_style_rows(style_rows, limit=7)
+    hot_style_ids = {str(item.get("style_id") or "").strip() for item in hot_styles}
+    cold_source_rows = [item for item in style_rows if str(item.get("style_id") or "").strip() not in hot_style_ids]
+    cold_styles = _pick_cold_style_rows(cold_source_rows or style_rows, limit=3)
+    image_targets = _select_style_image_targets(hot_styles, cold_styles)
     return {
         "profile": detail["profile"],
         "totals": detail["totals"],
-        "hot_styles": _pick_hot_style_rows(style_rows),
-        "cold_styles": _pick_cold_style_rows(style_rows),
+        "hot_styles": hot_styles,
+        "cold_styles": cold_styles,
         "styles": style_rows,
         "public_competitors": public_competitors,
         "funnels": _build_workbench_funnels(daily, detail["totals"]),
         "recent_daily_metrics": daily,
+        "style_image_targets": image_targets,
+        "today_advice": _build_today_ops_advice(
+            detail["profile"],
+            detail["totals"],
+            hot_styles,
+            cold_styles,
+            style_rows,
+            public_competitors,
+        ),
     }
 
 
@@ -1557,6 +1571,211 @@ def _build_public_competitors(rows: list[sqlite3.Row], profile: dict[str, Any]) 
             "public_score": public_score,
         })
     return peers
+
+
+def _select_style_image_targets(
+    hot_styles: list[dict[str, Any]],
+    cold_styles: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    selected: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for bucket, reason in ((hot_styles, "hot"), (cold_styles, "cold")):
+        for item in bucket:
+            style_id = str(item.get("style_id") or "").strip()
+            if not style_id or style_id in seen:
+                continue
+            copied = dict(item)
+            copied["image_reason"] = reason
+            selected.append(copied)
+            seen.add(style_id)
+    return selected
+
+
+def _build_today_ops_advice(
+    profile: dict[str, Any],
+    totals: dict[str, Any],
+    hot_styles: list[dict[str, Any]],
+    cold_styles: list[dict[str, Any]],
+    all_styles: list[dict[str, Any]],
+    public_competitors: list[dict[str, Any]],
+) -> dict[str, Any]:
+    hot_count = min(3, len(hot_styles))
+    revise_candidates = [
+        item for item in cold_styles
+        if float(item.get("conversion_rate") or 0) < 0.08
+    ]
+    revise_count = min(2, len(revise_candidates) or len(cold_styles))
+    offline_candidates = [
+        item for item in cold_styles
+        if float(item.get("conversion_rate") or 0) < 0.035
+        or int(item.get("refund_orders_30d") or 0) >= 6
+    ]
+    offline_count = min(1, len(offline_candidates))
+    total_orders = int(totals.get("group_buy_orders_30d") or 0)
+    total_styles = int(totals.get("style_count") or len(all_styles) or 0)
+    persona = str(profile.get("style_persona_name") or profile.get("style_name") or "当前门店风格")
+    repeat_rate = float(profile.get("repeat_customer_rate") or 0)
+    refund_rate = float(profile.get("refund_rate") or 0)
+    avg_ticket = int(profile.get("avg_ticket") or 0)
+    rating = float(profile.get("rating") or 0)
+    competitor_count = len(public_competitors)
+
+    notes = [
+        f"今天先处理 {hot_count} 款待加码爆款，优先放大已经跑出成交的上新候选。",
+        f"同时复查 {revise_count} 款高点击低成交款，先做款式图、卖点文案和价格带优化。",
+    ]
+    if offline_count:
+        notes.append(f"其中有 {offline_count} 款建议直接进入下架或降权观察，避免继续吃掉曝光。")
+    if repeat_rate < 0.28:
+        notes.append("复购偏弱，今天适合补一轮老客提醒和二次到店话术。")
+    if refund_rate >= 0.05:
+        notes.append("退款压力偏高，记得优先回看差评和退款原因，避免继续放大问题款。")
+    if competitor_count:
+        notes.append(f"同风格公开竞店有 {competitor_count} 家可参考，后续可以按团购均价和风格包装补齐差距。")
+
+    extra_suggestions = [
+        f"围绕 {persona} 再补 1 组同审美变体，保持首页风格统一。",
+        "把今天的投流预算优先给已经验证过点击承接能力的款，不要平均分散。",
+        "晚间复盘点击高但未成交的款，优先检查主图、团购标题和首屏卖点。",
+    ]
+    if avg_ticket >= 220:
+        extra_suggestions.append("客单已经不低，今天更适合放大高意向款，不建议盲目大降价。")
+    else:
+        extra_suggestions.append("当前客单仍有抬升空间，可同步测试一档高配版或加价换装饰。")
+    if rating >= 4.7:
+        extra_suggestions.append("店铺评分优势明显，记得把用户口碑和真实上手效果写进团购卖点。")
+
+    headline = (
+        f"今天建议先放大 {hot_count} 款有潜力的成交款，"
+        f"再处理 {max(revise_count + offline_count, len(cold_styles))} 款低效款。"
+    )
+    return {
+        "headline": headline,
+        "summary": f"{persona} 门店当前共有 {total_styles} 款在运营，本周期累计成交 {total_orders} 单。",
+        "promote_count": hot_count,
+        "revise_count": revise_count,
+        "offline_count": offline_count,
+        "suggestions": notes,
+        "extra_suggestions": extra_suggestions[:4],
+        "actions": [
+            {"label": f"{hot_count} 款待加强投流", "target": "hotStyleBoard", "type": "promote"},
+            {"label": f"{revise_count} 款待改款优化", "target": "coldStyleBoard", "type": "revise"},
+            {"label": f"{offline_count} 款待下架观察", "target": "coldStyleBoard", "type": "offline"},
+        ],
+    }
+
+
+def generate_existing_style_images(
+    base_dir: str,
+    hot_count: int = 7,
+    cold_count: int = 3,
+    shop_limit: int = 0,
+    only_missing: bool = True,
+    shop_ids: list[str] | None = None,
+) -> dict[str, Any]:
+    db_path = os.path.join(base_dir, "data", "jiaqu.db")
+    if not os.path.exists(db_path):
+        raise ValueError("merchant dataset not found")
+    ensure_merchant_data_schema(db_path)
+    os.makedirs(os.path.join(base_dir, "static", STYLE_IMAGE_DIRNAME), exist_ok=True)
+
+    safe_hot = max(1, min(int(hot_count or 7), 10))
+    safe_cold = max(1, min(int(cold_count or 3), 10))
+    safe_limit = max(0, min(int(shop_limit or 0), 5000))
+    wanted_shop_ids = {str(item).strip() for item in (shop_ids or []) if str(item).strip()}
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    params: list[Any] = []
+    where_sql = ""
+    if wanted_shop_ids:
+        placeholders = ",".join("?" for _ in wanted_shop_ids)
+        where_sql = f"WHERE shop_id IN ({placeholders})"
+        params.extend(sorted(wanted_shop_ids))
+    limit_sql = f"LIMIT {safe_limit}" if safe_limit else ""
+    shops = conn.execute(
+        f"""
+        SELECT shop_id, shop_name, style
+        FROM merchant_profiles
+        {where_sql}
+        ORDER BY shop_id ASC
+        {limit_sql}
+        """,
+        params,
+    ).fetchall()
+
+    summary = {
+        "generated_at": datetime.now(BJT).isoformat(),
+        "shops_processed": 0,
+        "styles_requested": 0,
+        "generated": 0,
+        "failed": 0,
+        "skipped": 0,
+        "shop_summaries": [],
+        "hot_count": safe_hot,
+        "cold_count": safe_cold,
+        "only_missing": bool(only_missing),
+    }
+    for shop in shops:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM merchant_style_catalog
+            WHERE shop_id = ?
+            ORDER BY group_buy_orders_30d DESC, click_volume_30d DESC, search_volume_30d DESC, style_id ASC
+            """,
+            (shop["shop_id"],),
+        ).fetchall()
+        styles = [_normalize_style_row(dict(row)) for row in rows]
+        hot_styles = _pick_hot_style_rows(styles, limit=safe_hot)
+        hot_style_ids = {str(item.get("style_id") or "").strip() for item in hot_styles}
+        cold_source_rows = [item for item in styles if str(item.get("style_id") or "").strip() not in hot_style_ids]
+        cold_styles = _pick_cold_style_rows(cold_source_rows or styles, limit=safe_cold)
+        targets = _select_style_image_targets(hot_styles, cold_styles)
+        shop_stats = {"shop_id": shop["shop_id"], "shop_name": shop["shop_name"], "requested": 0, "generated": 0, "failed": 0, "skipped": 0}
+        for item in targets:
+            if only_missing and str(item.get("style_image_url") or "").strip() and str(item.get("style_image_status") or "").strip() == "generated":
+                shop_stats["skipped"] += 1
+                summary["skipped"] += 1
+                continue
+            asset = _generate_style_image_asset(
+                base_dir=base_dir,
+                shop_name=str(shop.get("shop_name") or shop["shop_id"]),
+                shop_style_code=str(shop.get("style") or ""),
+                style=item,
+            )
+            conn.execute(
+                """
+                UPDATE merchant_style_catalog
+                SET style_image_url = ?, style_image_prompt = ?, style_image_status = ?, style_image_error = ?, updated_at = ?
+                WHERE shop_id = ? AND style_id = ?
+                """,
+                (
+                    asset["style_image_url"],
+                    asset["style_image_prompt"],
+                    asset["style_image_status"],
+                    asset["style_image_error"],
+                    datetime.now(BJT).isoformat(),
+                    shop["shop_id"],
+                    item["style_id"],
+                ),
+            )
+            shop_stats["requested"] += 1
+            summary["styles_requested"] += 1
+            if asset["style_image_status"] == "generated":
+                shop_stats["generated"] += 1
+                summary["generated"] += 1
+            elif str(asset["style_image_status"]).startswith("skipped"):
+                shop_stats["skipped"] += 1
+                summary["skipped"] += 1
+            else:
+                shop_stats["failed"] += 1
+                summary["failed"] += 1
+        summary["shops_processed"] += 1
+        summary["shop_summaries"].append(shop_stats)
+    conn.commit()
+    conn.close()
+    return summary
 
 
 def _build_workbench_funnels(daily_rows: list[dict[str, Any]], totals: dict[str, Any]) -> dict[str, Any]:
@@ -2313,7 +2532,7 @@ def _generate_style_image_asset(
     style: dict[str, Any],
 ) -> dict[str, str]:
     api_key = str(os.environ.get("ARK_API_KEY") or "").strip()
-    prompt = str(style.get("design_prompt") or "").strip()
+    prompt = str(style.get("style_image_prompt") or style.get("design_prompt") or "").strip()
     if not api_key:
         return {
             "style_image_url": "",
