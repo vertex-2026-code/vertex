@@ -404,7 +404,8 @@ def admin_merchant_dataset_shop_detail(shop_id: str):
 @app.route("/api/styles")
 def list_styles():
     from services.style_taxonomy import STYLE_TO_USER_TAGS
-    files = sorted([f for f in os.listdir(NAILS_DIR) if f.lower().endswith((".png", ".jpg", ".jpeg"))])
+    # 只列 jpg/jpeg 缩略图给前端；png 原图保留给 AI 试戴用（见 /api/tryon nails_orig/）
+    files = sorted([f for f in os.listdir(NAILS_DIR) if f.lower().endswith((".jpg", ".jpeg"))])
     styles = []
     for f in files:
         sid = os.path.splitext(f)[0]
@@ -900,8 +901,9 @@ def user_recommend():
         return "平台 7 天口碑榜"
 
     # ---------- 10. 构造响应（保持数组形态，前端无需大改）----------
+    # 同上：只取 jpg 缩略图，避免前端同时拉 png+jpg 两份
     files = {os.path.splitext(f)[0]: f for f in os.listdir(NAILS_DIR)
-             if f.lower().endswith(('.png', '.jpg', '.jpeg'))}
+             if f.lower().endswith(('.jpg', '.jpeg'))}
     result = []
     for sid in picks:
         f = files.get(sid)
