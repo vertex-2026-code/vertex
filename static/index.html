@@ -1312,19 +1312,25 @@
     white-space: nowrap;
   }
   .plaza-like-btn {
-    background: transparent;
-    border: none;
-    padding: 4px;
-    margin: -4px;
+    background: rgba(0, 0, 0, 0.42);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    padding: 4px 10px;
+    border-radius: 999px;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--accent);
     cursor: pointer;
     line-height: 1;
+    transition: background 0.18s, border-color 0.18s, transform 0.18s;
   }
+  .plaza-like-btn:hover {
+    background: rgba(0, 0, 0, 0.62);
+    border-color: var(--accent);
+  }
+  .plaza-like-btn:active { transform: scale(0.94); }
   .plaza-like-btn i { font-size: 13px; }
   .plaza-caption {
     font-size: 11px;
