@@ -669,6 +669,75 @@
     pointer-events: none;
   }
 
+  /* 选中款式后展开的整行详情卡 — 横跨 3 列，贴在选中 card 那一行之后 */
+  .style-detail-card {
+    grid-column: 1 / -1;
+    background: color-mix(in srgb, var(--accent) 6%, var(--card));
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--stage-line));
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px 16px;
+    animation: detail-in 0.22s ease-out;
+  }
+  @keyframes detail-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .style-detail-card .sd-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: var(--accent);
+    text-transform: uppercase;
+    grid-column: 1 / -1;
+    margin-bottom: 2px;
+  }
+  .style-detail-card .sd-shop {
+    font-family: var(--font-display);
+    font-size: 14px;
+    color: var(--t-primary);
+    line-height: 1.3;
+  }
+  .style-detail-card .sd-desc {
+    font-size: 11px;
+    color: var(--t-tertiary);
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+  .style-detail-card .sd-price {
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: var(--accent);
+    text-align: right;
+    line-height: 1;
+  }
+  .style-detail-card .sd-price-unit {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: var(--t-tertiary);
+    display: block;
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+  .style-detail-card .sd-meta {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--t-secondary);
+    padding-top: 8px;
+    border-top: 1px dashed var(--stage-line);
+    text-transform: uppercase;
+  }
+  .style-detail-card .sd-meta span { display: inline-flex; align-items: center; gap: 4px; }
+  .style-detail-card .sd-meta b { color: var(--accent); font-weight: normal; }
+
   .custom-tile {
     aspect-ratio: 1 / 1;
     background: color-mix(in srgb, var(--accent) 8%, var(--card));
@@ -1911,6 +1980,7 @@
     selectedStyle = sid;
     customStyleImage = null;
     checkReady();
+    renderStyleDetail(target, sid);
     target.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 
@@ -1973,6 +2043,8 @@
     $('#filter-chips').addEventListener('click', e => {
       const chip = e.target.closest('.chip');
       if (!chip) return;
+      // 切风格筛选可能把选中款隐藏 → 干脆把详情卡一起清掉，避免飘
+      if (typeof removeStyleDetail === 'function') removeStyleDetail();
       const type = chip.dataset.type;
       const value = chip.dataset.value;
       // 再点同一 chip = 回到「全部」
@@ -2046,6 +2118,7 @@
     if (!c) return;
     $$('.style-card').forEach(x => x.classList.remove('selected'));
     c.classList.add('selected');
+    removeStyleDetail();
 
     // 灵感图卡 → 走自定义款流程
     if (c.dataset.kind === 'inspiration') {
@@ -2068,6 +2141,7 @@
       });
       $('#custom-upload-rect').classList.remove('has-image');
       $('#custom-upload-label').textContent = '上传一张你喜欢的灵感图';
+      renderStyleDetail(c, '__custom__');
       return;
     }
 
@@ -2077,7 +2151,58 @@
     $('#custom-upload-rect').classList.remove('has-image');
     $('#custom-upload-label').textContent = '上传一张你喜欢的灵感图';
     checkReady();
+    renderStyleDetail(c, selectedStyle);
   });
+
+  // 选中后展开的整行详情卡（横跨 grid 3 列）
+  let styleDetailToken = 0;
+  function removeStyleDetail() {
+    const old = $('#styles-grid .style-detail-card');
+    if (old) old.remove();
+  }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, m =>
+      ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[m]
+    );
+  }
+  async function renderStyleDetail(card, styleId) {
+    removeStyleDetail();
+    const myToken = ++styleDetailToken;
+    const grid = $('#styles-grid');
+    if (!grid || !card) return;
+    try {
+      const url = `/api/shops/for_style?style_id=${encodeURIComponent(styleId)}` +
+                  (userId ? `&user_id=${encodeURIComponent(userId)}` : '');
+      const r = await fetch(url);
+      const data = await r.json();
+      if (myToken !== styleDetailToken) return; // 用户已切换到别的卡
+      if (!card.classList.contains('selected')) return;
+
+      const primary = data.primary;
+      const alt = (data.alternatives || [])[0];
+      const shop = primary || alt;
+      if (!shop) return;
+
+      const detail = document.createElement('div');
+      detail.className = 'style-detail-card';
+      const badge = shop.badge || (data.mode === 'custom' ? '自定义款 · 附近门店' : '推荐门店');
+      detail.innerHTML = `
+        <div class="sd-badge">${escapeHtml(badge)}</div>
+        <div>
+          <div class="sd-shop">${escapeHtml(shop.name)}</div>
+          <div class="sd-desc">${escapeHtml(shop.desc || '')}</div>
+        </div>
+        <div class="sd-price">¥${shop.price_avg}<span class="sd-price-unit">均价</span></div>
+        <div class="sd-meta">
+          <span>RATING <b>${shop.rating}★</b></span>
+          <span>DISTANCE <b>${shop.distance_km} km</b></span>
+          ${data.target_category_name ? `<span>STYLE <b>${escapeHtml(data.target_category_name)}</b></span>` : ''}
+        </div>
+      `;
+      // 插在选中 card 之后；grid-column: 1 / -1 让它跨满整行
+      card.after(detail);
+    } catch {}
+  }
 
   // 工具：远程图 URL → dataURL（灵感图试戴时复用 tryon 现有 custom_style_image 入参）
   async function urlToDataURL(url) {
@@ -2144,6 +2269,7 @@
           if (card) {
             $$('.style-card').forEach(x => x.classList.remove('selected'));
             card.classList.add('selected');
+            renderStyleDetail(card, '__custom__');
             // 切到「全部」分类，保证灵感图可见
             const allChip = $('#filter-chips .chip[data-type="all"]');
             if (allChip && !allChip.classList.contains('active')) allChip.click();
