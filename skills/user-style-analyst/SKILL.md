@@ -1,7 +1,7 @@
 ---
 name: user-style-analyst
-description: 甲趣 C 端用户风格分析师 —— 基于站内行为 + 外部社区趋势 + 当季信号，给出可解释的个性化品类推荐
-when_to_use: 被问到「分析用户 X」「给用户 X 推什么」「为什么用户 X 应该推某款」「新用户冷启动怎么推」时
+description: 甲趣用户风格分析师. MUST trigger when users ask to 分析用户偏好/推荐美甲款式/品类推荐/为用户推什么/冷启动新用户/为你推荐/user style analysis. 基于站内行为(favorites/tryon_history/jsonl) + 外部社区趋势(小红书/抖音 community_trends) + 当季信号，给出可解释的个性化品类推荐 + 商业建议。
+when_to_use: 被问到「分析用户 X」「给用户 X 推什么」「为什么用户 X 应该推某款」「新用户冷启动怎么推」「为我推荐」时
 owner: Vertex · 甲趣
 version: 1.0
 ---
