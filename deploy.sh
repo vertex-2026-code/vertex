@@ -29,11 +29,14 @@ if [ -d skills ]; then
   echo "    已同步 skills/ → /root/.openclaw/workspace/skills/"
 fi
 
-echo "==> [5/6] 启动新 Flask"
+echo "==> [5/7] 同步 Python 依赖（gunicorn / Pillow 等新加的包）"
 # shellcheck disable=SC1091
 source venv/bin/activate
 # shellcheck disable=SC1091
 source .env
+pip install -q -r requirements.txt 2>&1 | tail -3 || echo "    ⚠️ pip install 有问题，继续"
+
+echo "==> [6/7] 启动新 Flask"
 # 优先用 gunicorn 4 worker：一个 AI 请求只阻塞 1/4 worker，其他 3 个继续服务
 # 没装 gunicorn 时回退到 python3 app.py（开发模式）
 if python3 -c "import gunicorn" 2>/dev/null; then
@@ -46,7 +49,7 @@ else
 fi
 sleep 3
 
-echo "==> [6/6] 健康检查"
+echo "==> [7/7] 健康检查"
 HEALTH=$(curl -s --max-time 3 http://localhost:5000/health || echo FAIL)
 echo "    /health → $HEALTH"
 
