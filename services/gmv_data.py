@@ -55,20 +55,32 @@ def get_gmv_overview(db):
     """GMV 总览"""
     _, data_end = _get_date_bounds(db)
     start = data_end - timedelta(days=29)
-    month_start = data_end.replace(day=1)
 
     p = _query_period(db, start, data_end)
     total_gmv = p["gmv"]
 
-    # 本月至今
-    month_p = _query_period(db, month_start, data_end)
-    month_gmv = month_p["gmv"]
-
-    # 目标
+    # 目标 + 周期（用 gmv_targets 的真实周期，不靠日历月）
     target_row = db.execute(
-        "SELECT target_value FROM gmv_targets WHERE period_type='monthly' ORDER BY id DESC LIMIT 1"
+        "SELECT target_value, period_start, period_end FROM gmv_targets "
+        "WHERE period_type='monthly' ORDER BY id DESC LIMIT 1"
     ).fetchone()
-    target_val = target_row[0] if target_row else (total_gmv * 1.15)
+
+    if target_row:
+        target_val = target_row[0]
+        try:
+            period_start = date.fromisoformat(target_row[1])
+            period_end = min(date.fromisoformat(target_row[2]), data_end)
+        except (ValueError, TypeError):
+            period_start = data_end.replace(day=1)
+            period_end = data_end
+        month_p = _query_period(db, period_start, period_end)
+        month_gmv = month_p["gmv"]
+    else:
+        # fallback: 日历月
+        month_start = data_end.replace(day=1)
+        month_p = _query_period(db, month_start, data_end)
+        month_gmv = month_p["gmv"]
+        target_val = total_gmv * 1.15
 
     curve = get_gmv_curve(db, 30)
 

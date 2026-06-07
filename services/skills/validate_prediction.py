@@ -7,7 +7,7 @@ Skill 7: validate_prediction — 预测准确性验证
 from services.skills._base import parse_period, query_all, safe_div
 
 
-def validate_prediction(db, period="last_week"):
+def validate_prediction(db, period="this_month"):
     start, end = parse_period(period)
 
     promos = query_all(
