@@ -1326,8 +1326,26 @@ def admin_chat():
     if chip and chip in JIAQU_CHIP_DISPATCH:
         dispatch = JIAQU_CHIP_DISPATCH[chip]
         from services.skills import SKILL_MAP
+        db = get_db()
         try:
-            raw_data = SKILL_MAP[dispatch["skill_key"]](get_db())
+            # promo_copy 是复合 skill：先 rank_styles 拿 top1 → 4 套 channel/tone 并联
+            if chip == "jiaqu-promo-copy":
+                rk = SKILL_MAP["style_ranking"](db, limit=1)
+                styles = rk.get("styles") or []
+                if not styles:
+                    raise RuntimeError("rank_styles 返回空，无 top 款可生成文案")
+                top_code = styles[0]["style_code"]
+                variants = [
+                    ("banner", "playful"), ("push", "playful"),
+                    ("detail_page", "premium"), ("merchant_invite", "premium"),
+                ]
+                raw_data = [
+                    SKILL_MAP["promo_copy"](db, top_code, channel=ch, tone=tn)
+                    for ch, tn in variants
+                ]
+            else:
+                # 其余 skill 全部 (db,) 默认参数即可
+                raw_data = SKILL_MAP[dispatch["skill_key"]](db)
         except Exception as exc:
             return jsonify({"error": f"fast-path {dispatch['skill_key']} 失败: {exc}"}), 500
 
