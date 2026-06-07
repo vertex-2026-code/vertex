@@ -319,6 +319,41 @@
   .chat-messages::-webkit-scrollbar { width: 5px; }
   .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+  /* ===== AI 思考中… 香槟金扫光 + 三点跳动 ===== */
+  .ai-thinking {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .ai-thinking-text {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--mid) 35%, transparent) 0%,
+      var(--accent) 45%,
+      var(--rose) 55%,
+      color-mix(in srgb, var(--mid) 35%, transparent) 100%
+    );
+    background-size: 220% auto;
+    -webkit-background-clip: text;
+            background-clip: text;
+    -webkit-text-fill-color: transparent;
+            color: transparent;
+    animation: ai-shimmer 2.2s linear infinite;
+  }
+  @keyframes ai-shimmer { to { background-position: -220% center; } }
+  .ai-thinking-dots { display: inline-flex; gap: 4px; }
+  .ai-thinking-dots .dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--accent);
+    animation: ai-dot-bounce 1.3s ease-in-out infinite;
+  }
+  .ai-thinking-dots .dot:nth-child(2) { animation-delay: 0.16s; background: var(--rose); }
+  .ai-thinking-dots .dot:nth-child(3) { animation-delay: 0.32s; }
+  @keyframes ai-dot-bounce {
+    0%, 80%, 100% { opacity: 0.25; transform: translateY(0) scale(0.85); }
+    40%           { opacity: 1;    transform: translateY(-4px) scale(1); }
+  }
+
   .msg-user, .msg-ai {
     font-size: 14px; line-height: 1.6;
     border-radius: 14px; padding: 11px 15px; margin-bottom: 12px;
@@ -1149,7 +1184,7 @@ async function sendChat() {
   document.querySelectorAll('.skill-chip.active').forEach(c => c.classList.remove('active'));
   chatSend.disabled = true;
   const loading = addMsg('ai', '');
-  loading.innerHTML = '<span style="opacity:0.6">AI 思考中…</span>';
+  loading.innerHTML = '<div class="ai-thinking"><span class="ai-thinking-text">AI 思考中</span><span class="ai-thinking-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div>';
   try {
     const r = await fetch('/api/admin/chat', {
       method: 'POST',
