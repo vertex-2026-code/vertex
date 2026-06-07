@@ -477,8 +477,21 @@ fetch('/api/admin/skills/detect_risk').then(r => r.json()).then(d => {
   `).join('');
 });
 
-// ── Auto-refresh ──
-setInterval(() => location.reload(), 30000);
+// ── 实时 SSE 连接 ──
+const evtSource = new EventSource('/api/events/stream');
+evtSource.addEventListener('snapshot', e => {
+  const d = JSON.parse(e.data);
+  $('#k-gmv').innerHTML = '¥' + F(d.month_gmv);
+  $('#target-badge').textContent = '目标 ¥' + (d.target / 10000).toFixed(0) + '万';
+  if (d.curve && d.curve.length) drawMainChart(d.curve, d.promo_events);
+});
+evtSource.addEventListener('gmv_update', e => {
+  const d = JSON.parse(e.data);
+  if (d.month_gmv) $('#k-gmv').innerHTML = '¥' + F(d.month_gmv);
+  if (d.target) $('#target-badge').textContent = '目标 ¥' + (d.target / 10000).toFixed(0) + '万';
+  if (d.curve && d.curve.length) drawMainChart(d.curve, d.promo_events || []);
+});
+evtSource.onerror = () => console.log('SSE 重连中…');
 </script>
 </body>
 </html>

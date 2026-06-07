@@ -1,8 +1,10 @@
 import base64
 import json
 import os
+import queue
 import sqlite3
 import subprocess
+import threading
 import time
 import uuid
 from collections import Counter
@@ -1081,6 +1083,138 @@ def merchant_skills():
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
+
+
+# ============ 实时事件管道 ============
+
+_sse_clients = []  # list[queue.Queue]
+_sse_lock = threading.Lock()
+
+
+def _broadcast_event(event_type, payload):
+    """向所有 SSE 客户端推送事件"""
+    msg = f"event: {event_type}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+    dead = []
+    with _sse_lock:
+        for q in _sse_clients:
+            try:
+                q.put_nowait(msg)
+            except Exception:
+                dead.append(q)
+        for q in dead:
+            _sse_clients.remove(q)
+
+
+@app.route('/api/events/stream')
+def events_stream():
+    """SSE 端点: 运营看板连接此 URL 接收实时推送"""
+    def generate():
+        q = queue.Queue()
+        with _sse_lock:
+            _sse_clients.append(q)
+        try:
+            # 首条: 当前 GMV 快照
+            from services.gmv_data import get_gmv_overview
+            snap = get_gmv_overview(get_db())
+            yield f"event: snapshot\ndata: {json.dumps(snap, ensure_ascii=False)}\n\n"
+            while True:
+                try:
+                    msg = q.get(timeout=30)
+                    yield msg
+                except queue.Empty:
+                    yield ": heartbeat\n\n"
+        except GeneratorExit:
+            pass
+        finally:
+            with _sse_lock:
+                if q in _sse_clients:
+                    _sse_clients.remove(q)
+    return app.response_class(generate(), mimetype='text/event-stream',
+                              headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
+
+
+@app.route('/api/events/push', methods=['POST'])
+def events_push():
+    """接收商家事件并写入数据库，同时广播给运营端
+
+    事件类型:
+      - new_order:   {"event":"new_order","shop_id":"...","style_id":"...","revenue":299}
+      - new_style:   {"event":"new_style","shop_id":"...","style_id":"...","style_name":"...","category":"...","price":299}
+      - daily_batch: {"event":"daily_batch","shop_id":"...","date":"2026-06-07","revenue":...,"orders":...,"views":...}
+      - style_batch: {"event":"style_metric","shop_id":"...","style_id":"...","date":"...","orders":...,"views":...,"favs":...}
+    """
+    data = request.get_json(force=True)
+    event_type = data.get("event", "")
+    db = get_db()
+
+    try:
+        if event_type == "new_order":
+            date_str = data.get("date", datetime.now(BJT).strftime("%Y-%m-%d"))
+            sid = data["style_id"]
+            # 更新店铺日指标
+            db.execute("""
+                INSERT INTO merchant_shop_daily_metrics
+                (shop_id, date, revenue, group_buy_orders, search_volume, click_volume, consultation_volume, ad_spend, repeat_orders, refund_orders, favorites_added, created_at)
+                VALUES(?, ?, ?, 1, 10, 5, 2, 0, 0, 0, 0, ?)
+                ON CONFLICT(shop_id, date) DO UPDATE SET
+                revenue = revenue + excluded.revenue,
+                group_buy_orders = group_buy_orders + 1
+            """, (data["shop_id"], date_str, data.get("revenue", 0), now_iso()))
+            # 更新款式日指标
+            db.execute("""
+                INSERT INTO merchant_style_daily_metrics
+                (shop_id, style_id, date, search_volume, click_volume, group_buy_orders, favorites_added, created_at)
+                VALUES(?, ?, ?, 10, 5, 1, 0, ?)
+                ON CONFLICT(shop_id, style_id, date) DO UPDATE SET
+                group_buy_orders = group_buy_orders + 1,
+                click_volume = click_volume + 5
+            """, (data["shop_id"], sid, date_str, now_iso()))
+            db.commit()
+
+            from services.gmv_data import get_gmv_overview
+            snap = get_gmv_overview(db)
+            _broadcast_event("gmv_update", snap)
+            return jsonify({"ok": True, "action": "new_order"})
+
+        elif event_type == "new_style":
+            db.execute("""
+                INSERT INTO merchant_style_catalog
+                (shop_id, style_id, style_name, category, price, cost, duration_minutes,
+                 search_volume_30d, click_volume_30d, cart_volume_30d, group_buy_orders_30d,
+                 ctr, conversion_rate, refund_orders_30d, favorite_count_30d, share_count_30d,
+                 impression_volume_30d, cpc, gmv_30d, inventory_status, launch_stage, trend_signal, title_tags, created_at, updated_at)
+                VALUES(?, ?, ?, ?, ?, ?, 45, 0, 0, 0, 0, 0.0, 0.0, 0, 0, 0, 0, 0.0, 0, 'in_stock', 'new', 'stable', '', ?, ?)
+            """, (data["shop_id"], data["style_id"], data.get("style_name", ""),
+                  data.get("category", ""), data.get("price", 200), data.get("cost", 80),
+                  now_iso(), now_iso()))
+            db.commit()
+
+            _broadcast_event("new_style", data)
+            return jsonify({"ok": True, "action": "new_style"})
+
+        elif event_type == "daily_batch":
+            date_str = data.get("date", datetime.now(BJT).strftime("%Y-%m-%d"))
+            db.execute("""
+                INSERT INTO merchant_shop_daily_metrics
+                (shop_id, date, revenue, group_buy_orders, search_volume, click_volume, consultation_volume, ad_spend, repeat_orders, refund_orders, favorites_added, created_at)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(shop_id, date) DO UPDATE SET
+                revenue = excluded.revenue, group_buy_orders = excluded.group_buy_orders,
+                search_volume = excluded.search_volume, click_volume = excluded.click_volume
+            """, (data["shop_id"], date_str, data.get("revenue", 0), data.get("orders", 0),
+                  data.get("views", 0), data.get("clicks", 0), data.get("consultations", 0),
+                  data.get("ad_spend", 0), data.get("repeat_orders", 0),
+                  data.get("refund_orders", 0), data.get("favorites", 0), now_iso()))
+            db.commit()
+
+            _broadcast_event("gmv_update", {"date": date_str, "shop_id": data["shop_id"]})
+            return jsonify({"ok": True, "action": "daily_batch"})
+
+        else:
+            return jsonify({"error": f"Unknown event type: {event_type}"}), 400
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ============ GMV 运营看板 ============
