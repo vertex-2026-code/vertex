@@ -60,8 +60,13 @@ def main():
 
     while d <= END_DATE:
         ds = d.isoformat()
+        # 周末效应：归一化后让工作日落到 ~90%（不然全贴 100% 看不出波动）
+        # 周末 ×1.07-1.13 → 窗口 max；工作日 ×0.95-1.02 → 归一化后 ≈ 87-92%
+        is_weekend = d.weekday() >= 5
+        dow_boost = rng.uniform(1.07, 1.13) if is_weekend else rng.uniform(0.95, 1.02)
+
         for shop_id in shops:
-            noise = rng.uniform(0.985, 1.015)  # ±1.5%
+            noise = rng.uniform(0.985, 1.015) * dow_boost
 
             # shop 级
             gmv = int(rng.uniform(9000, 27000) * noise)               # 单店 mean ≈ 18000

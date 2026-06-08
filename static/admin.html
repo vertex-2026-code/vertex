@@ -1340,8 +1340,8 @@ async function loadGmvDashboard() {
 }
 loadGmvDashboard();
 
-// 默认30天日期
-(function(){var t=new Date(),d=new Date(t);d.setDate(d.getDate()-29);var f=function(x){return x.toISOString().slice(0,10)};var ef=document.getElementById('gmv-from');var et=document.getElementById('gmv-to');if(ef&&!ef.value)ef.value=f(d);if(et&&!et.value)et.value=f(t);loadGmvDashboard()})();
+// 默认两周日期（今天往前 13 天）
+(function(){var t=new Date(),d=new Date(t);d.setDate(d.getDate()-13);var f=function(x){return x.toISOString().slice(0,10)};var ef=document.getElementById('gmv-from');var et=document.getElementById('gmv-to');if(ef&&!ef.value)ef.value=f(d);if(et&&!et.value)et.value=f(t);loadGmvDashboard()})();
 
 const chatMessages = $('#chat-messages');
 const chatInput = $('#chat-input');
