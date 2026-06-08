@@ -1794,7 +1794,7 @@ def gmv_dashboard():
     return jsonify({
         "cities": cities,
         "top_styles": top_styles,
-        "daily": daily[-30:],
+        "daily": daily,
         "total_gmv": round(total_gmv),
         "total_orders": round(total_orders),
         "total_views": round(total_views),
