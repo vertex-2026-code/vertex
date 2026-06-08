@@ -1338,9 +1338,9 @@ async function loadGmvDashboard() {
     }
   } catch(e) { console.log('GMV:', e); }
 }
-loadGmvDashboard();
 
-// 默认两周日期（今天往前 13 天）· v2-force-override
+// 默认两周日期（今天往前 13 天）· v3-no-race
+// 唯一的初始化入口：先填默认 from/to，再调 loadGmvDashboard，避免和裸调形成竞态
 (function(){var t=new Date(),d=new Date(t);d.setDate(d.getDate()-13);var f=function(x){return x.toISOString().slice(0,10)};var ef=document.getElementById('gmv-from');var et=document.getElementById('gmv-to');if(ef)ef.value=f(d);if(et)et.value=f(t);loadGmvDashboard()})();
 
 const chatMessages = $('#chat-messages');
