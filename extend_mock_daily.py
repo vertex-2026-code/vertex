@@ -10,7 +10,7 @@ import sqlite3, os, random
 from datetime import date, timedelta
 
 DB = f"{os.path.dirname(os.path.abspath(__file__))}/data/jiaqu.db"
-END_DATE = date(2030, 12, 31)
+END_DATE = date(2028, 6, 8)
 SEED = 4242  # 与 mock_merchant_local.py 的 seed=42 隔离，避免影响未来对照
 CHUNK = 50000
 
